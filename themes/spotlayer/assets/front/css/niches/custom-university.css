@@ -1,0 +1,12 @@
+section,
+footer {top: 100%;}
+.btn-lined.lined-white {color: #fff; border-color: #fff;}
+.kl-iconbox__icon.small {height: 90px; width: 90px;}
+.testimonial_slider__carousel-wrapper .testimonialbox .who strong {color: #64a264;}
+.testimonial_slider__carousel-wrapper .testimonialSlider-slickNav li.slick-active .slickBtn {background-color: #64a264;}
+.testimonial_slider__carousel-wrapper .testimonialbox .who,
+.testimonialbox .tcontent {color: #fff;}
+.testimonial_slider.quoter-style .cfs--pagination a.selected {background: #64a264;}
+.tcolor {color: #64a264 !important;}
+
+.process-list .processitems li .ico-wrapper > span {font-size: 30px; font-weight: bold;}

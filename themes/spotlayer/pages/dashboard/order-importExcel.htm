@@ -1,0 +1,1465 @@
+title = "Import New Shipments"
+url = "/dashboard/shipments/import"
+layout = "admin"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/shipments"
+menu_breadcrumb = "order"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+use \Spot\Shipment\Models\Settings;
+function onStart() {
+    if(!Auth::getUser()->hasUserPermission(["order"],'c')) {
+        \Flash::error($this['theme_lang']['not_allowed']);
+        return Redirect::to('dashboard/settings');
+    }
+
+    $this->page->stretch        = true;
+
+    $this['primary_currency']=   \Responsiv\Currency\Models\Currency::where('is_primary', 1)->first();
+    $this['employees']      =   \RainLab\User\Models\User::whereNotIn('role_id',[1,5])->select('id','name')->get();
+    $this['packaging']      =   \Spot\Shipment\Models\Packaging::select('id','name')->get();
+    $this['modes']          =   \Spot\Shipment\Models\Mode::select('id','name')->get();
+    $this['couriers']       =   \Spot\Shipment\Models\Courier::select('id','name')->get();
+    $this['deliverytimes']  =   \Spot\Shipment\Models\DeliveryTime::select('id','name')->get();
+    $this['offices']        =   \Spot\Shipment\Models\Office::select('id','name')->get();
+    $this['categories']     =   \Spot\Shipment\Models\Category::select('id','name')->get();
+    $this['countries']      =   \RainLab\Location\Models\Country::select('id','name')->where('is_enabled', 1)->get();
+    $this['states']         =   \RainLab\Location\Models\State::whereHas('country',function($q){$q->where('is_enabled', 1);})->select('id','name')->get();
+    $this['cities']         =   \Spot\Shipment\Models\City::select('id','name')->get();
+    $this['areas']          =   \Spot\Shipment\Models\Area::select('id','name')->get();
+    $this['statuses']       =   \Spot\Shipment\Models\Status::select('id','name')->get();
+    $this['max']            =   \Spot\Shipment\Models\Order::max('number')+1;
+    $this['addShipmentForm']      =   Settings::get('addShipmentForm',true);
+}
+use Spot\Shipment\Classes\Excel;
+use Spot\Shipment\Classes\ShipmentImport;
+
+function onImport(){
+    if(!Auth::getUser()->hasUserPermission(["order"],'c')) {
+        throw new ApplicationException($this['theme_lang']['not_allowed']);
+    }
+    $data = post();
+    Excel::excel()->import(new ShipmentImport,Input::file('excleFile') );
+    //Excel::excel()->import(Input::file('excleFile'), function($reader) {
+    //  dd($reader);
+    //});
+    //$excelFile =   \Spot\Shipment\Classes\ExcelFile::import(Input::file('excleFile'));
+    return Redirect::to('dashboard/shipments/import');
+
+}
+function onSave()
+{
+    if(!Auth::getUser()->hasUserPermission(["order"],'c')) {
+        throw new ApplicationException($this['theme_lang']['not_allowed']);
+    }
+    $data = post();
+    $addShipmentForm  = Settings::get('addShipmentForm',true);
+    $companyData            =   Settings::get('company', true);
+    
+
+    if ( $addShipmentForm == "add_form_simple")
+    {
+        if(Auth::getUser()->role_id == 5){
+            $number = '';
+            for($x = 0; $x <= $this['settings']['tracking']['numbers_order']; $x++){
+            $number .= '0';
+            }
+            $number .= \Spot\Shipment\Models\Order::withTrashed()->max('number')+1;
+            $number = substr($number, -$this['settings']['tracking']['numbers_order']);
+
+            $data['number']                 =   $number;
+
+            $data['sender_id']              =   Auth::getUser()->id;
+        }
+        //var_dump($companyData);
+        \RainLab\User\Models\User::extend(function($model){
+            $myrules['mobile'] = 'required|unique:users';
+            $myrules['password'] = 'required';
+            $model->rules = $myrules;
+            $model->customMessages['mobile.mobile'] = $this['theme_lang']['mobile_already_registered'];
+        });
+
+        $item                   = new \RainLab\User\Models\User;
+        $item->name             = htmlspecialchars($data['name']);
+        $password                       = \Hash::make(123);
+        $item->password                 = $password;
+        $item->password_confirmation    = $password;
+        $item->mobile           = htmlspecialchars($data['mobile']);
+        $item->role_id          = 5;
+        $item->street_addr            = htmlspecialchars($data['street_addr']);
+        $item->area_id            = htmlspecialchars($data['area_id']);
+        $item->city_id              = htmlspecialchars($data['city_id']);
+        $item->created_at       = \Carbon\Carbon::now();
+        $item->updated_at       = \Carbon\Carbon::now();
+        $item->save();
+
+        $subitem                    = new \Spot\Shipment\Models\Address;
+        $subitem->user_id           = $item->id;
+        $subitem->name              = htmlspecialchars($data['street_addr']);
+        $subitem->street            = htmlspecialchars($data['street_addr']);
+        $subitem->state            = htmlspecialchars($data['area_id']);
+        $subitem->city              = htmlspecialchars($data['city_id']);
+        $subitem->default           = 1;
+        $subitem->created_at        = \Carbon\Carbon::now();
+        $subitem->updated_at        = \Carbon\Carbon::now();
+        $subitem->save();
+        
+        $prev   =   \Spot\Shipment\Models\Order::where('number', $data['number'])->first();
+        if($prev){
+            throw new ApplicationException($this['theme_lang']['another_order_with_the_same_numbers']);
+        }
+
+        $item                        = new \Spot\Shipment\Models\Order;
+        //$item->sender_id             = htmlspecialchars($data['sender_id']);
+        //$item->sender_address_id     = htmlspecialchars($data['street_addr']);
+        $item->sender_id             = htmlspecialchars($data['sender_id']);
+        $item->sender_address_id     = (($companyData["address"]) ? $companyData["address"] : "");
+        $item->receiver_id      = $subitem->user_id;
+        $item->receiver_address_id= $subitem->id;
+        $item->ship_date             = \Carbon\Carbon::parse(\Carbon\Carbon::createFromFormat($this['settings']['dateformat'], $data['ship_date']));        
+
+        $item->number                = htmlspecialchars($data['number']);
+        $item->created_at            = \Carbon\Carbon::now();
+        $item->updated_at            = \Carbon\Carbon::now();
+        $item->barcode               = htmlspecialchars($data['number']);
+        if(isset($data['mode_id']) && $data['mode_id'] != ''){
+            $item->mode_id           = htmlspecialchars($data['mode_id']);
+        }
+        $item->courier_fee           = htmlspecialchars($data['courier_fee']);
+        $item->type                  =2;
+        $item->status_id             =19;
+        if(isset($data['assigned_id']) && $data['assigned_id'] != ''){
+            $item->assigned_id  = htmlspecialchars($data['assigned_id']);}
+        $item->save();
+
+        $subitem                    = new \Spot\Shipment\Models\Item;
+        $subitem->order_id          = $item->id;
+        $subitem->category_id       = htmlspecialchars($data['category_id']);
+        $subitem->description       = htmlspecialchars($data['description']);
+        $subitem->quantity          = htmlspecialchars($data['quantity']);
+        $subitem->weight            = htmlspecialchars($data['weight']);
+        $subitem->save();
+
+        $payment                    = new \Spot\Shipment\Models\Payment;
+        $payment->type              = 1;
+        $payment->item_id           = $item->id;
+        $payment->for_id            = $item->sender_id;
+        $payment->payment_with      = $item->sender_id;
+        $payment->movement          = 3; //Deduction from the wallet
+        $payment->amount            = '-'.$item->courier_fee;
+        $payment->date              = \Carbon\Carbon::parse($item->ship_date);
+        $payment->created_at        = \Carbon\Carbon::now();
+        $payment->updated_at        = \Carbon\Carbon::now();
+        $payment->save();
+
+        $event_data =   array(
+            'sender'                =>  Auth::getUser(),
+            'shipping_sender'       =>  $item->sender_id,
+            'shipping_receiver'     =>  (($item->receiver_id) ? $item->receiver_id : null),
+            'shipping_responsible'     =>  (($item->assigned_id) ? $item->assigned_id : null),
+            'item'                  =>  $item,
+            'type'      =>  'new_shipments',
+            'thumb'     =>  'icon',
+            'icon'      =>  'flaticon-gift',
+            'subject'   =>  $this['theme_lang']['new_shipments'],
+            'message'   =>  $this['theme_lang']['new_shipments'],
+            'url'       =>  url('dashboard/shipments/'.$item->id.'/view'),
+            'badge'     =>  'success',
+        );
+        \Event::fire('spot.event', [$this['pusher'],$this['settings'],$event_data]);
+
+        $activity                   = new \Spot\Shipment\Models\Activity;
+        $activity->user_id          = Auth::getUser()->id;
+        $activity->order_id         = $item->id;
+        $activity->description      = 'created';
+        $activity->created_at       = \Carbon\Carbon::now();
+        $activity->updated_at       = \Carbon\Carbon::now();
+        $activity->save();
+    }
+    elseif($addShipmentForm == "add_form_advance"){
+
+    if(Auth::getUser()->role_id == 5){
+        $number = '';
+        for($x = 0; $x <= $this['settings']['tracking']['numbers_order']; $x++){
+            $number .= '0';
+        }
+        $number .= \Spot\Shipment\Models\Order::withTrashed()->max('number')+1;
+        $number = substr($number, -$this['settings']['tracking']['numbers_order']);
+
+        $data['number']                 =   $number;
+
+        $data['sender_id']              =   Auth::getUser()->id;
+
+        if($data['type']   ==   1) {
+            $delivery_cost  =   $this['settings']['fees']['pickup_cost'];
+        }else{
+            $delivery_cost  =   $this['settings']['fees']['delivery_cost'];
+        }
+        $return_courier_fee     =   null;
+
+        if(isset($data['return_defray']) && $data['return_defray'] != ''){
+            if($data['return_package_fee']  ==  1){
+                $return_courier_fee  =   $this['settings']['fees']['delivery_cost_back_receiver'];
+            }else{
+                $return_courier_fee  =   $this['settings']['fees']['delivery_cost_back_sender'];
+            }
+        }
+
+        if(isset($data['receiver_address_id']) && $data['receiver_address_id']   !=   '') {
+            $sender_address_id      =   \Spot\Shipment\Models\Address::find($data['sender_address_id']);
+            $receiver_address_id    =   \Spot\Shipment\Models\Address::find($data['receiver_address_id']);
+
+            $fees   =   \Spot\Shipment\Models\Fees::where('from',$sender_address_id->county)->where('to',$receiver_address_id->county)->where('type',4)->first();
+            if(!$fees){
+                $fees   =   \Spot\Shipment\Models\Fees::where('from',$sender_address_id->city)->where('to',$receiver_address_id->city)->where('type',3)->first();
+                if(!$fees){
+                    $fees   =   \Spot\Shipment\Models\Fees::where('from',$sender_address_id->state)->where('to',$receiver_address_id->state)->where('type',2)->first();
+                    if(!$fees){
+                        $fees   =   \Spot\Shipment\Models\Fees::where('from',$sender_address_id->country)->where('to',$receiver_address_id->country)->where('type',1)->first();
+                    }
+                }
+            }
+
+            if($fees){
+                if($data['type']   ==   1) {
+                    $delivery_cost  =   $fees->pickup_cost;
+                }else{
+                    $delivery_cost  =   $fees->delivery_cost;
+                }
+                if($fees->packaging == 1 && isset($data['packaging_id']) && $data['packaging_id'] != ''){
+                    foreach($fees->packaging_fees as $package_fee   =>  $value){
+                        if($package_fee ==  $data['packaging_id']){
+                            $delivery_cost  +=   $value;
+                        }
+                    }
+                }
+                if(isset($data['return_defray']) && $data['return_defray'] != ''){
+                    if($data['return_package_fee']  ==  1){
+                        $return_courier_fee  =   $fees->delivery_cost_back_receiver;
+                    }else{
+                        $return_courier_fee  =   $fees->delivery_cost_back_sender;
+                    }
+                }
+            }
+
+        }
+
+        $data['return_courier_fee']     =   $return_courier_fee;
+        $data['courier_fee']            =   $delivery_cost;
+        $data['tax']                    =   $this['settings']['taxes']['percent'];
+        $data['insurance']              =   $this['settings']['taxes']['insurance'];
+        $data['customs_value']          =   0;
+        $data['status_id']              =   $this['settings']['tracking']['default_status'];
+        $data['delivery_time_id']       =   $this['settings']['tracking']['default_deliverytime'];
+    }
+
+    $prev   =   \Spot\Shipment\Models\Order::where('number', $data['number'])->first();
+    if($prev){
+        throw new ApplicationException($this['theme_lang']['another_order_with_the_same_numbers']);
+    }
+
+    $item                   = new \Spot\Shipment\Models\Order;
+    $item->sender_id        = htmlspecialchars($data['sender_id']);
+    $item->sender_address_id= htmlspecialchars($data['sender_address_id']);
+    $item->type             = htmlspecialchars($data['type']);
+    $item->packaging_id     = htmlspecialchars($data['packaging_id']);
+    $item->office_id        = htmlspecialchars($data['office_id']);
+    $item->ship_date        = \Carbon\Carbon::parse(\Carbon\Carbon::createFromFormat($this['settings']['dateformat'], $data['ship_date']));
+
+    if($data['type']    ==  2 or $data['show_receiver_info'] == 1){
+        $item->receiver_id      = htmlspecialchars($data['receiver_id']);
+        $item->receiver_address_id= htmlspecialchars($data['receiver_address_id']);
+    }
+    $item->payment_type     = htmlspecialchars($data['payment_type']);
+    if(isset($data['return_defray']) && $data['return_defray'] != '' && $data['return_defray'] != 2){
+        $item->return_defray    = htmlspecialchars($data['return_defray']);
+        $item->package_fee      = htmlspecialchars($data['package_fee']);
+        $item->return_package_fee= htmlspecialchars($data['return_package_fee']);
+        $item->return_courier_fee= htmlspecialchars($data['return_courier_fee']);
+    }
+    $item->number           = htmlspecialchars($data['number']);
+    $item->tax              = htmlspecialchars($data['tax']);
+    $item->insurance        = htmlspecialchars($data['insurance']);
+    if(isset($data['mode_id']) && $data['mode_id'] != ''){
+        $item->mode_id          = htmlspecialchars($data['mode_id']);
+    }
+    $item->customs_value    = htmlspecialchars($data['customs_value']);
+    if(isset($data['courier_id']) && $data['courier_id'] != ''){
+        $item->courier_id       = htmlspecialchars($data['courier_id']);
+    }
+    $item->courier_fee      = htmlspecialchars($data['courier_fee']);
+    $item->delivery_time_id = htmlspecialchars($data['delivery_time_id']);
+    $item->status_id        = htmlspecialchars($data['status_id']);
+    if(isset($data['assigned_id']) && $data['assigned_id'] != ''){
+        $item->assigned_id  = htmlspecialchars($data['assigned_id']);
+    }
+    $item->currency_id      = \Responsiv\Currency\Models\Currency::where('is_primary', 1)->first()->id;
+    $item->channel          = 'backend';
+    $item->created_at       = \Carbon\Carbon::now();
+    $item->updated_at       = \Carbon\Carbon::now();
+    $item->barcode          = htmlspecialchars($data['number']);
+    $item->save();
+
+    if(isset($data['sender']) && Auth::getUser()->role_id == 5){
+        \RainLab\User\Models\User::where('id', Auth::getUser()->id)->update(['mobile' => $data['sender_mobile']]);
+    }
+
+    $shipdate               = \Carbon\Carbon::parse($item->ship_date);
+    $deliverydate           = $shipdate->addHours($item->deliverytime->count);
+    $item->delivery_date    = $deliverydate;
+    $item->update();
+
+    if(isset($data['items']) && $data['items'] != '' && !empty($data['items'])){
+        foreach($data['items'] as $shipping_item){
+            $subitem                    = new \Spot\Shipment\Models\Item;
+            $subitem->order_id          = $item->id;
+            $subitem->category_id       = htmlspecialchars($shipping_item['category_id']);
+            $subitem->description       = htmlspecialchars($shipping_item['description']);
+            $subitem->quantity          = htmlspecialchars($shipping_item['quantity']);
+            $subitem->weight            = htmlspecialchars($shipping_item['weight']);
+            $subitem->length            = htmlspecialchars($shipping_item['length']);
+            $subitem->width             = htmlspecialchars($shipping_item['width']);
+            $subitem->height            = htmlspecialchars($shipping_item['height']);
+            $subitem->save();
+        }
+    }
+
+
+    $event_data =   array(
+        'sender'                =>  Auth::getUser(),
+        'shipping_sender'       =>  $item->sender_id,
+        'shipping_receiver'     =>  (($item->receiver_id) ? $item->receiver_id : null),
+        'shipping_responsible'     =>  (($item->assigned_id) ? $item->assigned_id : null),
+        'item'                  =>  $item,
+        'type'      =>  'new_shipments',
+        'thumb'     =>  'icon',
+        'icon'      =>  'flaticon-gift',
+        'subject'   =>  $this['theme_lang']['new_shipments'],
+        'message'   =>  $this['theme_lang']['new_shipments'],
+        'url'       =>  url('dashboard/shipments/'.$item->id.'/view'),
+        'badge'     =>  'success',
+    );
+    \Event::fire('spot.event', [$this['pusher'],$this['settings'],$event_data]);
+
+    $activity                   = new \Spot\Shipment\Models\Activity;
+    $activity->user_id          = Auth::getUser()->id;
+    $activity->order_id         = $item->id;
+    $activity->description      = 'created';
+    $activity->created_at       = \Carbon\Carbon::now();
+    $activity->updated_at       = \Carbon\Carbon::now();
+    $activity->save();
+
+    }
+    \Flash::success($this['theme_lang']['created_successfully']);
+    return Redirect::to('dashboard/shipments/import');
+}
+
+
+function onGetclients()
+{
+    $data = post();
+    $item = '';
+    $array = array();
+    if(isset($data['term']) && $data['term'] != ''){
+        $item = $data['term'];
+        $items = \RainLab\User\Models\User::where('role_id', 5)
+                    ->where(function($q) use($item){
+                        $q->where('id', 'like', "%$item%");
+                        $q->orWhere('name', 'like', "%$item%");
+                        $q->orWhere('username', 'like', "%$item%");
+                        $q->orWhere('email', 'like', "%$item%");
+                        $q->orWhere('phone', 'like', "%$item%");
+                        $q->orWhere('mobile', 'like', "%$item%");
+                    })
+                    ->get();
+
+        foreach($items as $item){
+            $array[] = array("id"=>$item->id, "text"=>$item->name, "mobile"=>$item->mobile);
+        }
+    }
+    $array[] = array("id"=>'new', "text"=>'<i class="flaticon2-add"></i>&nbsp;'.$this['theme_lang']['add_new']);
+    return $array;
+}
+function onNewclient(){
+    $data = post();
+    if(isset($data['connect'])){
+        \RainLab\User\Models\User::extend(function($model){
+            $myrules['email'] = 'required|between:6,255|email|unique:users';
+            $myrules['mobile'] = 'required|unique:users';
+            $myrules['username'] = 'required|between:2,255|unique:users';
+            $myrules['password'] = 'required';
+            $model->rules = $myrules;
+            $model->customMessages['mobile.unique'] = $this['theme_lang']['mobile_already_registered'];
+            $model->customMessages['email.unique'] = $this['theme_lang']['email_already_registered'];
+            $model->customMessages['username.unique'] = $this['theme_lang']['username_already_registered'];
+        });
+    }else{
+        \RainLab\User\Models\User::extend(function($model){
+            $myrules['mobile'] = 'required|unique:users';
+            $myrules['password'] = 'required';
+            $model->rules = $myrules;
+            $model->customMessages['mobile.mobile'] = $this['theme_lang']['mobile_already_registered'];
+        });
+    }
+
+    $item                   = new \RainLab\User\Models\User;
+    $item->name             = htmlspecialchars($data['name']);
+    if(isset($data['connect'])){
+        $item->username         = htmlspecialchars($data['username']);
+        $item->email            = htmlspecialchars($data['email']);
+        if(isset($data['password']) && $data['password'] != null && !empty($data['password']) && $data['password'] != ''){
+            $password                       = \Hash::make($data['password']);
+            $item->password                 = $password;
+            $item->password_confirmation    = $password;
+        }
+    }else{
+        $password                       = \Hash::make(123);
+        $item->password                 = $password;
+        $item->password_confirmation    = $password;
+    }
+    $item->mobile           = htmlspecialchars($data['mobile']);
+    $item->gender           = (isset($data['gender']) ? $data['gender'] : null);
+    $item->role_id          = 5;
+    $item->created_at       = \Carbon\Carbon::now();
+    $item->updated_at       = \Carbon\Carbon::now();
+    $item->save();
+
+    $subitem                    = new \Spot\Shipment\Models\Address;
+    $subitem->user_id           = $item->id;
+    $subitem->name              = htmlspecialchars($data['street_addr']);
+    $subitem->street            = htmlspecialchars($data['street_addr']);
+    $subitem->lat               = htmlspecialchars($data['lat']);
+    $subitem->lng               = htmlspecialchars($data['lng']);
+    $subitem->url               = htmlspecialchars($data['url']);
+    $subitem->county            = htmlspecialchars($data['area_id']);
+    $subitem->city              = htmlspecialchars($data['city_id']);
+    $subitem->zipcode           = htmlspecialchars($data['postal_code']);
+    $subitem->state             = htmlspecialchars($data['state_id']);
+    $subitem->country            = htmlspecialchars($data['country_id']);
+    $subitem->default           = 1;
+    $subitem->created_at        = \Carbon\Carbon::now();
+    $subitem->updated_at        = \Carbon\Carbon::now();
+    $subitem->save();
+
+    if(isset($data['connect'])){
+        $event_data =   array(
+            'persons'   =>  [$item->id],
+            'sender'    =>  Auth::getUser(),
+            'item'      =>  $item,
+            'type'      =>  'new_account',
+            'thumb'     =>  'icon',
+            'icon'      =>  'flaticon-gift',
+            'subject'   =>  $this['theme_lang']['new_account'],
+            'message'   =>  $this['theme_lang']['new_account'],
+            'url'       =>  url('dashboard/shipments/'.$item->id.'/view'),
+            'badge'     =>  'success',
+        );
+        \Event::fire('spot.event', [$this['pusher'],$this['settings'],$event_data]);
+    }
+    return array("id"=>$item->id, "name"=>$item->name, 'address_id' => $subitem->id, 'address_name' => $subitem->name);
+}
+function onNewclientaddress(){
+    $data = post();
+
+    \Spot\Shipment\Models\Address::where('user_id', $data['client_id'])->update(['default' => 0]);
+
+    $subitem                    = new \Spot\Shipment\Models\Address;
+    $subitem->user_id           = htmlspecialchars($data['client_id']);
+    $subitem->name              = htmlspecialchars($data['street_addr']);
+    $subitem->street            = htmlspecialchars($data['street_addr']);
+    $subitem->lat               = htmlspecialchars($data['lat']);
+    $subitem->lng               = htmlspecialchars($data['lng']);
+    $subitem->url               = htmlspecialchars($data['url']);
+    $subitem->county            = htmlspecialchars($data['area_id']);
+    $subitem->city              = htmlspecialchars($data['city_id']);
+    $subitem->zipcode           = htmlspecialchars($data['postal_code']);
+    $subitem->state             = htmlspecialchars($data['state_id']);
+    $subitem->country           = htmlspecialchars($data['country_id']);
+    $subitem->default           = 1;
+    $subitem->created_at        = \Carbon\Carbon::now();
+    $subitem->updated_at        = \Carbon\Carbon::now();
+    $subitem->save();
+
+    $addresses = \Spot\Shipment\Models\Address::where('user_id', $data['client_id'])->get();
+    $html = '<option data-hidden="true"></option>';
+    $default = 'new';
+    if($addresses){
+        foreach($addresses as $address){
+            if($address->default == 1){
+                $default = $address->id;
+            }
+            $html .= '<option value="'.$address->id.'">'.$address->name.'</option>';
+        }
+    }
+    if(Auth::getUser()->hasUserPermission(["client"],'c')) {
+        $html .= '<option value="new" data-icon="flaticon2-add">'.$this['theme_lang']['add_new'].'</option>';
+    }
+    return array("html" => $html, "default" => $default);
+}
+function onClientaddresses(){
+    $data = post();
+
+    $addresses = \Spot\Shipment\Models\Address::where('user_id', $data['id'])->get();
+    $html = '<option data-hidden="true"></option>';
+    $default = 'new';
+    if($addresses){
+        foreach($addresses as $address){
+            if($address->default == 1){
+                $default = $address->id;
+            }
+            $html .= '<option value="'.$address->id.'">'.$address->name.'</option>';
+        }
+    }
+    $html .= '<option value="new" data-icon="flaticon2-add">'.$this['theme_lang']['add_new'].'</option>';
+    return array("html" => $html, "default" => $default);
+}
+function onListstates(){
+    $data = post();
+
+    $items = \RainLab\Location\Models\State::where('country_id', $data['id'])->get();
+    $html = '<option data-hidden="true"></option>';
+    if($items){
+        foreach($items as $item){
+            $html .= '<option value="'.$item->id.'">'.$item->name.'</option>';
+        }
+    }
+    return array("html" => $html);
+}
+function onListcities(){
+    $data = post();
+
+    $items = \Spot\Shipment\Models\City::where('state_id', $data['id'])->get();
+    $html = '<option data-hidden="true"></option>';
+    if($items){
+        foreach($items as $item){
+            $html .= '<option value="'.$item->id.'">'.$item->name.'</option>';
+        }
+    }
+    return array("html" => $html);
+}
+function onListareas(){
+    $data = post();
+
+    $items = \Spot\Shipment\Models\Area::where('city_id', $data['id'])->get();
+    $html = '<option data-hidden="true"></option>';
+    if($items){
+        foreach($items as $item){
+            $html .= '<option value="'.$item->id.'">'.$item->name.'</option>';
+        }
+    }
+    return array("html" => $html);
+}
+function onChangefees(){
+    $data = post();
+
+    if($data['type']   ==   1) {
+        if($data['show_receiver_info'] == 1){
+            $delivery_cost  =   $this['settings']['fees']['pickup_cost'];
+            $delivery_cost  +=   $this['settings']['fees']['delivery_cost'];
+        }else{
+            $delivery_cost  =   $this['settings']['fees']['pickup_cost'];
+        }
+    }else{
+        $delivery_cost  =   $this['settings']['fees']['delivery_cost'];
+    }
+    if($data['return_package_fee']  ==  1){
+        $return_courier_fee  =   $this['settings']['fees']['delivery_cost_back_receiver'];
+    }else{
+        $return_courier_fee  =   $this['settings']['fees']['delivery_cost_back_sender'];
+    }
+
+    if(isset($data['receiver_address_id']) && $data['receiver_address_id']   !=   '' && isset($data['sender_address_id']) && $data['sender_address_id']   !=   '') {
+        $sender_address_id      =   \Spot\Shipment\Models\Address::find($data['sender_address_id']);
+        $receiver_address_id    =   \Spot\Shipment\Models\Address::find($data['receiver_address_id']);
+
+        $fees   =   \Spot\Shipment\Models\Fees::where('from',$sender_address_id->county)->where('to',$receiver_address_id->county)->where('type',4)->first();
+        if(!$fees){
+            $fees   =   \Spot\Shipment\Models\Fees::where('from',$sender_address_id->city)->where('to',$receiver_address_id->city)->where('type',3)->first();
+            if(!$fees){
+                $fees   =   \Spot\Shipment\Models\Fees::where('from',$sender_address_id->state)->where('to',$receiver_address_id->state)->where('type',2)->first();
+                if(!$fees){
+                    $fees   =   \Spot\Shipment\Models\Fees::where('from',$sender_address_id->country)->where('to',$receiver_address_id->country)->where('type',1)->first();
+                }
+            }
+        }
+
+        if($fees){
+            if($data['type']   ==   1) {
+                $delivery_cost  =   $fees->pickup_cost;
+            }else{
+                $delivery_cost  =   $fees->delivery_cost;
+            }
+            if($fees->packaging == 1 && isset($data['packaging_id']) && $data['packaging_id'] != ''){
+                foreach($fees->packaging_fees as $package_fee   =>  $value){
+                    if($package_fee ==  $data['packaging_id']){
+                        $delivery_cost  +=   $value;
+                    }
+                }
+            }
+            if(isset($data['return_defray']) && $data['return_defray'] != ''){
+                if($data['return_package_fee']  ==  1){
+                    $return_courier_fee  =   $fees->delivery_cost_back_receiver;
+                }else{
+                    $return_courier_fee  =   $fees->delivery_cost_back_sender;
+                }
+            }
+        }
+
+    }
+
+    return array("delivery_cost" => $delivery_cost,"return_courier_fee" => $return_courier_fee);
+}
+?>
+==
+{{ form_ajax('onImport', { files:true,success: 'created successfully!', flash: true, class: 'kt_form' }) }}
+ <div class="row">
+    <div class="col-lg-12">
+        <div class="kt-portlet kt-portlet--mobile">
+            <div class="kt-portlet__head">
+                <div class="kt-portlet__head-label">
+                    <h3 class="kt-portlet__head-title">
+                        {{'Shipments import'|__}}
+                    </h3>
+                </div>
+            </div>
+            <div class="kt-portlet__body">
+                <div class="form-group form-group-last kt-hide">
+                    <div class="alert alert-danger kt_form_msg" role="alert">
+                        <div class="alert-icon"><i class="flaticon-warning"></i></div>
+                        <div class="alert-text">
+                            {{'Oh snap! Change a few things up and try submitting again'|__}}.
+                        </div>
+                        <div class="alert-close">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true"><i class="la la-close"></i></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-lg-12">
+                        {% if addShipmentForm == "add_form_simple" %}
+                            <a class="btn btn-brand" href="./admin/files/simple_shipments.xlsx">Download Excel Sheet Template</a>
+                        {% else %}
+                            <a class="btn btn-brand" href="./admin/files/advance_shipments.xlsx">Download Excel Sheet Template</a>    
+                        {% endif %}    
+                    </div> 
+                    <div class="form-group col-lg-12">
+                        <label>{{'Browse Excel File'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <input type="file" class="form-control excleFile" name="excleFile" required />
+                    </div>                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>                
+<div class="row">
+    <div class="col-lg-12">
+        <div class="kt-portlet">
+            <div class="kt-portlet__foot">
+                <div class="row">
+                    <div class="col-lg-12">
+                        {% if user.role_id == 5 %}
+                            <button type="button" class="btn btn-info save_draft">{{'Save as draft'|__}}</button> <span class="kt-margin-left-10">{{'or'|__}}
+                        {% endif %}
+                        <button type="submit" class="btn btn-success save">{{'Send'|__}}</button>
+                        <span class="kt-margin-left-10">{{'or'|__}} <a href="{{this.page.child_of|page}}" class="kt-link">{{'Cancel'|__}}</a></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{ form_close() }}
+
+{% put styles %}
+    <style>
+        .table-bordered tr td:first-child {
+            width: 200px;
+            font-weight: bold;
+        }
+        .map_canvas {
+          height: 350px;
+        }
+        .filter-option-inner br {
+            display: none;
+        }
+        .select2 {
+            width: 100% !important;
+        }
+		.select2-selection {
+			min-height: 36px !important;
+		}
+        #addnewsender,#addnewsenderaddress,#addnewreceiver,#addnewreceiveraddress{
+            box-shadow: 0px 0px 2px 1px rgba(0,0,0,0.3);
+        }
+        .kt-portlet .kt-portlet__head .kt-portlet__head-label .kt-portlet__head-title {
+            font-weight: 700;
+        }
+    </style>
+{% endput %}
+{% put scripts %}
+<script src="{{ 'assets/admin/vendors/custom/geocomplete/jquery.geocomplete.js'|theme }}" type="text/javascript"></script>
+<script src="//maps.googleapis.com/maps/api/js?libraries=places&key={{settings.google.map.key}}"></script>
+<script type="text/javascript">
+KTUtil.ready(function () {
+    $( ".kt_form" ).validate({
+        ignore: ":hidden",
+        invalidHandler: function(event, validator) {
+            var alert = $('.kt_form_msg');
+            alert.removeClass('kt--hide').show();
+            KTUtil.scrollTop();
+        }
+    });
+
+    function formatRepo(repo) {
+        if (repo.loading) return repo.text;
+        var markup = "<div class='select2-result-repository clearfix'>" +
+                        "<div class='select2-result-repository__meta'>" +
+                        "<div class='select2-result-repository__title'>" + repo.text + "</div>";
+                        if (repo.mobile) {
+                            markup += "<div class='select2-result-repository__description'>" + repo.mobile + "</div>";
+                        }
+                    markup += "</div></div>";
+        return markup;
+    }
+
+    function formatRepoSelection(repo) {
+        return repo.text || repo.id;
+    }
+
+
+    $('body').on('click', '.show_receiver_info', function(e){
+        var selected = $('.show_receiver_info:checked').val();
+        if(selected == 2){
+            $('.receiver_information').addClass('kt-hidden');
+        }else{
+            $('.receiver_information').removeClass('kt-hidden');
+        }
+    });
+    $('body').on('click', '.type', function(e){
+        var selected = $(this).val();
+        if(selected == 2){
+            $('.type_1').addClass('kt-hidden');
+            $('.type_2').removeClass('kt-hidden');
+        }else{
+            $('.type_1').removeClass('kt-hidden');
+            $('.type_2').addClass('kt-hidden');
+            var show_receiver_info = $('.show_receiver_info:checked').val();
+            if(show_receiver_info == 2){
+                $('.receiver_information').addClass('kt-hidden');
+            }else{
+                $('.receiver_information').removeClass('kt-hidden');
+            }
+        }
+
+        var show_receiver_info = $('.show_receiver_info:checked').val();
+         var sender_address_id = $('#sender_address_id').val();
+         var receiver_address_id = $('#receiver_address_id').val();
+         var packaging_id = $('#packaging_id').val();
+         var return_defray = $('.return_defray:checked').val();
+         var return_package_fee = $('.return_package_fee:checked').val();
+         if(selected != '' && selected != 'new'){
+             $.request('onChangefees', {
+                  data: {sender_address_id: sender_address_id, type: selected, packaging_id:packaging_id, receiver_address_id: receiver_address_id, return_defray: return_defray, return_package_fee: return_package_fee,show_receiver_info:show_receiver_info},
+                  success: function(response, status, xhr, $form) {
+                       $('#delivery_cost').val(response.delivery_cost);
+                       $('#return_courier_fee').val(response.return_courier_fee);
+                  }
+             });
+        }
+    });
+    $('body').on('click', '.return_package_fee', function(e){
+        var selected = $(this).val();
+
+        var show_receiver_info = $('.show_receiver_info:checked').val();
+        var type = $('.type:checked').val();
+         var sender_address_id = $('#sender_address_id').val();
+         var receiver_address_id = $('#receiver_address_id').val();
+         var packaging_id = $('#packaging_id').val();
+         var return_defray = $('.return_defray:checked').val();
+         $.request('onChangefees', {
+              data: {sender_address_id: sender_address_id, type: type, packaging_id:packaging_id, receiver_address_id: receiver_address_id, return_defray: return_defray, return_package_fee: selected,show_receiver_info:show_receiver_info},
+              success: function(response, status, xhr, $form) {
+                   $('#delivery_cost').val(response.delivery_cost);
+                   $('#return_courier_fee').val(response.return_courier_fee);
+              }
+         });
+    });
+    $('body').on('click', '.show_receiver_info', function(e){
+        var selected = $(this).val();
+
+        var show_receiver_info = $('.show_receiver_info:checked').val();
+        var type = $('.type:checked').val();
+         var sender_address_id = $('#sender_address_id').val();
+         var receiver_address_id = $('#receiver_address_id').val();
+         var packaging_id = $('#packaging_id').val();
+         var return_defray = $('.return_defray:checked').val();
+         $.request('onChangefees', {
+              data: {sender_address_id: sender_address_id, type: type, packaging_id:packaging_id, receiver_address_id: receiver_address_id, return_defray: return_defray, return_package_fee: selected,show_receiver_info:show_receiver_info},
+              success: function(response, status, xhr, $form) {
+                   $('#delivery_cost').val(response.delivery_cost);
+                   $('#return_courier_fee').val(response.return_courier_fee);
+              }
+         });
+    });
+    $('body').on('change', '#sender_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected == 'new'){
+            $('select.sender_address_id').html('').val('').selectpicker('refresh');
+            $('#addnewsender').removeClass('kt-hidden');
+            $('html, body').animate({
+                scrollTop: eval($('#addnewsender').offset().top - 140)
+            }, 2000);
+        }else if(selected != ''){
+            $('#addnewsender').addClass('kt-hidden');
+            $.request('onClientaddresses', {
+                 data: {id: selected},
+                 success: function(response, status, xhr, $form) {
+                     $('select.sender_address_id').html(response.html).selectpicker('refresh');
+                     $('select.sender_address_id').val(response.default).selectpicker('refresh');
+                     if(response.default == 'new'){
+                         $('#addnewsenderaddress').removeClass('kt-hidden');
+                     }else if(selected != ''){
+                         $('#addnewsenderaddress').addClass('kt-hidden');
+                     }
+
+                     var selected = response.default;
+                     var type = $('.type:checked').val();
+                     var receiver_address_id = $('#receiver_address_id').val();
+                     var packaging_id = $('#packaging_id').val();
+                     var return_defray = $('.return_defray:checked').val();
+                     var return_package_fee = $('.return_package_fee:checked').val();
+                     var show_receiver_info = $('.show_receiver_info:checked').val();
+                     if(selected != '' && selected != 'new'){
+                         $.request('onChangefees', {
+                              data: {sender_address_id: selected, type: type, packaging_id:packaging_id, receiver_address_id: receiver_address_id, return_defray: return_defray, return_package_fee: return_package_fee,show_receiver_info:show_receiver_info},
+                              success: function(response, status, xhr, $form) {
+                                   $('#delivery_cost').val(response.delivery_cost);
+                                   $('#return_courier_fee').val(response.return_courier_fee);
+                              }
+                         });
+                    }
+                 }
+            });
+        }
+    });
+    $('body').on('click', '.save_draft', function(e){
+        swal.fire({
+            buttonsStyling: false,
+            html: "<div class='alert alert-warning' role='alert'><div class='alert-text'>{{'This mean that your shipment request will not be sent to the company, it will be just saved in your account as a draft so you can edit it or give you the ability to add all your shipments and then send them all to the company at once'|__}}</div></div>",
+            type: "warning",
+
+            confirmButtonText: "{{"Yes, Just save it as a draft"|__}}!",
+            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+
+            showCancelButton: true,
+            cancelButtonText: "{{"No, cancel"|__}}",
+            cancelButtonClass: "btn btn-sm btn-bold btn-default"
+        }).then(function (result) {
+            if (result.value) {
+                $('.kt_form').attr('data-request', 'onDraft');
+                $('.kt_form').submit();
+            } else {
+                $('.kt_form').attr('data-request', 'onSave');
+            }
+        });
+    });
+
+    $('body').on('click', '#addnewsender .save', function(e){
+        e.preventDefault();
+        var parent = $('#addnewsender');
+        var validation = 1;
+        parent.find('input,select').each(function(){
+            if($(this).is(':hidden')){
+                return;
+            }
+            if($(this).valid() == false){
+                validation = 0;
+            }
+        });
+
+        if(validation){
+            KTApp.blockPage({
+                overlayColor: '#000000',
+                type: 'v2',
+                state: 'primary',
+                message: '{{"Processing, please wait"|__}}...'
+            });
+            $.request('onNewclient', {
+                 data: {name: parent.find('.name').val(), mobile: parent.find('.mobile').val(), email: parent.find('.email').val(), gender: parent.find('.gender:checked').val(), street_addr: parent.find('.street_addr').val(), lat: parent.find('.lat').val(), lng: parent.find('.lng').val(), url: parent.find('.url').val(), area_id: parent.find('.area_id').find("option:selected").val(), city_id: parent.find('.city_id').find("option:selected").val(), postal_code: parent.find('.postal_code').val(), state_id: parent.find('.state_id').find("option:selected").val(), country_id: parent.find('.country_id').find("option:selected").val(), connect: parent.find('.connect:checked').val(), username: parent.find('.username').val(), password: parent.find('.password').val()},
+                 error: function(response, status, xhr, $form) {
+                     swal.fire({
+                         title: '{{"Error!"|__}}',
+                         text: response.responseText,
+                         type: 'error',
+                         buttonsStyling: false,
+                         confirmButtonText: '{{"OK"|__}}',
+                         confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                     });
+                     KTApp.unblockPage();
+                 },
+                 success: function(response, status, xhr, $form) {
+                     var newOption = new Option(response.name, response.id, false, true);
+                     $('#sender_id').append(newOption).trigger('change');
+                     $('select.sender_address_id').html('<option value="'+response.address_id+'">'+response.address_name+'</option>').selectpicker('refresh');
+                     $('select.sender_address_id').val(response.address_id).selectpicker('refresh');
+                     KTApp.unblockPage();
+                     parent.find('input,select').each(function(){
+                         $(this).val('');
+                         $(this).selectpicker('refresh');
+                     });
+                     $('#addnewsender').addClass('kt-hidden');
+                 }
+            });
+        }
+    });
+    $('body').on('click', '#addnewsender .cancel', function(e){
+        e.preventDefault();
+        var newOption = new Option('', '', false, true);
+        $('#sender_id').append(newOption).trigger('change');
+        $('#addnewsender').addClass('kt-hidden');
+    });
+
+    $('body').on('changed.bs.select', '.sender_address_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected == 'new'){
+            $('#addnewsenderaddress').removeClass('kt-hidden');
+            $('html, body').animate({
+                scrollTop: eval($('#addnewsenderaddress').offset().top - 140)
+            }, 2000);
+        }else if(selected != ''){
+            $('#addnewsenderaddress').addClass('kt-hidden');
+        }
+    });
+
+    $('body').on('changed.bs.select', '#packaging_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+
+        var type = $('.type:checked').val();
+         var sender_address_id = $('#sender_address_id').val();
+         var receiver_address_id = $('#receiver_address_id').val();
+         var packaging_id = selected;
+         var return_defray = $('.return_defray:checked').val();
+         var return_package_fee = $('.return_package_fee:checked').val();
+         var show_receiver_info = $('.show_receiver_info:checked').val();
+         if(selected != ''){
+             $.request('onChangefees', {
+                  data: {sender_address_id: sender_address_id, type: type, packaging_id:packaging_id, receiver_address_id: receiver_address_id, return_defray: return_defray, return_package_fee: return_package_fee,show_receiver_info:show_receiver_info},
+                  success: function(response, status, xhr, $form) {
+                       $('#delivery_cost').val(response.delivery_cost);
+                       $('#return_courier_fee').val(response.return_courier_fee);
+                  }
+             });
+        }
+    });
+    $('body').on('click', '#addnewsenderaddress .save', function(e){
+        e.preventDefault();
+        var parent = $('#addnewsenderaddress');
+        var validation = 1;
+        parent.find('input,select').each(function(){
+            if($(this).is(':hidden')){
+                return;
+            }
+            if($(this).valid() == false){
+                validation = 0;
+            }
+        });
+
+        if(validation){
+            KTApp.blockPage({
+                overlayColor: '#000000',
+                type: 'v2',
+                state: 'primary',
+                message: '{{"Processing, please wait"|__}}...'
+            });
+            $.request('onNewclientaddress', {
+                 data: {client_id: {% if user.role_id == 5 %}{{user.id}}{% else %}$('#sender_id').val(){% endif %}, street_addr: parent.find('.street_addr').val(), lat: parent.find('.lat').val(), lng: parent.find('.lng').val(), url: parent.find('.url').val(), area_id: parent.find('.area_id').find("option:selected").val(), city_id: parent.find('.city_id').find("option:selected").val(), postal_code: parent.find('.postal_code').val(), state_id: parent.find('.state_id').find("option:selected").val(), country_id: parent.find('.country_id').find("option:selected").val()},
+                 error: function(response, status, xhr, $form) {
+                     swal.fire({
+                         title: '{{"Error!"|__}}',
+                         text: response.responseText,
+                         type: 'error',
+                         buttonsStyling: false,
+                         confirmButtonText: '{{"OK"|__}}',
+                         confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                     });
+                     KTApp.unblockPage();
+                 },
+                 success: function(response, status, xhr, $form) {
+                     $('select.sender_address_id').html(response.html).selectpicker('refresh');
+                     $('select.sender_address_id').val(response.default).selectpicker('refresh');
+
+
+
+                      var selected = response.default;
+                      var type = $('.type:checked').val();
+                      var receiver_address_id = $('#receiver_address_id').val();
+                      var packaging_id = $('#packaging_id').val();
+                      var return_defray = $('.return_defray:checked').val();
+                      var return_package_fee = $('.return_package_fee:checked').val();
+                      var show_receiver_info = $('.show_receiver_info:checked').val();
+                      if(selected != '' && selected != 'new'){
+                          $.request('onChangefees', {
+                               data: {sender_address_id: selected, type: type, packaging_id:packaging_id, receiver_address_id: receiver_address_id, return_defray: return_defray, return_package_fee: return_package_fee,show_receiver_info:show_receiver_info},
+                               success: function(response, status, xhr, $form) {
+                                    $('#delivery_cost').val(response.delivery_cost);
+                                    $('#return_courier_fee').val(response.return_courier_fee);
+                               }
+                          });
+                     }
+
+
+                     KTApp.unblockPage();
+                     parent.find('input,select').each(function(){
+                         $(this).val('');
+                         $(this).selectpicker('refresh');
+                     });
+                     $('#addnewsenderaddress').addClass('kt-hidden');
+                 }
+            });
+        }
+    });
+    $('body').on('click', '#addnewsenderaddress .cancel', function(e){
+        e.preventDefault();
+        $('select.sender_address_id').val('').selectpicker('refresh');
+        $('#addnewsenderaddress').addClass('kt-hidden');
+    });
+
+
+
+    $('body').on('change', '#receiver_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected == 'new'){
+            $('select.receiver_address_id').html('').val('').selectpicker('refresh');
+            $('#addnewreceiver').removeClass('kt-hidden');
+            $('html, body').animate({
+                scrollTop: eval($('#addnewreceiver').offset().top - 140)
+            }, 2000);
+        }else if(selected != ''){
+            $('#addnewreceiver').addClass('kt-hidden');
+            $.request('onClientaddresses', {
+                 data: {id: selected},
+                 success: function(response, status, xhr, $form) {
+                     $('select.receiver_address_id').html(response.html).selectpicker('refresh');
+                     $('select.receiver_address_id').val(response.default).selectpicker('refresh');
+                     if(response.default == 'new'){
+                         $('#addnewreceiveraddress').removeClass('kt-hidden');
+                     }else if(selected != ''){
+                         $('#addnewreceiveraddress').addClass('kt-hidden');
+                     }
+
+
+
+                     var selected = response.default;
+                     var type = $('.type:checked').val();
+                     var sender_address_id = $('#sender_address_id').val();
+                     var packaging_id = $('#packaging_id').val();
+                     var return_defray = $('.return_defray:checked').val();
+                     var return_package_fee = $('.return_package_fee:checked').val();
+                     var show_receiver_info = $('.show_receiver_info:checked').val();
+                     if(selected != '' && selected != 'new'){
+                         $.request('onChangefees', {
+                              data: {sender_address_id: sender_address_id, packaging_id: packaging_id, type: type, receiver_address_id: selected, return_defray: return_defray, return_package_fee: return_package_fee,show_receiver_info:show_receiver_info},
+                              success: function(response, status, xhr, $form) {
+                                   $('#delivery_cost').val(response.delivery_cost);
+                                   $('#return_courier_fee').val(response.return_courier_fee);
+                              }
+                         });
+                    }
+                 }
+            });
+        }
+    });
+    $('body').on('click', '#addnewreceiver .save', function(e){
+        e.preventDefault();
+        var parent = $('#addnewreceiver');
+        var validation = 1;
+        parent.find('input,select').each(function(){
+            if($(this).is(':hidden')){
+                return;
+            }
+            if($(this).valid() == false){
+                validation = 0;
+            }
+        });
+
+        if(validation){
+            KTApp.blockPage({
+                overlayColor: '#000000',
+                type: 'v2',
+                state: 'primary',
+                message: '{{"Processing, please wait"|__}}...'
+            });
+            $.request('onNewclient', {
+                 data: {name: parent.find('.name').val(), mobile: parent.find('.mobile').val(), email: parent.find('.email').val(), gender: parent.find('.gender:checked').val(), street_addr: parent.find('.street_addr').val(), lat: parent.find('.lat').val(), lng: parent.find('.lng').val(), url: parent.find('.url').val(), area_id: parent.find('.area_id').find("option:selected").val(), city_id: parent.find('.city_id').find("option:selected").val(), postal_code: parent.find('.postal_code').val(), state_id: parent.find('.state_id').find("option:selected").val(), country_id: parent.find('.country_id').find("option:selected").val(), connect: parent.find('.connect:checked').val(), username: parent.find('.username').val(), password: parent.find('.password').val()},
+                 error: function(response, status, xhr, $form) {
+                     swal.fire({
+                         title: '{{"Error!"|__}}',
+                         text: response.responseText,
+                         type: 'error',
+                         buttonsStyling: false,
+                         confirmButtonText: '{{"OK"|__}}',
+                         confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                     });
+                     KTApp.unblockPage();
+                 },
+                 success: function(response, status, xhr, $form) {
+                     var newOption = new Option(response.name, response.id, false, true);
+                     $('#receiver_id').append(newOption).trigger('change');
+                     $('select.receiver_address_id').html('<option value="'+response.address_id+'">'+response.address_name+'</option>').selectpicker('refresh');
+                     $('select.receiver_address_id').val(response.address_id).selectpicker('refresh');
+
+
+                      var selected = response.address_id;
+                      var type = $('.type:checked').val();
+                      var sender_address_id = $('#sender_address_id').val();
+                      var packaging_id = $('#packaging_id').val();
+                      var return_defray = $('.return_defray:checked').val();
+                      var return_package_fee = $('.return_package_fee:checked').val();
+                      var show_receiver_info = $('.show_receiver_info:checked').val();
+                      if(selected != '' && selected != 'new'){
+                          $.request('onChangefees', {
+                               data: {sender_address_id: sender_address_id, packaging_id: packaging_id, type: type, receiver_address_id: selected, return_defray: return_defray, return_package_fee: return_package_fee,show_receiver_info:show_receiver_info},
+                               success: function(response, status, xhr, $form) {
+                                    $('#delivery_cost').val(response.delivery_cost);
+                                    $('#return_courier_fee').val(response.return_courier_fee);
+                               }
+                          });
+                     }
+
+                     KTApp.unblockPage();
+                     parent.find('input,select').each(function(){
+                         $(this).val('');
+                         $(this).selectpicker('refresh');
+                     });
+                     $('#addnewreceiver').addClass('kt-hidden');
+                 }
+            });
+        }
+    });
+    $('body').on('click', '#addnewreceiver .cancel', function(e){
+        e.preventDefault();
+        var newOption = new Option('', '', false, true);
+        $('#receiver_id').append(newOption).trigger('change');
+        $('#addnewreceiver').addClass('kt-hidden');
+    });
+
+    $('body').on('changed.bs.select', '.receiver_address_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected == 'new'){
+            $('#addnewreceiveraddress').removeClass('kt-hidden');
+            $('html, body').animate({
+                scrollTop: eval($('#addnewreceiveraddress').offset().top - 140)
+            }, 2000);
+        }else if(selected != ''){
+            $('#addnewreceiveraddress').addClass('kt-hidden');
+        }
+    });
+    $('body').on('click', '#addnewreceiveraddress .save', function(e){
+        e.preventDefault();
+        var parent = $('#addnewreceiveraddress');
+        var validation = 1;
+        parent.find('input,select').each(function(){
+            if($(this).is(':hidden')){
+                return;
+            }
+            if($(this).valid() == false){
+                validation = 0;
+            }
+        });
+
+        if(validation){
+            KTApp.blockPage({
+                overlayColor: '#000000',
+                type: 'v2',
+                state: 'primary',
+                message: '{{"Processing, please wait"|__}}...'
+            });
+            $.request('onNewclientaddress', {
+                 data: {client_id: $('#receiver_id').val(), street_addr: parent.find('.street_addr').val(), lat: parent.find('.lat').val(), lng: parent.find('.lng').val(), url: parent.find('.url').val(), area_id: parent.find('.area_id').find("option:selected").val(), city_id: parent.find('.city_id').find("option:selected").val(), postal_code: parent.find('.postal_code').val(), state_id: parent.find('.state_id').find("option:selected").val(), country_id: parent.find('.country_id').find("option:selected").val()},
+                 error: function(response, status, xhr, $form) {
+                     swal.fire({
+                         title: '{{"Error!"|__}}',
+                         text: response.responseText,
+                         type: 'error',
+                         buttonsStyling: false,
+                         confirmButtonText: '{{"OK"|__}}',
+                         confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                     });
+                     KTApp.unblockPage();
+                 },
+                 success: function(response, status, xhr, $form) {
+                     $('select.receiver_address_id').html(response.html).selectpicker('refresh');
+                     $('select.receiver_address_id').val(response.default).selectpicker('refresh');
+
+
+
+
+                       var selected = response.default;
+                       var type = $('.type:checked').val();
+                       var sender_address_id = $('#sender_address_id').val();
+                       var packaging_id = $('#packaging_id').val();
+                       var return_defray = $('.return_defray:checked').val();
+                       var return_package_fee = $('.return_package_fee:checked').val();
+                       var show_receiver_info = $('.show_receiver_info:checked').val();
+                       if(selected != '' && selected != 'new'){
+                           $.request('onChangefees', {
+                                data: {sender_address_id: sender_address_id, packaging_id: packaging_id, type: type, receiver_address_id: selected, return_defray: return_defray, return_package_fee: return_package_fee,show_receiver_info:show_receiver_info},
+                                success: function(response, status, xhr, $form) {
+                                     $('#delivery_cost').val(response.delivery_cost);
+                                     $('#return_courier_fee').val(response.return_courier_fee);
+                                }
+                           });
+                      }
+
+
+
+                     KTApp.unblockPage();
+                     parent.find('input,select').each(function(){
+                         $(this).val('');
+                         $(this).selectpicker('refresh');
+                     });
+                     $('#addnewreceiveraddress').addClass('kt-hidden');
+                 }
+            });
+        }
+    });
+    $('body').on('click', '#addnewreceiveraddress .cancel', function(e){
+        e.preventDefault();
+        $('select.receiver_address_id').val('').selectpicker('refresh');
+        $('#addnewreceiveraddress').addClass('kt-hidden');
+    });
+
+
+    $('body').on('changed.bs.select', '.country_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        var parent = $(e.currentTarget).parent().parent().parent().parent();
+        if(selected != ''){
+            $.request('onListstates', {
+                 data: {id: selected},
+                 success: function(response, status, xhr, $form) {
+                      parent.find('select.state_id').selectpicker({title: '{{'Select'|__}}'}).selectpicker('refresh');
+                      parent.find('select.state_id').html(response.html).selectpicker('refresh');
+                 }
+            });
+       }
+    });
+    $('body').on('changed.bs.select', '.state_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        var parent = $(e.currentTarget).parent().parent().parent().parent();
+        if(selected != ''){
+            $.request('onListcities', {
+                 data: {id: selected},
+                 success: function(response, status, xhr, $form) {
+                      parent.find('select.city_id').selectpicker({title: '{{'Select'|__}}'}).selectpicker('refresh');
+                      parent.find('select.city_id').html(response.html).selectpicker('refresh');
+                 }
+            });
+       }
+    });
+    $('body').on('changed.bs.select', '.city_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        var parent = $(e.currentTarget).parent().parent().parent().parent();
+        if(selected != ''){
+            $.request('onListareas', {
+                 data: {id: selected},
+                 success: function(response, status, xhr, $form) {
+                      parent.find('select.area_id').selectpicker({title: '{{'Select'|__}}'}).selectpicker('refresh');
+                      parent.find('select.area_id').html(response.html).selectpicker('refresh');
+                 }
+            });
+       }
+    });
+
+    $('body').on('change', '#sender_address_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        var type = $('.type:checked').val();
+        var receiver_address_id = $('#receiver_address_id').val();
+        var packaging_id = $('#packaging_id').val();
+        var return_defray = $('.return_defray:checked').val();
+        var return_package_fee = $('.return_package_fee:checked').val();
+        var show_receiver_info = $('.show_receiver_info:checked').val();
+        if(selected != '' && selected != 'new'){
+            $.request('onChangefees', {
+                 data: {sender_address_id: selected, type: type, packaging_id:packaging_id, receiver_address_id: receiver_address_id, return_defray: return_defray, return_package_fee: return_package_fee,show_receiver_info:show_receiver_info},
+                 success: function(response, status, xhr, $form) {
+                      $('#delivery_cost').val(response.delivery_cost);
+                      $('#return_courier_fee').val(response.return_courier_fee);
+                 }
+            });
+       }
+    });
+
+    $('body').on('change', '#receiver_address_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+         var type = $('.type:checked').val();
+         var sender_address_id = $('#sender_address_id').val();
+         var packaging_id = $('#packaging_id').val();
+         var return_defray = $('.return_defray:checked').val();
+         var return_package_fee = $('.return_package_fee:checked').val();
+         var show_receiver_info = $('.show_receiver_info:checked').val();
+         if(selected != '' && selected != 'new'){
+             $.request('onChangefees', {
+                  data: {sender_address_id: sender_address_id, type: type, packaging_id:packaging_id, receiver_address_id: selected, return_defray: return_defray, return_package_fee: return_package_fee,show_receiver_info:show_receiver_info},
+                  success: function(response, status, xhr, $form) {
+                       $('#delivery_cost').val(response.delivery_cost);
+                       $('#return_courier_fee').val(response.return_courier_fee);
+                  }
+             });
+        }
+    });
+
+
+    $(".clients").select2({
+        {% if currentLang == 'ar'%}
+            dir: "rtl",
+        {% endif %}
+        language: {
+            errorLoading: function () {
+                return "{{'There is an error while searching'|__}}...";
+            },
+            inputTooLong: function (args) {
+                return "{{'You must enter less characters'|__}}...";
+            },
+            inputTooShort: function (args) {
+                return "{{'You must enter more characters'|__}}...";
+            },
+            loadingMore: function () {
+                return "{{'Loading More'|__}}...";
+            },
+            maximumSelected: function (args) {
+                return "{{'Maximum element has been selected'|__}}...";
+            },
+            noResults: function () {
+                return "{{'No result found'|__}}...";
+            },
+            searching: function () {
+                return "{{'Searching'|__}}...";
+            }
+        },
+        placeholder: "{{'Search for client'|__}}",
+        allowClear: true,
+        ajax: {
+            transport: function(params, success, failure) {
+                var $request = $.request('onGetclients', {
+                    data: params.data,
+                })
+                $request.done(success)
+                $request.fail(failure)
+
+                return $request
+            },
+            dataType: 'json',
+            processResults: function (response) {
+                return {
+                    results: response
+                };
+            },
+            cache: true
+        },
+        escapeMarkup: function(markup) {
+            return markup;
+        },
+        minimumInputLength: 0,
+        templateResult: formatRepo,
+        templateSelection: formatRepoSelection
+    });
+    $('#package_repeater').repeater({
+        initEmpty: true,
+        show: function () {
+            $(this).slideDown();
+            $('.selectpicker').selectpicker({
+                noneSelectedText: '{{"Nothing selected"|__}}',
+            });
+            $('.bootstrap-touchspin-vertical-btn').TouchSpin({
+                buttondown_class: 'btn btn-secondary',
+                buttonup_class: 'btn btn-secondary',
+                verticalbuttons: true,
+                verticalup: '<i class="la la-plus"></i>',
+                verticaldown: '<i class="la la-minus"></i>'
+            });
+        },
+        hide: function (deleteElement) {
+            $(this).slideUp(deleteElement);
+        }
+    });
+    $('.bootstrap-touchspin-vertical-btn').TouchSpin({
+        buttondown_class: 'btn btn-secondary',
+        buttonup_class: 'btn btn-secondary',
+        verticalbuttons: true,
+        verticalup: '<i class="la la-plus"></i>',
+        verticaldown: '<i class="la la-minus"></i>'
+    });
+
+    $('.address').each(function(){
+        var address = $(this);
+        address.geocomplete({
+            map: ".map_canvas.map_"+address.attr('rel'),
+            mapOptions: {
+                zoom: 18
+            },
+            markerOptions: {
+                draggable: true
+            },
+            details: ".location-"+$(this).attr('rel'),
+            detailsAttribute: 'data-'+$(this).attr('rel'),
+            autoselect: true,
+            restoreValueAfterBlur: true,
+        });
+        address.bind("geocode:dragged", function(event, latLng){
+            $("input[data-"+address.attr('rel')+"=lat]").val(latLng.lat());
+            $("input[data-"+address.attr('rel')+"=lng]").val(latLng.lng());
+        });
+
+    });
+
+    $('body').on('click', '.connect', function(){
+        if($(this).is(":checked")){
+            $('#connect_'+$(this).val()).removeClass('kt-hidden');
+        }else{
+            $('#connect_'+$(this).val()).addClass('kt-hidden');
+        }
+    });
+    $('body').on('click', '.return_defray', function(){
+        if($(this).val() == 1){
+            $('.package_fee').removeClass('kt-hidden');
+
+
+             var sender_address_id = $('#sender_address_id').val();
+             var receiver_address_id = $('#receiver_address_id').val();
+             var packaging_id = $('#packaging_id').val();
+             var type = $('.type:checked').val();
+             var return_defray = $('.return_defray:checked').val();
+             var return_package_fee = $('.return_package_fee:checked').val();
+             var show_receiver_info = $('.show_receiver_info:checked').val();
+             $.request('onChangefees', {
+                  data: {sender_address_id: sender_address_id, type: type, packaging_id:packaging_id, receiver_address_id: receiver_address_id, return_defray: return_defray, return_package_fee: return_package_fee,show_receiver_info:show_receiver_info},
+                  success: function(response, status, xhr, $form) {
+                       $('#delivery_cost').val(response.delivery_cost);
+                       $('#return_courier_fee').val(response.return_courier_fee);
+                  }
+             });
+        }else{
+            $('.package_fee').addClass('kt-hidden');
+        }
+    });
+    $(".fees").inputmask('999{{primary_currency.thousand_separator}}999{{primary_currency.thousand_separator}}999{{primary_currency.decimal_point}}{% for i in '1'..primary_currency.initbiz_money_fraction_digits %}9{% endfor %}', {
+        numericInput: true
+    });
+    $('.mask').val(('{% for i in '1'..settings.tracking.numbers_order %}0{% endfor %}' + {{max}}).slice(-{{settings.tracking.numbers_order}}));
+    $("body").on('keyup', '.mask', function(e){
+        $(this).val(('{% for i in '1'..settings.tracking.numbers_order %}0{% endfor %}' + $(this).val()).slice(-{{settings.tracking.numbers_order}}));
+    });
+});
+</script>
+{% endput %}

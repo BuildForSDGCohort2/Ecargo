@@ -1,0 +1,30 @@
+@media screen and (min-width: 992px) {
+	.main-nav > ul > li > a:before { background-color: #000;}
+}
+
+.logo-container .logo-infocard .left-side {background-color: #312f2f;}
+.logo-container .logo-infocard .right-side {background-color: #000;}
+.kl-cta-ribbon .trisvg {fill: #000;}
+.chaser .main-menu li.active>a { background: #000 !important;}
+.logo-container .logo-infocard { background-color: #000;}
+.kl-cta-ribbon { background-color: #000; font-weight: 300;}
+.kl-cta-ribbon strong { font-weight: 400;}
+.kl-cta-ribbon .trisvg path { fill: #000;}
+.m_title { color: #000;}
+.how_to_shop .number { background-color: #000;}
+.btn-lined { color: #000;}
+.btn-lined:hover { color: #000;}
+.btn-lined.btn-skewed:before { border: 2px solid #000;}
+.btn-lined.btn-skewed:hover:before { border-color: rgba(0, 0, 0, 0.42);}
+.media-container__link--style-borderanim2 .media-container__text { font-weight: 400;}
+.media-container .kl-title-block .tbk__title {color: #000;}
+.media-container .kl-title-block .btn-lined { background-color: #000; color: #fff; padding: 15px 40px; font-size: 19px; font-weight: 100; margin-top: 30px;}
+.media-container .kl-title-block .btn-lined:hover { background-color: #fff; color: #000; border-color: #000; border-radius: 0;}
+.kl-slideshow .kl-slideshow-safepadding { padding-top: 50px;}
+.newsletter-signup input[type=submit] { background-color: #000;}
+.restaurant-services { padding-bottom: 70px;}
+.restaurant-services .kl-iconbox--fleft .kl-iconbox__icon-wrapper { float: none; text-align: center; margin-right: 0;}
+.restaurant-services .kl-iconbox__content-wrapper { text-align: center;} 
+.photo-wall .pw-item::after { background-color: #000;}
+.btn-fullcolor, .btn-fullcolor:focus { background-color: #000; border: solid 1px #000;}
+.btn-fullcolor:hover { background-color: #fff; color: #000;}

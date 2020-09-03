@@ -1,0 +1,2446 @@
+title = "Update Shipment"
+url = "/dashboard/shipments/:id/edit"
+layout = "admin"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/shipments"
+menu_breadcrumb = "order"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+use \Spot\Shipment\Models\Settings;
+function onStart() {
+    if(!Auth::getUser()->hasUserPermission(["order"],'u')) {
+        \Flash::error($this['theme_lang']['not_allowed']);
+        return Redirect::to('dashboard/settings');
+    }
+
+    $this->page->stretch        = true;
+
+
+    $this['order']      =   $order  =   \Spot\Shipment\Models\Order::find($this->param('id'));
+
+
+    switch (Auth::getUser()->role_id) {
+        case 6:
+            if(!in_array($order->office_id, Auth::getUser()->manage->pluck('id')->toArray())){
+                \Flash::error($this['theme_lang']['not_allowed']);
+                return Redirect::to('dashboard/shipments/');
+            }
+            break;
+        case 5:
+            if($order->sender_id != Auth::getUser()->id && $order->receiver_id != Auth::getUser()->id){
+                \Flash::error($this['theme_lang']['not_allowed']);
+                return Redirect::to('dashboard/shipments/');
+            }
+            break;
+        case 4:
+            if(Auth::getUser()->is_superuser){
+                if($order->office_id != Auth::getUser()->office){
+                    \Flash::error($this['theme_lang']['not_allowed']);
+                    return Redirect::to('dashboard/shipments/');
+                }
+            }else{
+                if($order->assigned_id != Auth::getUser()->id){
+                    if($order->manifest_id != null){
+                        if($order->driver_id != Auth::getUser()->id && $order->employee_id != Auth::getUser()->id){
+                            \Flash::error($this['theme_lang']['not_allowed']);
+                            return Redirect::to('dashboard/shipments/');
+                        }
+                    }else{
+                        \Flash::error($this['theme_lang']['not_allowed']);
+                        return Redirect::to('dashboard/shipments/');
+                    }
+                }
+            }
+            break;
+        case 3:
+            $employees  =   \RainLab\User\Models\User::whereHas('groups',function($q){$q->whereIn('user_group_id', Auth::getUser()->groups->pluck('id')->toArray());})->pluck('id')->toArray();
+            if(!in_array($order->assigned_id, $employees)){
+                if($order->manifest_id != null){
+                    if(!in_array($order->driver_id, $employees) && !in_array($order->employee_id, $employees)){
+                        \Flash::error($this['theme_lang']['not_allowed']);
+                        return Redirect::to('dashboard/shipments/');
+                    }
+                }else{
+                    \Flash::error($this['theme_lang']['not_allowed']);
+                    return Redirect::to('dashboard/shipments/');
+                }
+            }
+            break;
+    }
+
+    $this['primary_currency']=   \Responsiv\Currency\Models\Currency::where('is_primary', 1)->first();
+    $this['employees']      =   \RainLab\User\Models\User::whereNotIn('role_id',[1,5])->select('id','name')->get();
+    $this['packaging']      =   \Spot\Shipment\Models\Packaging::select('id','name')->get();
+    $this['modes']          =   \Spot\Shipment\Models\Mode::select('id','name')->get();
+    $this['couriers']       =   \Spot\Shipment\Models\Courier::select('id','name')->get();
+    $this['labels']       =   \Spot\Shipment\Models\Label::select('id','name')->get();
+    $this['handlers']       =   \Spot\Shipment\Models\Handler::select('id','name')->get();
+    $this['breakdowns']       =   \Spot\Shipment\Models\Breakdown::select('id','name')->get();
+    $this['languages']      =   \RainLab\Translate\Models\Locale::select('id', 'name','code')->get();
+    $this['deliverytimes']  =   \Spot\Shipment\Models\DeliveryTime::select('id','name')->get();
+    $this['offices']        =   \Spot\Shipment\Models\Office::select('id','name')->get();
+    $this['categories']     =   \Spot\Shipment\Models\Category::select('id','name')->get();
+    $this['countries']      =   \RainLab\Location\Models\Country::select('id','name')->where('is_enabled', 1)->get();
+    $this['states']         =   \RainLab\Location\Models\State::select('id','name')->get();
+    $this['cities']         =   \Spot\Shipment\Models\City::select('id','name')->get();
+    $this['areas']          =   \Spot\Shipment\Models\Area::select('id','name')->get();
+    $this['statuses']       =   \Spot\Shipment\Models\Status::select('id','name','equal')->get();
+    $this['max']            =   \Spot\Shipment\Models\Order::max('number')+1;
+    $this['updateShipmentForm']      =   Settings::get('updateShipmentForm',true);
+    $this['addShipmentForm']      =   Settings::get('addShipmentForm',true);
+}
+function onSave()
+{
+    if(!Auth::getUser()->hasUserPermission(["order"],'u')) {
+        throw new ApplicationException($this['theme_lang']['not_allowed']);
+    }
+    $data = post();
+    $updateShipmentForm  = Settings::get('updateShipmentForm',true);
+    $addShipmentForm     = Settings::get('addShipmentForm',true);
+    $companyData            =   Settings::get('company', true);
+    if ( $addShipmentForm == "add_form_normal"){
+        
+        $item                   = \Spot\Shipment\Models\Order::find($this->param('id'));
+
+        if(isset($data['sender_id']) && $data['sender_id'] != ''){
+            $item->sender_id        = htmlspecialchars($data['sender_id']);
+        }
+        if(isset($data['sender_address_id']) && $data['sender_address_id'] != ''){
+            $item->sender_address_id= htmlspecialchars($data['sender_address_id']);
+        }
+        
+        if(isset($data['number']) && $data['number'] != ''){
+            $item->number                = htmlspecialchars($data['number']);
+            $item->barcode                = htmlspecialchars($data['number']);
+        }
+        
+        if(isset($data['airwaybill']) && $data['airwaybill'] != ''){
+            $item->airWayBill                = htmlspecialchars($data['airwaybill']);
+        }
+        if(isset($data['location']) && $data['location'] != ''){
+            $item->location                = htmlspecialchars($data['location']);
+        }
+        if(isset($data['cc']) && $data['cc'] != ''){
+            $item->cc                = htmlspecialchars($data['cc']);
+        }
+
+        if(isset($data['transfer'])){
+            $item->transfer_jost                = 1;
+        }
+        if(isset($data['label_id']) && $data['label_id'] != '' && $data['label_id'] != 'other'){
+            $item->label_id                = htmlspecialchars($data['label_id']);
+        }elseif(isset($data['label_id']) && $data['label_id'] != '' && $data['label_id'] == 'other'){
+            $label = new \Spot\Shipment\Models\Label;
+            $label->name = htmlspecialchars($data['label_other']);
+            $label->save();
+            $item->label_id = $label->id;
+        }
+        if(isset($data['handler_id']) && $data['handler_id'] != ''){
+            $item->handler_id                = htmlspecialchars($data['handler_id']);
+        }
+        if(isset($data['breakdown_id']) && $data['breakdown_id'] != ''){
+            $item->breakdown_id                = htmlspecialchars($data['breakdown_id']);
+        }
+        if(isset($data['remarks']) && $data['remarks'] != ''){
+            $item->remarks                = htmlspecialchars($data['remarks']);
+        }
+        if(isset($data['notes']) && $data['notes'] != ''){
+            $item->released_note                = htmlspecialchars($data['notes']);
+        }
+        if(isset($data['courier_id']) && $data['courier_id'] != ''){
+            $item->courier_id           = htmlspecialchars($data['courier_id']);
+        }
+        
+        if(isset($data['clearance']) && $data['clearance'] != ''){
+            $item->custom_clearance                    = htmlspecialchars($data['clearance']);
+        }
+        if(isset($data['fiscal']) && $data['fiscal'] != ''){
+            $item->fiscal_representation        = htmlspecialchars($data['fiscal']);
+        }
+        if(isset($data['payment_term']) && $data['payment_term'] != ''){
+            $item->payment_term                 = htmlspecialchars($data['payment_term']);
+        }
+        if(isset($data['price_kg']) && $data['price_kg'] != ''){
+            $item->price_kg                     = htmlspecialchars($data['price_kg']);
+        }
+        if(htmlspecialchars($data['storage_fee']) == 'yes'){
+            $item->storage_fee              = 1;
+            $item->cost_24                      = htmlspecialchars($data['cost_24']);
+            $item->cost_48                      = htmlspecialchars($data['cost_48']);
+        }
+        else 
+            $item->storage_fee              = 2;  
+        $item->created_at            = \Carbon\Carbon::now();
+        $item->updated_at            = \Carbon\Carbon::now();
+        
+        if(isset($data['status_id']) && $data['status_id'] != ''){
+            $status = explode("_" , htmlspecialchars($data['status_id']) );
+            $item->status_id        = $status[0];
+            $item->requested        = $status[1];
+            //$item->status_id        = htmlspecialchars($data['status_id']);
+        }
+        if(isset($data['assigned_id']) && $data['assigned_id'] != ''){
+            $item->assigned_id  = htmlspecialchars($data['assigned_id']);
+        }
+        $item->type                  =2;
+        $item-> preAlert_received            = \Carbon\Carbon::parse(\Carbon\Carbon::createFromFormat($this['settings']['dateformat'], $data['alert_received']));
+
+        $item->releasedNote_received            = \Carbon\Carbon::parse(\Carbon\Carbon::createFromFormat($this['settings']['dateformat'], $data['note_received']));
+
+
+        $item->update();
+        
+        $subitem         = \Spot\Shipment\Models\Item::where('order_id',$this->param('id'))->first();
+        
+        if(isset($data['weight']) && $data['weight'] != ''){
+            $subitem->weight            = htmlspecialchars($data['weight']);
+        }
+        if(isset($data['num_boxes']) && $data['num_boxes'] != ''){
+            $subitem->num_boxes            = htmlspecialchars($data['num_boxes']);
+        }
+        if(isset($data['num_pallets']) && $data['num_pallets'] != ''){
+            $subitem->num_pallets            = htmlspecialchars($data['num_pallets']);
+        }
+        $subitem->update();
+    }
+    elseif ( $updateShipmentForm == "update_form_simple")
+    {
+        $item                   = \Spot\Shipment\Models\Order::find($this->param('id'));
+
+        if(isset($data['status_id']) && $data['status_id'] != ''){
+            $status = explode("_" , htmlspecialchars($data['status_id']) );
+            $item->status_id        = $status[0];
+            $item->requested        = $status[1];
+            //$item->status_id        = htmlspecialchars($data['status_id']);
+        }
+        $item->updated_at       = \Carbon\Carbon::now();
+        $item->update();
+    }
+    else{
+        if(Auth::getUser()->role_id != 5){
+            $prev   =   \Spot\Shipment\Models\Order::where('number', $data['number'])->where('id', '!=', $this->param('id'))->first();
+            if($prev){
+                throw new ApplicationException($this['theme_lang']['another_order_with_the_same_numbers']);
+            }
+        }
+
+        $item                   = \Spot\Shipment\Models\Order::find($this->param('id'));
+
+        if(isset($data['sender_id']) && $data['sender_id'] != ''){
+            $item->sender_id        = htmlspecialchars($data['sender_id']);
+        }
+        if(isset($data['sender_address_id']) && $data['sender_address_id'] != ''){
+            $item->sender_address_id= htmlspecialchars($data['sender_address_id']);
+        }
+        $item->type             = htmlspecialchars($data['type']);
+        $item->packaging_id     = htmlspecialchars($data['packaging_id']);
+        if(isset($data['office_id']) && $data['office_id'] != ''){
+            $item->office_id        = htmlspecialchars($data['office_id']);
+        }
+        $item->ship_date        = \Carbon\Carbon::parse(\Carbon\Carbon::createFromFormat($this['settings']['dateformat'], $data['ship_date']));
+        $shipdate               = \Carbon\Carbon::parse($item->ship_date);
+        $deliverydate           = $shipdate->addHours($item->deliverytime->count);
+        $item->delivery_date    = $deliverydate;
+
+        if($data['type']    ==  2){
+            $item->receiver_id      = htmlspecialchars($data['receiver_id']);
+            $item->receiver_address_id= htmlspecialchars($data['receiver_address_id']);
+        }
+        $item->payment_type     = htmlspecialchars($data['payment_type']);
+        if(isset($data['return_defray']) && $data['return_defray'] != '' && $data['return_defray'] != 2){
+            if(isset($data['return_defray']) && $data['return_defray'] != ''){
+                $item->return_defray    = htmlspecialchars($data['return_defray']);
+            }
+            if(isset($data['package_fee']) && $data['package_fee'] != ''){
+                $item->package_fee      = htmlspecialchars($data['package_fee']);
+            }
+            if(isset($data['return_package_fee']) && $data['return_package_fee'] != ''){
+                $item->return_package_fee= htmlspecialchars($data['return_package_fee']);
+            }
+            if(isset($data['return_courier_fee']) && $data['return_courier_fee'] != ''){
+                $item->return_courier_fee= htmlspecialchars($data['return_courier_fee']);
+            }
+        }
+        if(isset($data['number']) && $data['number'] != ''){
+            $item->number           = htmlspecialchars($data['number']);
+        }
+        if(isset($data['tax']) && $data['tax'] != ''){
+            $item->tax              = htmlspecialchars($data['tax']);
+        }
+        if(isset($data['insurance']) && $data['insurance'] != ''){
+            $item->insurance        = htmlspecialchars($data['insurance']);
+        }
+        if(isset($data['mode_id']) && $data['mode_id'] != ''){
+            $item->mode_id          = htmlspecialchars($data['mode_id']);
+        }
+        if(isset($data['customs_value']) && $data['customs_value'] != ''){
+            $item->customs_value    = htmlspecialchars($data['customs_value']);
+        }
+        if(isset($data['courier_id']) && $data['courier_id'] != ''){
+            $item->courier_id       = htmlspecialchars($data['courier_id']);
+        }
+        if(isset($data['courier_fee']) && $data['courier_fee'] != ''){
+            $item->courier_fee      = htmlspecialchars($data['courier_fee']);
+        }
+        if(isset($data['delivery_time_id']) && $data['delivery_time_id'] != ''){
+            $item->delivery_time_id = htmlspecialchars($data['delivery_time_id']);
+        }
+        if(isset($data['status_id']) && $data['status_id'] != ''){
+            $status = explode("_" , htmlspecialchars($data['status_id']) );
+            $item->status_id        = $status[0];
+            $item->requested        = $status[1];
+            //$item->status_id        = htmlspecialchars($data['status_id']);
+        }
+        if(isset($data['assigned_id']) && $data['assigned_id'] != ''){
+            $item->assigned_id  = htmlspecialchars($data['assigned_id']);
+        }
+
+
+        $item->updated_at       = \Carbon\Carbon::now();
+        $item->update();
+
+        if(isset($data['items']) && $data['items'] != '' && !empty($data['items'])){
+            foreach($data['items'] as $shipping_item){
+                if(isset($shipping_item['id'])){
+                    $subitem                    = \Spot\Shipment\Models\Item::find($shipping_item['id']);
+                    $subitem->category_id       = htmlspecialchars($shipping_item['category_id']);
+                    $subitem->description       = htmlspecialchars($shipping_item['description']);
+                    $subitem->quantity          = htmlspecialchars($shipping_item['quantity']);
+                    $subitem->weight            = htmlspecialchars($shipping_item['weight']);
+                    $subitem->length            = htmlspecialchars($shipping_item['length']);
+                    $subitem->width             = htmlspecialchars($shipping_item['width']);
+                    $subitem->height            = htmlspecialchars($shipping_item['height']);
+                    $subitem->update();
+                }else{
+                    $subitem                    = new \Spot\Shipment\Models\Item;
+                    $subitem->order_id          = $item->id;
+                    $subitem->category_id       = htmlspecialchars($shipping_item['category_id']);
+                    $subitem->description       = htmlspecialchars($shipping_item['description']);
+                    $subitem->quantity          = htmlspecialchars($shipping_item['quantity']);
+                    $subitem->weight            = htmlspecialchars($shipping_item['weight']);
+                    $subitem->length            = htmlspecialchars($shipping_item['length']);
+                    $subitem->width             = htmlspecialchars($shipping_item['width']);
+                    $subitem->height            = htmlspecialchars($shipping_item['height']);
+                    $subitem->save();
+                }
+            }
+        }
+    
+    }
+    $event_data =   array(
+        'sender'                =>  Auth::getUser(),
+        'shipping_sender'       =>  $item->sender_id,
+        'shipping_receiver'     =>  (($item->receiver_id) ? $item->receiver_id : null),
+        'shipping_responsible'     =>  (($item->assigned_id) ? $item->assigned_id : null),
+        'item'                  =>  $item,
+        'type'      =>  'update_shipment',
+        'thumb'     =>  'icon',
+        'icon'      =>  'flaticon-gift',
+        'subject'   =>  $this['theme_lang']['update_shipment'],
+        'message'   =>  $this['theme_lang']['update_shipment'],
+        'url'       =>  url('dashboard/shipments/'.$item->id.'/view'),
+        'badge'     =>  'success',
+    );
+    \Event::fire('spot.event', [$this['pusher'],$this['settings'],$event_data]);
+
+    \Flash::success($this['theme_lang']['updated_successfully']);
+    return Redirect::to('dashboard/shipments/'.$item->id.'/view');
+}
+function onGetclients()
+{
+    $data = post();
+    $item = '';
+    $array = array();
+    if(isset($data['term']) && $data['term'] != ''){
+        $item = $data['term'];
+        $items = \RainLab\User\Models\User::where('role_id', 5)
+                    ->where(function($q) use($item){
+                        $q->where('id', 'like', "%$item%");
+                        $q->orWhere('name', 'like', "%$item%");
+                        $q->orWhere('username', 'like', "%$item%");
+                        $q->orWhere('email', 'like', "%$item%");
+                        $q->orWhere('phone', 'like', "%$item%");
+                        $q->orWhere('mobile', 'like', "%$item%");
+                    })
+                    ->get();
+
+        $array = array();
+        foreach($items as $item){
+            $array[] = array("id"=>$item->id, "text"=>$item->name, "mobile"=>$item->mobile);
+        }
+    }
+    if(Auth::getUser()->hasUserPermission(["client"],'c')) {
+        $array[] = array("id"=>'new', "text"=>'<i class="flaticon2-add"></i>&nbsp;'.$this['theme_lang']['add_new']);
+    }
+    return $array;
+}
+function onNewclient(){
+    $addShipmentForm  = Settings::get('addShipmentForm',true);
+    $data = post();
+    if ( $addShipmentForm == "add_form_normal"){
+        \RainLab\User\Models\User::extend(function($model){
+            $myrules['email'] = 'required|between:6,255|email|unique:users';
+            $myrules['mobile'] = 'required|unique:users,deleted_at,NULL';
+            $model->rules = $myrules;
+            $model->customMessages['email.unique'] = $this['theme_lang']['email_already_registered'];
+        });
+
+        $item                               = new \RainLab\User\Models\User;
+        $item->name                         = htmlspecialchars($data['name']);
+        $item->username                     = htmlspecialchars($data['name']);
+        $item->email                        = htmlspecialchars($data['email']);
+        $password                           = \Hash::make(123);
+        $item->password                     = $password;
+        $item->password_confirmation        = $password;
+        
+        $item->vat_number                   = htmlspecialchars($data['vat']);
+        $item->mobile                       = htmlspecialchars($data['num']);
+        $item->box                          = htmlspecialchars($data['box']);
+        $item->budget                          = htmlspecialchars($data['budget']);
+        $item->lang_id                     = htmlspecialchars($data['lang']);
+        $item->custom_clearance                    = htmlspecialchars($data['clearance']);
+        $item->fiscal_representation        = htmlspecialchars($data['fiscal']);
+        $item->payment_term                 = htmlspecialchars($data['payment_term']);
+        $item->price_kg                     = htmlspecialchars($data['price_kg']);
+        if(htmlspecialchars($data['storage_fee']) == 'yes'){
+            $item->storage_fee              = 1;
+            $item->cost_24                      = htmlspecialchars($data['cost_24']);
+            $item->cost_48                      = htmlspecialchars($data['cost_48']);
+        }
+        else 
+            $item->storage_fee              = 2;   
+
+        $item->role_id                      = 5;
+        $item->created_at                   = \Carbon\Carbon::now();
+        $item->updated_at                   = \Carbon\Carbon::now();
+        $item->save();
+
+        $subitem                    = new \Spot\Shipment\Models\Address;
+        $subitem->user_id           = $item->id;
+        $subitem->name              = htmlspecialchars($data['street_addr']);
+        $subitem->street            = htmlspecialchars($data['street_addr']);
+        $subitem->city              = htmlspecialchars($data['city_id']);
+        $subitem->zipcode           = htmlspecialchars($data['postal_code']);
+        $subitem->country            = htmlspecialchars($data['country_id']);
+        $subitem->default           = 1;
+        $subitem->created_at        = \Carbon\Carbon::now();
+        $subitem->updated_at        = \Carbon\Carbon::now();
+        $subitem->save();
+
+        $event_data =   array(
+            'persons'   =>  [$item->id],
+            'sender'    =>  Auth::getUser(),
+            'item'      =>  $item,
+            'type'      =>  'new_account',
+            'thumb'     =>  'icon',
+            'icon'      =>  'flaticon-gift',
+            'subject'   =>  $this['theme_lang']['new_account'],
+            'message'   =>  $this['theme_lang']['new_account'],
+            'url'       =>  url('dashboard/shipments/'.$item->id.'/view'),
+            'badge'     =>  'success',
+        );
+        \Event::fire('spot.event', [$this['pusher'],$this['settings'],$event_data]);
+
+        $resultArr = array(
+                "id"=>$item->id, "name"=>$item->name, 'address_id' => $subitem->id, 'address_name' => $subitem->name,
+                "clearance"=>$item->custom_clearance,"fiscal"=>$item->fiscal_representation,"payment_term"=>$item->payment_term,"price_kg"=>$item->price_kg,"storage_fee"=>$item->storage_fee,"cost_24"=>$item->cost_24,"cost_48"=>$item->cost_48  );
+        
+        return $resultArr;
+        
+
+    }else{
+        if(isset($data['connect'])){
+            \RainLab\User\Models\User::extend(function($model){
+                $myrules['email'] = 'required|between:6,255|email|unique:users';
+                $myrules['mobile'] = 'required|unique:users';
+                $myrules['username'] = 'required|between:2,255|unique:users';
+                $myrules['password'] = 'required';
+                $model->rules = $myrules;
+                $model->customMessages['mobile.unique'] = $this['theme_lang']['mobile_already_registered'];
+                $model->customMessages['email.unique'] = $this['theme_lang']['email_already_registered'];
+                $model->customMessages['username.unique'] = $this['theme_lang']['username_already_registered'];
+            });
+        }else{
+            \RainLab\User\Models\User::extend(function($model){
+                $myrules['mobile'] = 'required|unique:users';
+                $myrules['password'] = 'required';
+                $model->rules = $myrules;
+                $model->customMessages['mobile.mobile'] = $this['theme_lang']['mobile_already_registered'];
+            });
+        }
+
+        $item                   = new \RainLab\User\Models\User;
+        $item->name             = htmlspecialchars($data['name']);
+        if(isset($data['connect'])){
+            $item->username         = htmlspecialchars($data['username']);
+            $item->email            = htmlspecialchars($data['email']);
+            if(isset($data['password']) && $data['password'] != null && !empty($data['password']) && $data['password'] != ''){
+                $password                       = \Hash::make($data['password']);
+                $item->password                 = $password;
+                $item->password_confirmation    = $password;
+            }
+        }else{
+            $password                       = \Hash::make(123);
+            $item->password                 = $password;
+            $item->password_confirmation    = $password;
+        }
+        $item->mobile           = htmlspecialchars($data['mobile']);
+        $item->gender           = (isset($data['gender']) ? $data['gender'] : null);
+        $item->role_id          = 5;
+        $item->created_at       = \Carbon\Carbon::now();
+        $item->updated_at       = \Carbon\Carbon::now();
+        $item->save();
+
+        $subitem                    = new \Spot\Shipment\Models\Address;
+        $subitem->user_id           = $item->id;
+        $subitem->name              = htmlspecialchars($data['street_addr']);
+        $subitem->street            = htmlspecialchars($data['street_addr']);
+        $subitem->lat               = htmlspecialchars($data['lat']);
+        $subitem->lng               = htmlspecialchars($data['lng']);
+        $subitem->url               = htmlspecialchars($data['url']);
+        $subitem->county            = htmlspecialchars($data['area_id']);
+        $subitem->city              = htmlspecialchars($data['city_id']);
+        $subitem->zipcode           = htmlspecialchars($data['postal_code']);
+        $subitem->state             = htmlspecialchars($data['state_id']);
+        $subitem->county            = htmlspecialchars($data['country_id']);
+        $subitem->default           = 1;
+        $subitem->created_at        = \Carbon\Carbon::now();
+        $subitem->updated_at        = \Carbon\Carbon::now();
+        $subitem->save();
+
+        return array("id"=>$item->id, "name"=>$item->name, 'address_id' => $subitem->id, 'address_name' => $subitem->name);
+    }
+}
+
+function onNewclientaddress(){
+    $addShipmentForm  = Settings::get('addShipmentForm',true);
+    $data = post();
+
+    \Spot\Shipment\Models\Address::where('user_id', $data['client_id'])->update(['default' => 0]);
+
+    if ( $addShipmentForm == "add_form_normal"){
+        $subitem = new \Spot\Shipment\Models\Address;
+        $subitem->name              = htmlspecialchars($data['street_addr']);
+        $subitem->user_id           = htmlspecialchars($data['client_id']);
+        $subitem->street            = htmlspecialchars($data['street_addr']);
+        $subitem->city              = htmlspecialchars($data['city_id']);
+        $subitem->zipcode           = htmlspecialchars($data['postal_code']);
+        $subitem->country            = htmlspecialchars($data['country_id']);
+        $subitem->default           = 1;
+        $subitem->created_at        = \Carbon\Carbon::now();
+        $subitem->updated_at        = \Carbon\Carbon::now();
+        $subitem->save();
+    }
+    else{
+
+        $subitem                    = new \Spot\Shipment\Models\Address;
+        $subitem->user_id           = htmlspecialchars($data['client_id']);
+        $subitem->name              = htmlspecialchars($data['street_addr']);
+        $subitem->street            = htmlspecialchars($data['street_addr']);
+        $subitem->lat               = htmlspecialchars($data['lat']);
+        $subitem->lng               = htmlspecialchars($data['lng']);
+        $subitem->url               = htmlspecialchars($data['url']);
+        $subitem->county            = htmlspecialchars($data['area_id']);
+        $subitem->city              = htmlspecialchars($data['city_id']);
+        $subitem->zipcode           = htmlspecialchars($data['postal_code']);
+        $subitem->state             = htmlspecialchars($data['state_id']);
+        $subitem->county            = htmlspecialchars($data['country_id']);
+        $subitem->default           = 1;
+        $subitem->created_at        = \Carbon\Carbon::now();
+        $subitem->updated_at        = \Carbon\Carbon::now();
+        $subitem->save();
+    }
+        $addresses = \Spot\Shipment\Models\Address::where('user_id', $data['client_id'])->get();
+        $html = '<option data-hidden="true"></option>';
+        $default = 'new';
+        if($addresses){
+            foreach($addresses as $address){
+                if($address->default == 1){
+                    $default = $address->id;
+                }
+                $html .= '<option value="'.$address->id.'">'.$address->name.'</option>';
+            }
+        }
+        if(Auth::getUser()->hasUserPermission(["client"],'c')) {
+            $html .= '<option value="new" data-icon="flaticon2-add">'.$this['theme_lang']['add_new'].'</option>';
+        }
+        return array("html" => $html, "default" => $default);
+    
+}
+function onClientaddresses(){
+    $addShipmentForm  = Settings::get('addShipmentForm',true);
+    $data = post();
+    $item = \RainLab\User\Models\User::find($data['id']);
+    $addresses = \Spot\Shipment\Models\Address::where('user_id', $data['id'])->get();
+    $html = '<option data-hidden="true"></option>';
+    $default = 'new';
+    if($addresses){
+        foreach($addresses as $address){
+            if($address->default == 1){
+                $default = $address->id;
+            }
+            $html .= '<option value="'.$address->id.'">'.$address->name.'</option>';
+        }
+    }
+    if(Auth::getUser()->hasUserPermission(["client"],'c')) {
+        $html .= '<option value="new" data-icon="flaticon2-add">'.$this['theme_lang']['add_new'].'</option>';
+    }
+    if ( $addShipmentForm == "add_form_normal"){
+        $resultArr = array("html" => $html, "default" => $default,"clearance"=>$item->custom_clearance,
+                        "fiscal"=>$item->fiscal_representation,"payment_term"=>$item->payment_term,
+                        "price_kg"=>$item->price_kg,"storage_fee"=>$item->storage_fee,"cost_24"=>$item->cost_24,
+                        "cost_48"=>$item->cost_48 );
+        return $resultArr;
+    }else{
+        return array("html" => $html, "default" => $default);
+    }
+}
+function onListstates(){
+    $data = post();
+
+    $items = \RainLab\Location\Models\State::where('country_id', $data['id'])->get();
+    $html = '<option data-hidden="true"></option>';
+    if($items){
+        foreach($items as $item){
+            $html .= '<option value="'.$item->id.'">'.$item->name.'</option>';
+        }
+    }
+    return array("html" => $html);
+}
+function onListcities(){
+    $addShipmentForm  = Settings::get('addShipmentForm',true);
+    $data = post();
+    if ( $addShipmentForm == "add_form_normal"){
+        $items = \Spot\Shipment\Models\City::where('country_id', $data['id'])->get();
+    }else{
+        $items = \Spot\Shipment\Models\City::where('state_id', $data['id'])->get();
+    }
+    $html = '<option data-hidden="true"></option>';
+    if($items){
+        foreach($items as $item){
+            $html .= '<option value="'.$item->id.'">'.$item->name.'</option>';
+        }
+    }
+    return array("html" => $html);
+}
+function onListareas(){
+    $data = post();
+
+    $items = \Spot\Shipment\Models\Area::where('city_id', $data['id'])->get();
+    $html = '<option data-hidden="true"></option>';
+    if($items){
+        foreach($items as $item){
+            $html .= '<option value="'.$item->id.'">'.$item->name.'</option>';
+        }
+    }
+    return array("html" => $html);
+}
+?>
+==
+{{ form_ajax('onSave', { success: 'created successfully!', flash: true, class: 'kt_form' }) }}
+{% if updateShipmentForm == "update_form_simple" %}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="kt-portlet kt-portlet--mobile">
+            <div class="kt-portlet__head">
+                <div class="kt-portlet__head-label">
+                    <h3 class="kt-portlet__head-title">
+                        {{'Shipment information'|__}}
+                    </h3>
+                </div>
+            </div>
+            <div class="kt-portlet__body">
+                <div class="form-group form-group-last kt-hide">
+                    <div class="alert alert-danger kt_form_msg" role="alert">
+                        <div class="alert-icon"><i class="flaticon-warning"></i></div>
+                        <div class="alert-text">
+                            {{'Oh snap! Change a few things up and try submitting again'|__}}.
+                        </div>
+                        <div class="alert-close">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true"><i class="la la-close"></i></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="kt-portlet__body kt-portlet__body--fluid">
+                    <div class="kt-widget12">
+                        <div class="kt-widget12__content">
+                            {% for item in order.items %}
+                            <div class="kt-widget12__item">
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Product Name'|__}}</span>
+                                    <span class="kt-widget12__value">
+                                        {% for category in categories %}
+                                            {% if item.category_id == category.id %}
+                                                {{category.name}}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </span>
+                                </div>
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Shipping Date'|__}}</span>
+                                    <span class="kt-widget12__value">{{order.ship_date|date(settings.dateformat)}}</span>
+                                </div>
+                            </div>
+                            <div class="kt-widget12__item">
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Quantity'|__}}</span>
+                                    <span class="kt-widget12__value">
+                                        {{item.quantity}}
+                                    </span>
+                                </div>
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Weight'|__}}</span>
+                                    <span class="kt-widget12__value">{{item.weight}}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+
+                            <div class="kt-widget12__item">
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Name'|__}}</span>
+                                    <span class="kt-widget12__value">
+                                        {{order.receiver.name|capitalize}}
+                                        {% if order.receiver.userverify_dateverified %}
+                                            <i class="flaticon2-correct kt-font-info"></i>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Address'|__}}</span>
+                                    <span class="kt-widget12__value">{{order.receiver_address.name}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row kt-margin-t-20">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Delivery Status'|__}}</label>
+                    <div class="col-lg-9 col-xl-6">
+                        <select class="form-control" data-live-search="true" name="status_id" required>
+                            <option data-hidden="true"></option>
+                            {% for status in statuses %}
+                                <option value="{{status.id}}_{{status.equal}}" {% if order.status_id == status.id %}selected{% endif %}>{{status.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+
+
+            </div>
+        </div>
+    </div>
+</div>
+{% elseif addShipmentForm == "add_form_normal" %}
+    {% partial 'normalShipmentEditForm' %}
+{% else %}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="kt-portlet kt-portlet--mobile">
+            <div class="kt-portlet__head">
+                <div class="kt-portlet__head-label">
+                    <h3 class="kt-portlet__head-title">
+                        {{'Shipment information'|__}}
+                    </h3>
+                </div>
+            </div>
+            <div class="kt-portlet__body">
+                <div class="form-group form-group-last kt-hide">
+                    <div class="alert alert-danger kt_form_msg" role="alert">
+                        <div class="alert-icon"><i class="flaticon-warning"></i></div>
+                        <div class="alert-text">
+                            {{'Oh snap! Change a few things up and try submitting again'|__}}.
+                        </div>
+                        <div class="alert-close">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true"><i class="la la-close"></i></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="kt-section">
+                    <h3 class="kt-section__title kt-margin-b-20">
+                        {{'Shipment Type'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span>
+                    </h3>
+                    <div class="kt-section__content">
+                        <div class="form-group form-group-last">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <label class="kt-option">
+                                        <span class="kt-option__control">
+                                            <span class="kt-radio kt-radio--state-brand">
+                                                <input type="radio" name="type" id="type" value="1" {% if order.type == 1 %}checked{% endif %} required>
+                                                <span></span>
+                                            </span>
+                                        </span>
+                                        <span class="kt-option__label">
+                                            <span class="kt-option__head">
+                                                <span class="kt-option__title">
+                                                    {{'Pickup'|__}}
+                                                </span>
+                                                <span class="kt-option__focus"></span>
+                                            </span>
+                                            <span class="kt-option__body">
+                                                {{'For door to door delivery'|__}}
+                                            </span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="kt-option">
+                                        <span class="kt-option__control">
+                                            <span class="kt-radio kt-radio--state-brand">
+                                                <input type="radio" name="type" id="type" value="2" {% if order.type == 2 %}checked{% endif %} required>
+                                                <span></span>
+                                            </span>
+                                        </span>
+                                        <span class="kt-option__label">
+                                            <span class="kt-option__head">
+                                                <span class="kt-option__title">
+                                                    {{'Drop off'|__}}
+                                                </span>
+                                                <span class="kt-option__focus"></span>
+                                            </span>
+                                            <span class="kt-option__body">
+                                                {{'For delivery package from office directly'|__}}
+                                            </span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-text text-muted"><!--must use this helper element to display error message for the options--></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="kt-separator kt-separator--border-dashed kt-separator--space-lg kt-separator--portlet-fit kt-margin-t-0"></div>
+                <div class="row">
+                    <div class="form-group col-lg-4">
+                        <label>{{'Package Type'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <select class="form-control" name="packaging_id" id="packaging_id" data-live-search="true" required>
+                            <option data-hidden="true"></option>
+                            {% for package in packaging %}
+                                <option value="{{package.id}}" {% if order.packaging_id == package.id %}selected{% endif %}>{{package.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group col-lg-4">
+                        <label>{{'Office'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <select class="form-control" name="office_id" required>
+                            <option data-hidden="true"></option>
+                            {% for office in offices %}
+                                <option value="{{office.id}}" {% if order.office_id == office.id %}selected{% endif %}>{{office.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group col-lg-4">
+                        <label>{{'Shipping Date'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <div class="input-group date">
+                            <input type="text" class="form-control date" readonly="" name="ship_date" value="{{order.ship_date|date(settings.dateformat)}}">
+                            <div class="input-group-append">
+                                <span class="input-group-text">
+                                    <i class="la la-calendar"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-12">
+        <div class="kt-portlet kt-portlet--mobile">
+            <div class="kt-portlet__head">
+				<div class="kt-portlet__head-label">
+					<h3 class="kt-portlet__head-title">
+						{{'Sender information'|__}}
+					</h3>
+				</div>
+			</div>
+            <div class="kt-portlet__body">
+                <div class="form-group form-group-last kt-hide">
+    				<div class="alert alert-danger kt_form_msg" role="alert">
+    					<div class="alert-icon"><i class="flaticon-warning"></i></div>
+    				  	<div class="alert-text">
+                            {{'Oh snap! Change a few things up and try submitting again'|__}}.
+    					</div>
+    					<div class="alert-close">
+    						<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    					    	<span aria-hidden="true"><i class="la la-close"></i></span>
+    					  	</button>
+    					</div>
+    				</div>
+    			</div>
+                <div class="form-group row">
+                    <label>{{'Sender'|__}}/{{'Client'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    {% if user.role_id == 5 %}
+                        <input name="sender_id" value="{{user.id}}" type="hidden" />
+                        <input value="{{user.name}}" type="text" class="form-control" disabled />
+                    {% else %}
+                        <select class="form-control clients" name="sender_id" id="sender_id" required>
+                            <option data-hidden="true"></option>
+                            <option value="{{order.sender_id}}" selected>{{order.sender.name}}</option>
+                            {% if user.hasUserPermission('client', 'c') %}
+                                <option value="new" data-icon="flaticon2-add">{{'Add New'|__}}</option>
+                            {% endif %}
+                        </select>
+                        <span class="text-muted">{{'Choose or add a new client that will send the package'|__}}</span>
+                    {% endif %}
+                </div>
+                <div class="form-group row">
+                    <label>{{'Sender Address'|__}}/{{'Client Address'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    <select class="form-control sender_address_id" name="sender_address_id" id="sender_address_id" data-live-search="true" title="{{'Please select sender first'|__}}" required>
+                        <option value="{{order.sender_address_id}}" selected>{{order.sender_address.name}}</option>
+                        <option data-hidden="true"></option>
+                        {% if user.role_id == 5 %}
+                            {% for address in user.addresses %}
+                                <option value="{{address.id}}" {% if address.default == 1 %}selected{% endif %}>{{address.name}}</option>
+                            {% endfor %}
+                            <option value="new" data-icon="flaticon2-add">{{'Add New'|__}}</option>
+                        {% endif %}
+                    </select>
+                </div>
+                {% if user.role_id != 5 %}
+                    <div class="row kt-hidden" id="addnewsender">
+                        <div class="kt-portlet kt-portlet--bordered kt-portlet--head--noborder kt-margin-b-0">
+            				<div class="kt-portlet__head">
+            					<div class="kt-portlet__head-label">
+            						<h3 class="kt-portlet__head-title">
+            							{{'Add a new client'|__}}
+            						</h3>
+            					</div>
+            				</div>
+            				<div class="kt-portlet__body">
+                                <div class="row">
+                                    <div class="form-group col-lg-5">
+                                        <label>{{'Client Name'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <input type="text" class="form-control name" name="sender[name]" required />
+                                    </div>
+                                    <div class="form-group col-lg-4">
+                                        <label>{{'Mobile'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <input type="text" class="form-control mobile" name="sender[mobile]" required />
+                                    </div>
+                                    <div class="form-group col-lg-3">
+                                        <label>{{'Gender'|__}}</label>
+                                        <div class="kt-radio-inline">
+                							<label class="kt-radio">
+                								<input type="radio" name="sender[gender]" class="gender" value="male"> {{'Male'|__}}
+                								<span></span>
+                							</label>
+                							<label class="kt-radio">
+                								<input type="radio" name="sender[gender]" class="gender" value="female"> {{'Female'|__}}
+                								<span></span>
+                							</label>
+                						</div>
+                                    </div>
+                                </div>
+                                <div class="location-sender">
+                                    <div class="row">
+                                        <div class="form-group col-lg-5">
+                                            <label>{{'Address'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <input type="text" class="form-control address street_addr" data-sender="route" name="sender[street_address]"  rel="sender" required/>
+                                            <input type="hidden" class="form-control lat" data-sender="lat" name="sender[lat]" />
+                                            <input type="hidden" class="form-control lng" data-sender="lng" name="sender[lng]" />
+                                            <input type="hidden" class="form-control url" data-sender="url" name="sender[url]" />
+                                        </div>
+                                        <div class="form-group col-lg-4">
+                                            <label>{{'Country'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <select class="form-control country_id" data-sender="country" data-live-search="true" name="sender[country]" required>
+                                                <option data-hidden="true"></option>
+                                                {% for country in countries %}
+                                                    <option value="{{country.id}}" {% if currentLang != 'en' %}data-subtext="{{country.lang(currentLang).name}}"{% endif %}>{{country.lang('en').name}}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-lg-3">
+                                            <label>{{'Postal Code'|__}}</label>
+                                            <input class="form-control postal_code" type="text" data-sender="postal_code" name="sender[postal_code]" >
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="form-group col-lg-4">
+                                            <label>{{'State / Region'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <select class="form-control state_id" data-sender="administrative_area_level_1" title="{{'Please select country first'|__}}" name="sender[state]" data-live-search="true" required>
+                                                <option data-hidden="true"></option>
+                                                {% for state in states %}
+                                                    <option value="{{state.id}}" {% if currentLang != 'en' %}data-subtext="{{state.lang(currentLang).name}}"{% endif %}>{{state.lang('en').name}}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-lg-4">
+                                            <label>{{'City'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <select class="form-control city_id" data-sender="locality" name="sender[city]" title="{{'Please select state first'|__}}" data-live-search="true" required>
+                                                <option data-hidden="true"></option>
+                                                {% for city in cities %}
+                                                    <option value="{{city.id}}">{{city.name}}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-lg-4">
+                                            <label>{{'County'|__}}</label>
+                                            <select class="form-control area_id" data-sender="sublocality" name="sender[county]" title="{{'Please select city first'|__}}" data-live-search="true">
+                                                <option data-hidden="true"></option>
+                                                {% for county in areas %}
+                                                    <option value="{{county.id}}">{{county.name}}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="form-group col-lg-12">
+                                            <label>{{'Google Map'|__}}</label>
+                                            <div class="col-sm-12 map_canvas map_sender"></div>
+                                            <span class="form-text text-muted">{{'Change the pin to select the right location'|__}}</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label class="col-xl-3 col-lg-3 col-form-label"></label>
+                                        <div class="col-lg-9 col-xl-6">
+                                            <div class="kt-checkbox-single">
+                                                <label class="kt-checkbox">
+                                                    <input type="checkbox" name="connect" class="connect" value="sender"> {{'Connect client'|__}}: {{'create an account for the client'|__}}
+                                                    <span></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row align-items-center kt-hidden" id="connect_sender">
+                                        <div class="col-md-4">
+                                            <div class="form-group kt-form__group--inline">
+                                                <div class="kt-form__label">
+                                                    <label class="col-form-label">{{'Email'|__}}:&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                                </div>
+                                                <div class="kt-form__control">
+                                                    <input type="text" class="form-control email" name="sender[email]" required/>
+                                                </div>
+                                            </div>
+                                            <div class="d-md-none kt-margin-b-10"></div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group kt-form__group--inline">
+                                                <div class="kt-form__label">
+                                                    <label class="col-form-label">{{'Username'|__}}:&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                                </div>
+                                                <div class="kt-form__control">
+                                                    <input type="text" class="form-control username" name="sender[username]" required>
+                                                </div>
+                                            </div>
+                                            <div class="d-md-none kt-margin-b-10"></div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group kt-form__group--inline">
+                                                <div class="kt-form__label">
+                                                    <label class="col-form-label">{{'Password'|__}}:&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                                </div>
+                                                <div class="kt-form__control">
+                                                    <input type="password" class="form-control password" name="sender[password]" required>
+                                                </div>
+                                            </div>
+                                            <div class="d-md-none kt-margin-b-10"></div>
+                                        </div>
+                                    </div>
+                                </div>
+            				</div>
+                            <div class="kt-portlet__foot">
+                				<div class="row align-items-center">
+                					<div class="col-lg-12">
+                						<button type="button" class="btn btn-success save">{{'Save'|__}}</button>
+                						<button type="button" class="btn btn-secondary cancel">{{'Cancel'|__}}</button>
+                					</div>
+                				</div>
+                			</div>
+            			</div>
+        			</div>
+                {% endif %}
+                <div class="row kt-hidden" id="addnewsenderaddress">
+                    <div class="kt-portlet kt-portlet--bordered kt-portlet--head--noborder kt-margin-b-0">
+        				<div class="kt-portlet__head">
+        					<div class="kt-portlet__head-label">
+        						<h3 class="kt-portlet__head-title">
+        							{{'Add a new client address'|__}}
+        						</h3>
+        					</div>
+        				</div>
+        				<div class="kt-portlet__body">
+                            <div class="location-senderaddress">
+                                <div class="row">
+                                    <div class="form-group col-lg-5">
+                                        <label>{{'Address'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <input type="text" class="form-control address street_addr" data-senderaddress="route" name="senderaddress[street_address]"  rel="senderaddress" required/>
+                                        <input type="hidden" class="form-control lat" data-senderaddress="lat" name="senderaddress[lat]" />
+                                        <input type="hidden" class="form-control lng" data-senderaddress="lng" name="senderaddress[lng]" />
+                                        <input type="hidden" class="form-control url" data-senderaddress="url" name="senderaddress[url]" />
+                                    </div>
+                                    <div class="form-group col-lg-4">
+                                        <label>{{'Country'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <select class="form-control country_id" data-senderaddress="country" data-live-search="true" name="senderaddress[country]" required>
+                                            <option data-hidden="true"></option>
+                                            {% for country in countries %}
+                                                <option value="{{country.id}}" {% if currentLang != 'en' %}data-subtext="{{country.lang(currentLang).name}}"{% endif %}>{{country.lang('en').name}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-lg-3">
+                                        <label>{{'Postal Code'|__}}</label>
+                                        <input class="form-control postal_code" type="text" data-sendsenderaddresser="postal_code" name="senderaddress[postal_code]" >
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group col-lg-4">
+                                        <label>{{'State / Region'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <select class="form-control state_id" data-senderaddress="administrative_area_level_1" title="{{'Please select country first'|__}}" name="senderaddress[state]" data-live-search="true" required>
+                                            <option data-hidden="true"></option>
+                                            {% for state in states %}
+                                                <option value="{{state.id}}" {% if currentLang != 'en' %}data-subtext="{{state.lang(currentLang).name}}"{% endif %}>{{state.lang('en').name}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-lg-4">
+                                        <label>{{'City'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <select class="form-control city_id" data-senderaddress="locality" name="senderaddress[city]" title="{{'Please select state first'|__}}" data-live-search="true" required>
+                                            <option data-hidden="true"></option>
+                                            {% for city in cities %}
+                                                <option value="{{city.id}}">{{city.name}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-lg-4">
+                                        <label>{{'County'|__}}</label>
+                                        <select class="form-control area_id" data-senderaddress="sublocality" name="senderaddress[county]" title="{{'Please select city first'|__}}" data-live-search="true" >
+                                            <option data-hidden="true"></option>
+                                            {% for county in areas %}
+                                                <option value="{{county.id}}">{{county.name}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group col-lg-12">
+                                        <label>{{'Google Map'|__}}</label>
+                                        <div class="col-sm-12 map_canvas map_senderaddress"></div>
+                                        <span class="form-text text-muted">{{'Change the pin to select the right location'|__}}</span>
+                                    </div>
+                                </div>
+                            </div>
+        				</div>
+                        <div class="kt-portlet__foot">
+            				<div class="row align-items-center">
+            					<div class="col-lg-12">
+            						<button type="button" class="btn btn-success save">{{'Save'|__}}</button>
+            						<button type="button" class="btn btn-secondary cancel">{{'Cancel'|__}}</button>
+            					</div>
+            				</div>
+            			</div>
+        			</div>
+    			</div>
+                <div class="kt-separator kt-separator--border-dashed kt-separator--space-lg kt-separator--portlet-fit"></div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Payment Type'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    <div class="col-lg-9 col-xl-6">
+                        <select class="form-control" name="payment_type" id="payment_type" required>
+                            <option data-hidden="true"></option>
+                            <option value="1" {% if order.payment_type == 1 %}selected{% endif %}>{{'Postpaid'|__}} </option>
+                            <option value="2" {% if order.payment_type == 2 %}selected{% endif %}>{{'Prepaid'|__}} </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="type_2 kt-hidden">
+            <div class="kt-portlet kt-portlet--mobile">
+                <div class="kt-portlet__head">
+    				<div class="kt-portlet__head-label">
+    					<h3 class="kt-portlet__head-title">
+    						{{'Receiver information'|__}}
+    					</h3>
+    				</div>
+    			</div>
+                <div class="kt-portlet__body">
+                    <div class="form-group row">
+                        <label>{{'Receiver'|__}}/{{'Client'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <select class="form-control clients" name="receiver_id" id="receiver_id" equired>
+                            <option data-hidden="true"></option>
+                            <option value="{{order.receiver_id}}" selected>{{order.receiver.name}}</option>
+                            {% if user.hasUserPermission('client', 'c') %}
+                                <option value="new" data-icon="flaticon2-add">{{'Add New'|__}}</option>
+                            {% endif %}
+                        </select>
+                        <span class="text-muted">{{'Choose or add a new client that will receive the package'|__}}</span>
+                    </div>
+                    <div class="form-group row">
+                        <label>{{'Receiver Address'|__}}/{{'Client Address'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <select class="form-control receiver_address_id" name="receiver_address_id" id="receiver_address_id" data-live-search="true" title="{{'Please select receiver first'|__}}" required>
+                            <option value="{{order.receiver_address_id}}" selected>{{order.receiver_address.name}}</option>
+                            <option data-hidden="true"></option>
+                        </select>
+                    </div>
+                    <div class="row kt-hidden" id="addnewreceiver">
+                        <div class="kt-portlet kt-portlet--bordered kt-portlet--head--noborder kt-margin-b-0">
+            				<div class="kt-portlet__head">
+            					<div class="kt-portlet__head-label">
+            						<h3 class="kt-portlet__head-title">
+            							{{'Add a new client'|__}}
+            						</h3>
+            					</div>
+            				</div>
+            				<div class="kt-portlet__body">
+                                <div class="row">
+                                    <div class="form-group col-lg-5">
+                                        <label>{{'Client Name'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <input type="text" class="form-control name" name="receiver[name]" required />
+                                    </div>
+                                    <div class="form-group col-lg-4">
+                                        <label>{{'Mobile'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <input type="text" class="form-control mobile" name="receiver[mobile]" required />
+                                    </div>
+                                    <div class="form-group col-lg-3">
+                                        <label>{{'Gender'|__}}</label>
+                                        <div class="kt-radio-inline">
+                							<label class="kt-radio">
+                								<input type="radio" name="receiver[gender]" class="gender" value="male"> {{'Male'|__}}
+                								<span></span>
+                							</label>
+                							<label class="kt-radio">
+                								<input type="radio" name="receiver[gender]" class="gender" value="female"> {{'Female'|__}}
+                								<span></span>
+                							</label>
+                						</div>
+                                    </div>
+                                </div>
+                                <div class="location-receiver">
+                                    <div class="row">
+                                        <div class="form-group col-lg-5">
+                                            <label>{{'Address'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <input type="text" class="form-control address street_addr" data-receiver="route" name="receiver[street_address]"  rel="receiver" required/>
+                                            <input type="hidden" class="form-control lat" data-receiver="lat" name="receiver[lat]" />
+                                            <input type="hidden" class="form-control lng" data-receiver="lng" name="receiver[lng]" />
+                                            <input type="hidden" class="form-control url" data-receiver="url" name="receiver[url]" />
+                                        </div>
+                                        <div class="form-group col-lg-4">
+                                            <label>{{'Country'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <select class="form-control country_id" data-receiver="country" data-live-search="true" name="receiver[country]" required>
+                                                <option data-hidden="true"></option>
+                                                {% for country in countries %}
+                                                    <option value="{{country.id}}" {% if currentLang != 'en' %}data-subtext="{{country.lang(currentLang).name}}"{% endif %}>{{country.lang('en').name}}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-lg-3">
+                                            <label>{{'Postal Code'|__}}</label>
+                                            <input class="form-control postal_code" type="text" data-receiver="postal_code" name="receiver[postal_code]" >
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="form-group col-lg-4">
+                                            <label>{{'State / Region'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <select class="form-control state_id" data-receiver="administrative_area_level_1" title="{{'Please select country first'|__}}" name="receiver[state]" data-live-search="true" required>
+                                                <option data-hidden="true"></option>
+                                                {% for state in states %}
+                                                    <option value="{{state.id}}" {% if currentLang != 'en' %}data-subtext="{{state.lang(currentLang).name}}"{% endif %}>{{state.lang('en').name}}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-lg-4">
+                                            <label>{{'City'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <select class="form-control city_id" data-receiver="locality" name="receiver[city]" title="{{'Please select state first'|__}}" data-live-search="true" required>
+                                                <option data-hidden="true"></option>
+                                                {% for city in cities %}
+                                                    <option value="{{city.id}}">{{city.name}}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-lg-4">
+                                            <label>{{'County'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <select class="form-control area_id" data-receiver="sublocality" name="receiver[county]" title="{{'Please select city first'|__}}" data-live-search="true">
+                                                <option data-hidden="true"></option>
+                                                {% for county in areas %}
+                                                    <option value="{{county.id}}">{{county.name}}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="form-group col-lg-12">
+                                            <label>{{'Google Map'|__}}</label>
+                                            <div class="col-sm-12 map_canvas map_receiver"></div>
+                                            <span class="form-text text-muted">{{'Change the pin to select the right location'|__}}</span>
+                                        </div>
+                                    </div>
+                                    {% if user.hasUserPermission('client', 'c') %}
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label"></label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <div class="kt-checkbox-single">
+                                                    <label class="kt-checkbox">
+                                                        <input type="checkbox" name="connect" class="connect" value="receiver"> {{'Connect client'|__}}: {{'create an account for the client'|__}}
+                                                        <span></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row align-items-center kt-hidden" id="connect_receiver">
+                                            <div class="col-md-4">
+                                                <div class="form-group kt-form__group--inline">
+                                                    <div class="kt-form__label">
+                                                        <label class="col-form-label">{{'Email'|__}}:&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                                    </div>
+                                                    <div class="kt-form__control">
+                                                        <input type="text" class="form-control email" name="receiver[email]" required/>
+                                                    </div>
+                                                </div>
+                                                <div class="d-md-none kt-margin-b-10"></div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group kt-form__group--inline">
+                                                    <div class="kt-form__label">
+                                                        <label class="col-form-label">{{'Username'|__}}:&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                                    </div>
+                                                    <div class="kt-form__control">
+                                                        <input type="text" class="form-control username" name="receiver[username]" required>
+                                                    </div>
+                                                </div>
+                                                <div class="d-md-none kt-margin-b-10"></div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group kt-form__group--inline">
+                                                    <div class="kt-form__label">
+                                                        <label class="col-form-label">{{'Password'|__}}:&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                                    </div>
+                                                    <div class="kt-form__control">
+                                                        <input type="password" class="form-control password" name="receiver[password]" required>
+                                                    </div>
+                                                </div>
+                                                <div class="d-md-none kt-margin-b-10"></div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+            				</div>
+                            <div class="kt-portlet__foot">
+                				<div class="row align-items-center">
+                					<div class="col-lg-12">
+                						<button type="button" class="btn btn-success save">{{'Save'|__}}</button>
+                						<button type="button" class="btn btn-secondary cancel">{{'Cancel'|__}}</button>
+                					</div>
+                				</div>
+                			</div>
+            			</div>
+        			</div>
+                    <div class="row kt-hidden" id="addnewreceiveraddress">
+                        <div class="kt-portlet kt-portlet--bordered kt-portlet--head--noborder kt-margin-b-0">
+            				<div class="kt-portlet__head">
+            					<div class="kt-portlet__head-label">
+            						<h3 class="kt-portlet__head-title">
+            							{{'Add a new client address'|__}}
+            						</h3>
+            					</div>
+            				</div>
+            				<div class="kt-portlet__body">
+                                <div class="location-receiveraddress">
+                                    <div class="row">
+                                        <div class="form-group col-lg-5">
+                                            <label>{{'Address'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <input type="text" class="form-control address street_addr" data-receiveraddress="route" name="receiveraddress[street_address]"  rel="receiveraddress" required/>
+                                            <input type="hidden" class="form-control lat" data-receiveraddress="lat" name="receiveraddress[lat]" />
+                                            <input type="hidden" class="form-control lng" data-receiveraddress="lng" name="receiveraddress[lng]" />
+                                            <input type="hidden" class="form-control url" data-receiveraddress="url" name="receiveraddress[url]" />
+                                        </div>
+                                        <div class="form-group col-lg-4">
+                                            <label>{{'Country'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <select class="form-control country_id" data-receiveraddress="country" data-live-search="true" name="receiveraddress[country]" required>
+                                                <option data-hidden="true"></option>
+                                                {% for country in countries %}
+                                                    <option value="{{country.id}}" {% if currentLang != 'en' %}data-subtext="{{country.lang(currentLang).name}}"{% endif %}>{{country.lang('en').name}}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-lg-3">
+                                            <label>{{'Postal Code'|__}}</label>
+                                            <input class="form-control postal_code" type="text" data-sendreceiveraddresser="postal_code" name="receiveraddress[postal_code]" >
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="form-group col-lg-4">
+                                            <label>{{'State / Region'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <select class="form-control state_id" data-receiveraddress="administrative_area_level_1" title="{{'Please select country first'|__}}" name="receiveraddress[state]" data-live-search="true" required>
+                                                <option data-hidden="true"></option>
+                                                {% for state in states %}
+                                                    <option value="{{state.id}}" {% if currentLang != 'en' %}data-subtext="{{state.lang(currentLang).name}}"{% endif %}>{{state.lang('en').name}}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-lg-4">
+                                            <label>{{'City'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <select class="form-control city_id" data-receiveraddress="locality" name="receiveraddress[city]" title="{{'Please select state first'|__}}" data-live-search="true" required>
+                                                <option data-hidden="true"></option>
+                                                {% for city in cities %}
+                                                    <option value="{{city.id}}">{{city.name}}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-lg-4">
+                                            <label>{{'County'|__}}</label>
+                                            <select class="form-control area_id" data-receiveraddress="sublocality" name="receiveraddress[county]" title="{{'Please select city first'|__}}" data-live-search="true">
+                                                <option data-hidden="true"></option>
+                                                {% for county in areas %}
+                                                    <option value="{{county.id}}" {% if currentLang != 'en' %}data-subtext="{{county.lang(currentLang).name}}"{% endif %}>{{county.lang('en').name}}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="form-group col-lg-12">
+                                            <label>{{'Google Map'|__}}</label>
+                                            <div class="col-sm-12 map_canvas map_receiveraddress"></div>
+                                            <span class="form-text text-muted">{{'Change the pin to select the right location'|__}}</span>
+                                        </div>
+                                    </div>
+                                </div>
+            				</div>
+                            <div class="kt-portlet__foot">
+                				<div class="row align-items-center">
+                					<div class="col-lg-12">
+                						<button type="button" class="btn btn-success save">{{'Save'|__}}</button>
+                						<button type="button" class="btn btn-secondary cancel">{{'Cancel'|__}}</button>
+                					</div>
+                				</div>
+                			</div>
+            			</div>
+        			</div>
+                    <div class="kt-separator kt-separator--border-dashed kt-separator--space-lg kt-separator--portlet-fit"></div>
+                    <div class="form-group row">
+                        <label class="col-xl-3 col-lg-3 col-form-label">{{'Return package cost'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <div class="col-lg-9 col-xl-6">
+                            <div class="kt-radio-inline">
+                                <label class="kt-radio">
+                                    <input type="radio" name="return_defray" class="return_defray" value="1" {% if order.return_defray == 1 %}checked{% endif %} required> {{'Yes'|__}}
+                                    <span></span>
+                                </label>
+                                <label class="kt-radio">
+                                    <input type="radio" name="return_defray" class="return_defray" value="2" {% if order.return_defray == 2 %}checked{% endif %} required> {{'No'|__}}
+                                    <span></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row {% if return_defray == 2 %}kt-hidden{% endif %} package_fee">
+                        <label class="col-xl-3 col-lg-3 col-form-label">{{'Package Cost'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <div class="col-lg-9 col-xl-6">
+                            <div class="input-group">
+                                {% if primary_currency.place_symbol_before == 1 %}
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">
+                                            {{primary_currency.currency_symbol}}
+                                        </span>
+                                    </div>
+                                {% endif %}
+                					<input type="text" class="form-control" data-type='currency' name="package_fee" value="{{order.package_fee}}" required />
+                                {% if primary_currency.place_symbol_before == 0 %}
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            {{primary_currency.currency_symbol}}
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% if user.role_id != 5 %}
+                        <div class="form-group row {% if return_defray == 2 %}kt-hidden{% endif %} package_fee">
+                            <label class="col-xl-3 col-lg-3 col-form-label">{{'Return Shipment Cost'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                            <div class="col-lg-9 col-xl-6">
+                                <div class="input-group">
+                                    {% if primary_currency.place_symbol_before == 1 %}
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">
+                                                {{primary_currency.currency_symbol}}
+                                            </span>
+                                        </div>
+                                    {% endif %}
+                    					<input type="text" class="form-control" data-type='currency' name="return_courier_fee" value="{{order.return_courier_fee}}" required />
+                                    {% if primary_currency.place_symbol_before == 0 %}
+                                        <div class="input-group-append">
+                                            <span class="input-group-text">
+                                                {{primary_currency.currency_symbol}}
+                                            </span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="form-group row {% if return_defray == 2 %}kt-hidden{% endif %} package_fee">
+                        <label class="col-xl-3 col-lg-3 col-form-label">{{'Return package fees responsiable'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <div class="col-lg-9 col-xl-6">
+                            <div class="kt-radio-inline">
+                                <label class="kt-radio">
+                                    <input type="radio" name="return_package_fee" value="1" {% if order.return_package_fee == 1 %}checked{% endif %} required> {{'Receiver'|__}}
+                                    <span></span>
+                                </label>
+                                <label class="kt-radio">
+                                    <input type="radio" name="return_package_fee" value="2" {% if order.return_package_fee == 2 %}checked{% endif %} required> {{'Sender'|__}}
+                                    <span></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-12 type_1">
+        <div class="kt-portlet">
+            <div class="kt-portlet__head">
+				<div class="kt-portlet__head-label">
+					<h3 class="kt-portlet__head-title">
+						{{'Shipment Details'|__}}
+					</h3>
+				</div>
+			</div>
+            <div class="kt-portlet__body">
+                <div class="form-group form-group-last kt-hide">
+    				<div class="alert alert-danger kt_form_msg" role="alert">
+    					<div class="alert-icon"><i class="flaticon-warning"></i></div>
+    				  	<div class="alert-text">
+                            {{'Oh snap! Change a few things up and try submitting again'|__}}.
+    					</div>
+    					<div class="alert-close">
+    						<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    					    	<span aria-hidden="true"><i class="la la-close"></i></span>
+    					  	</button>
+    					</div>
+    				</div>
+    			</div>
+                <div class="kt-section">
+					<h3 class="kt-section__title kt-margin-b-20">
+						{{'Package Content'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span>
+					</h3>
+					<div class="kt-section__content" id="kt_repeater_1">
+                        <div class="form-group form-group-last row">
+                            <div data-repeater-list="items" class="col-lg-12">
+                                <div data-repeater-item class="align-items-center new">
+                                    <div class="form-group row">
+                                        <div class="col-md-4">
+                                            <div class="kt-form__group--inline">
+                                                <div class="kt-form__label">
+                                                    <label>{{'Category'|__}}:</label>
+                                                </div>
+                                                <div class="kt-form__control">
+                                                    <select class="form-control selectpicker" data-live-search="true" name="category_id" required>
+                                                        <option data-hidden="true"></option>
+                                                        {% for category in categories %}
+                                                            <option value="{{category.id}}">{{category.name}}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="kt-form__group--inline">
+                                                <div class="kt-form__label">
+                                                    <label class="kt-label m-label--single">{{'Description'|__}}:</label>
+                                                </div>
+                                                <div class="kt-form__control">
+                                                    <input type="text" class="form-control" name="description">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-md-6">
+                                            <div class="kt-form__group--inline">
+                                                <div class="kt-form__label">
+                                                    <label class="kt-label m-label--single">{{'Quantity'|__}}:</label>
+                                                </div>
+                                                <div class="kt-form__control">
+                                                    <input type="text" class="form-control bootstrap-touchspin-vertical-btn" name="quantity" value="1">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="kt-form__group--inline">
+                                                <div class="kt-form__label">
+                                                    <label class="kt-label m-label--single">{{'Weight'|__}}:</label>
+                                                </div>
+                                                <div class="kt-form__control">
+                                                    <div class="input-group">
+                                						<div class="input-group-prepend"><span class="input-group-text">{{'Kg'|__}}</span></div>
+                        								<input type="text" class="form-control bootstrap-touchspin-vertical-btn" name="weight">
+                                					</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-md-12">
+                                            <div class="kt-form__group--inline">
+                                                <div class="kt-form__label">
+                                                    <label class="kt-label m-label--single">{{'Dimensions'|__}}&nbsp;<i class="flaticon2-delivery-package"></i>&nbsp;[{{'Length'|__}}&nbsp;x&nbsp;{{'Width'|__}}&nbsp;x&nbsp;{{'Height'|__}}] ({{'cm'|__}}):</label>
+                                                </div>
+                                                <div class="kt-form__control">
+                                                    <div class="input-group">
+                        								<div class="input-group-prepend">
+                                                            <span class="input-group-text">
+                                                                <input type="text" class="form-control form-control-sm bootstrap-touchspin-vertical-btn" name="length" style="max-width: 100px;">
+                                                            </span>
+                                                        </div>
+                        								<div class="input-group-prepend"><span class="input-group-text">x</span></div>
+                        								<div class="input-group-prepend">
+                                                            <span class="input-group-text">
+                                                                <input type="text" class="form-control form-control-sm bootstrap-touchspin-vertical-btn" name="width" style="max-width: 100px;">
+                                                            </span>
+                                                        </div>
+                        								<div class="input-group-prepend"><span class="input-group-text">x</span></div>
+                        								<div class="input-group-append">
+                                                            <span class="input-group-text">
+                                                                <input type="text" class="form-control form-control-sm bootstrap-touchspin-vertical-btn" name="height" style="max-width: 100px;">
+                                                            </span>
+                                                        </div>
+                        							</div>
+                                                </div>
+                                            </div>
+                                            <div class="d-md-none kt-margin-b-10"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-md-3">
+                                            <a href="javascript:;" data-repeater-delete="" class="btn-sm btn btn-label-danger btn-bold kt-margin-t-25 delete_btn">
+                                                <i class="la la-trash-o"></i>
+                                                {{'Delete'|__}}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% for item in order.items %}
+                                    <div data-repeater-item class="align-items-center">
+                                        <input type="hidden" name="id" value="{{item.id}}" />
+                                        <div class="form-group row">
+                                            <div class="col-md-4">
+                                                <div class="kt-form__group--inline">
+                                                    <div class="kt-form__label">
+                                                        <label>{{'Category'|__}}:</label>
+                                                    </div>
+                                                    <div class="kt-form__control">
+                                                        <select class="form-control selectpicker" data-live-search="true" name="category_id" required>
+                                                            <option data-hidden="true"></option>
+                                                            {% for category in categories %}
+                                                                <option value="{{category.id}}" {% if item.category_id == category.id %}selected{% endif %}>{{category.name}}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="kt-form__group--inline">
+                                                    <div class="kt-form__label">
+                                                        <label class="kt-label m-label--single">{{'Description'|__}}:</label>
+                                                    </div>
+                                                    <div class="kt-form__control">
+                                                        <input type="text" class="form-control" name="description" value="{{item.description}}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <div class="col-md-6">
+                                                <div class="kt-form__group--inline">
+                                                    <div class="kt-form__label">
+                                                        <label class="kt-label m-label--single">{{'Quantity'|__}}:</label>
+                                                    </div>
+                                                    <div class="kt-form__control">
+                                                        <input type="text" class="form-control bootstrap-touchspin-vertical-btn" name="quantity" value="{{item.quantity}}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="kt-form__group--inline">
+                                                    <div class="kt-form__label">
+                                                        <label class="kt-label m-label--single">{{'Weight'|__}}:</label>
+                                                    </div>
+                                                    <div class="kt-form__control">
+                                                        <div class="input-group">
+                                    						<div class="input-group-prepend"><span class="input-group-text">{{'Kg'|__}}</span></div>
+                            								<input type="text" class="form-control bootstrap-touchspin-vertical-btn" name="weight" value="{{item.weight}}">
+                                    					</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <div class="col-md-12">
+                                                <div class="kt-form__group--inline">
+                                                    <div class="kt-form__label">
+                                                        <label class="kt-label m-label--single">{{'Dimensions'|__}}&nbsp;<i class="flaticon2-delivery-package"></i>&nbsp;[{{'Length'|__}}&nbsp;x&nbsp;{{'Width'|__}}&nbsp;x&nbsp;{{'Height'|__}}] ({{'cm'|__}}):</label>
+                                                    </div>
+                                                    <div class="kt-form__control">
+                                                        <div class="input-group">
+                            								<div class="input-group-prepend">
+                                                                <span class="input-group-text">
+                                                                    <input type="text" class="form-control form-control-sm bootstrap-touchspin-vertical-btn" name="length" value="{{item.length}}" style="max-width: 100px;">
+                                                                </span>
+                                                            </div>
+                            								<div class="input-group-prepend"><span class="input-group-text">x</span></div>
+                            								<div class="input-group-prepend">
+                                                                <span class="input-group-text">
+                                                                    <input type="text" class="form-control form-control-sm bootstrap-touchspin-vertical-btn" name="width" value="{{item.width}}" style="max-width: 100px;">
+                                                                </span>
+                                                            </div>
+                            								<div class="input-group-prepend"><span class="input-group-text">x</span></div>
+                            								<div class="input-group-append">
+                                                                <span class="input-group-text">
+                                                                    <input type="text" class="form-control form-control-sm bootstrap-touchspin-vertical-btn" name="height" value="{{item.height}}" style="max-width: 100px;">
+                                                                </span>
+                                                            </div>
+                            							</div>
+                                                    </div>
+                                                </div>
+                                                <div class="d-md-none kt-margin-b-10"></div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <div class="col-md-3">
+                                                <a href="javascript:;" data-repeater-delete="" class="btn-sm btn btn-label-danger btn-bold kt-margin-t-25">
+                                                    <i class="la la-trash-o"></i>
+                                                    {{'Delete'|__}}
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                         </div>
+                         <div class="form-group form-group-last row">
+                             <label class="col-xl-3 col-lg-3 col-form-label">
+                                 <a href="javascript:;" data-repeater-create="" class="btn btn-bold btn-sm btn-label-brand">
+                                     <i class="la la-plus"></i> {{'Add Item'|__}}
+                                 </a>
+                             </label>
+                        </div>
+                    </div>
+                </div>
+                {% if user.role_id != 5 %}
+                    <div class="kt-separator kt-separator--border-dashed kt-separator--space-lg kt-separator--portlet-fit"></div>
+                    <div class="kt-section">
+    					<div class="kt-section__content">
+                            <div class="row">
+                                <div class="form-group col-lg-4">
+                                    <label>{{'Order Number'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                    <div class="input-group">
+                						<div class="input-group-prepend"><span class="input-group-text">{{settings.tracking.prefix_order}}</span></div>
+                						<input type="text" class="form-control mask" name="number" value="{{order.number}}" aria-describedby="basic-addon1">
+                					</div>
+                                </div>
+                                <div class="form-group col-lg-4">
+                                    <label>{{'Tax'|__}} & {{'Duty'|__}}</label>
+                                    <div class="input-group">
+                						<div class="input-group-prepend"><span class="input-group-text">%</span></div>
+                						<input type="text" class="form-control bootstrap-touchspin-vertical-btn" name="tax" value="{{order.tax}}">
+                					</div>
+                                </div>
+                                <div class="form-group col-lg-4">
+                                    <label>{{'Insurance'|__}}</label>
+                                    <div class="input-group">
+                						<div class="input-group-prepend"><span class="input-group-text">%</span></div>
+                						<input type="text" class="form-control bootstrap-touchspin-vertical-btn" name="insurance" value="{{order.insurance}}">
+                					</div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-lg-4">
+                                    <label>{{'Shipping Mode'|__}}</label>
+                                    <select class="form-control" data-live-search="true" name="mode_id">
+                                        <option data-hidden="true"></option>
+                                        {% for mode in modes %}
+                                            <option value="{{mode.id}}" {% if order.mode_id == mode.id %}selected{% endif %}>{{mode.name}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group col-lg-4">
+                                    <label>{{'Customs Value'|__}}</label>
+                                    <input type="text" class="form-control" name="customs_value" value="{{order.customs_value}}" aria-describedby="basic-addon1">
+                                </div>
+                                <div class="form-group col-lg-4">
+                                    <label>{{'Courier Company'|__}}</label>
+                                    <select class="form-control" data-live-search="true" name="courier_id">
+                                        <option data-hidden="true"></option>
+                                        {% for courier in couriers %}
+                                            <option value="{{courier.id}}" {% if order.courier_id == courier.id %}selected{% endif %}>{{courier.name}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-lg-4">
+                                    <label>{{'Shipping Fee'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                    <div class="input-group">
+                                        {% if primary_currency.place_symbol_before == 1 %}
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">
+                                                    {{primary_currency.currency_symbol}}
+                                                </span>
+                                            </div>
+                                        {% endif %}
+                                        <input type="text" class="form-control" data-type='currency' name="courier_fee" value="{{order.courier_fee}}" required>
+                                        {% if primary_currency.place_symbol_before == 0 %}
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">
+                                                    {{primary_currency.currency_symbol}}
+                                                </span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="form-group col-lg-4">
+                                    <label>{{'Delivery Time'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                    <select class="form-control" data-live-search="true" name="delivery_time_id" required>
+                                        <option data-hidden="true"></option>
+                                        {% for deliverytime in deliverytimes %}
+                                            <option value="{{deliverytime.id}}" {% if order.delivery_time_id == deliverytime.id %}selected{% endif %}>{{deliverytime.name}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group col-lg-4">
+                                    <label>{{'Delivery Status'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                    <select class="form-control" data-live-search="true" name="status_id" required>
+                                        <option data-hidden="true"></option>
+                                        {% for status in statuses %}
+                                            <option value="{{status.id}}_{{status.equal}}" {% if order.status_id == status.id %}selected{% endif %}>{{status.name}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            {% if (user.hasUserPermission('assign', 'c')) %}
+                                <div class="form-group row kt-margin-t-20">
+                                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Assign Employee'|__}}</label>
+                                    <div class="col-lg-9 col-xl-6">
+                                        <select class="form-control" data-live-search="true" name="assigned_id">
+                                            <option data-hidden="true"></option>
+                                            {% for employee in employees %}
+                                                <option value="{{employee.id}}" {% if order.assigned_id == employee.id %}selected{% endif %}>{{employee.name}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="kt-portlet">
+            <div class="kt-portlet__foot">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <button type="submit" class="btn btn-primary save">{{'Update'|__}}</button>
+                        <span class="kt-margin-left-10">{{'or'|__}} <a href="{{this.page.child_of|page}}" class="kt-link">{{'Cancel'|__}}</a></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{ form_close() }}
+
+{% put styles %}
+    <style>
+        .table-bordered tr td:first-child {
+            width: 200px;
+            font-weight: bold;
+        }
+        .map_canvas {
+          height: 350px;
+        }
+        .filter-option-inner br {
+            display: none;
+        }
+        .select2 {
+            width: 100% !important;
+        }
+		.select2-selection {
+			min-height: 36px !important;
+		}
+        #addnewsender,#addnewsenderaddress,#addnewreceiver,#addnewreceiveraddress{
+            box-shadow: 0px 0px 2px 1px rgba(0,0,0,0.3);
+        }
+        .kt-portlet .kt-portlet__head .kt-portlet__head-label .kt-portlet__head-title {
+            font-weight: 700;
+        }
+    </style>
+{% endput %}
+{% put scripts %}
+<script src="{{ 'assets/admin/vendors/custom/geocomplete/jquery.geocomplete.js'|theme }}" type="text/javascript"></script>
+<script src="//maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyCjN-FapLWoOHL6QOnVcwjFmesRdCyUiAc"></script>
+<script type="text/javascript">
+KTUtil.ready(function () {
+    $( ".kt_form" ).validate({
+        ignore: ":hidden",
+        invalidHandler: function(event, validator) {
+            var alert = $('.kt_form_msg');
+            alert.removeClass('kt--hide').show();
+            KTUtil.scrollTop();
+        }
+    });
+
+    function formatRepo(repo) {
+        if (repo.loading) return repo.text;
+        var markup = "<div class='select2-result-repository clearfix'>" +
+                        "<div class='select2-result-repository__meta'>" +
+                        "<div class='select2-result-repository__title'>" + repo.text + "</div>";
+                        if (repo.mobile) {
+                            markup += "<div class='select2-result-repository__description'>" + repo.mobile + "</div>";
+                        }
+                    markup += "</div></div>";
+        return markup;
+    }
+
+    function formatRepoSelection(repo) {
+        return repo.text || repo.id;
+    }
+
+
+    $('body').on('click', '#type', function(e){
+        var selected = $(this).val();
+        if(selected == 2){
+            $('.type_2').removeClass('kt-hidden');
+            $('.type_1').addClass('col-lg-6');
+            $('.type_1').removeClass('col-lg-12');
+        }else{
+            $('.type_2').addClass('kt-hidden');
+            $('.type_1').removeClass('col-lg-6');
+            $('.type_1').addClass('col-lg-12');
+        }
+    });
+    $('body').on('change', '#sender_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected == 'new'){
+            $('select.sender_address_id').html('').val('').selectpicker('refresh');
+            $('#addnewsender').removeClass('kt-hidden');
+            $('.payment').addClass('kt-hidden');
+        }else if(selected != ''){
+            $('#addnewsender').addClass('kt-hidden');
+            $.request('onClientaddresses', {
+                 data: {id: selected},
+                 success: function(response, status, xhr, $form) {
+                     $('select.sender_address_id').html(response.html).selectpicker('refresh');
+                     $('select.sender_address_id').val(response.default).selectpicker('refresh');
+                     {% if addShipmentForm == "add_form_normal" %}
+                     $('#clearance').val(response.clearance);
+                     $('#fiscal').val(response.fiscal);
+                     $('#payment_term').val(response.payment_term);
+                     $('#price_kg').val(response.price_kg);
+                     if(response.storage_fee == 1){
+                        $('#storage_yes').prop('checked',true);
+                        $('#cost_24').val(response.cost_24);
+                        $('#cost_48').val(response.cost_48);
+                        $('#ccost').removeClass('kt-hidden');   
+                     }else{
+                        $('#storage_no').prop('checked',true);
+                        $('#ccost').addClass('kt-hidden');
+                     }
+                     $('.payment').removeClass('kt-hidden');
+                     {% endif %}
+                     if(response.default == 'new'){
+                         $('#addnewsenderaddress').removeClass('kt-hidden');
+                     }else if(selected != ''){
+                         $('#addnewsenderaddress').addClass('kt-hidden');
+                     }
+                 }
+            });
+        }
+    });
+    $('body').on('click', '#addnewsender .save', function(e){
+        e.preventDefault();
+        var parent = $('#addnewsender');
+        var validation = 1;
+        parent.find('input,select').each(function(){
+            if($(this).is(':hidden')){
+                return;
+            }
+            if($(this).valid() == false){
+                validation = 0;
+            }
+        });
+
+        if(validation){
+            KTApp.blockPage({
+                overlayColor: '#000000',
+                type: 'v2',
+                state: 'primary',
+                message: '{{"Processing, please wait"|__}}...'
+            });
+            $.request('onNewclient', {
+                 {% if addShipmentForm == "add_form_normal" %}
+                 data: {name: parent.find('.name').val(),email: parent.find('.email').val(), vat: parent.find('.vat').val(),budget: parent.find('.budget').val() ,street_addr: parent.find('.street').val(), num: parent.find('.num').val(), box: parent.find('.box').val(), city_id: parent.find('.city_id').find("option:selected").val(), postal_code: parent.find('.postal_code').val(),  country_id: parent.find('.country_id').find("option:selected").val(), lang: parent.find('.lang').find("option:selected").val(), clearance: parent.find('.clearance').val(), fiscal: parent.find('.fiscal').val(),payment_term: parent.find('.payment_term').val(),price_kg: parent.find('.price_kg').val(),storage_fee: parent.find('.feeRadio:checked').val(),cost_24: parent.find('.cost_24').val(),cost_48: parent.find('.cost_48').val()},
+                 {% else %}
+                 data: { name: parent.find('.name').val(), mobile: parent.find('.mobile').val(), email: parent.find('.email').val(), gender: parent.find('.gender:checked').val(), street_addr: parent.find('.street_addr').val(), lat: parent.find('.lat').val(), lng: parent.find('.lng').val(), url: parent.find('.url').val(), area_id: parent.find('.area_id').find("option:selected").val(), city_id: parent.find('.city_id').find("option:selected").val(), postal_code: parent.find('.postal_code').val(), state_id: parent.find('.state_id').find("option:selected").val(), country_id: parent.find('.country_id').find("option:selected").val(), connect: parent.find('.connect:checked').val(), username: parent.find('.username').val(), password: parent.find('.password').val()},
+                 {% endif %}
+                 error: function(response, status, xhr, $form) {
+                     swal.fire({
+                         title: '{{"Error!"|__}}',
+                         text: response.responseText,
+                         type: 'error',
+                         buttonsStyling: false,
+                         confirmButtonText: '{{"OK"|__}}',
+                         confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                     });
+                     KTApp.unblockPage();
+                 },
+                 success: function(response, status, xhr, $form) {
+                     var newOption = new Option(response.name, response.id, false, true);
+                     $('#sender_id').append(newOption).trigger('change');
+                     $('select.sender_address_id').html('<option value="'+response.address_id+'">'+response.address_name+'</option>').selectpicker('refresh');
+                     $('select.sender_address_id').val(response.address_id).selectpicker('refresh');
+                     {% if addShipmentForm == "add_form_normal" %}
+                     $('#clearance').val(response.clearance);
+                     $('#fiscal').val(response.fiscal);
+                     $('#payment_term').val(response.payment_term);
+                     $('#price_kg').val(response.price_kg);
+                     if(response.storage_fee == 1){
+                        $('#storage_yes').prop('checked',true);
+                        $('#cost_24').val(response.cost_24);
+                        $('#cost_48').val(response.cost_48);
+                        $('#ccost').removeClass('kt-hidden');   
+                     }else{
+                        $('#storage_no').prop('checked',true);
+                        $('#ccost').addClass('kt-hidden');
+                     }
+                     $('.payment').removeClass('kt-hidden');
+                     {% endif %}
+                     KTApp.unblockPage();
+                     parent.find('input,select').each(function(){
+                         $(this).val('');
+                         $(this).selectpicker('refresh');
+                     });
+                     $('#addnewsender').addClass('kt-hidden');
+                 }
+            });
+        }
+    });
+    $('body').on('click', '#addnewsender .cancel', function(e){
+        e.preventDefault();
+        var newOption = new Option('', '', false, true);
+        $('#sender_id').append(newOption).trigger('change');
+        $('#addnewsender').addClass('kt-hidden');
+    });
+
+    $('body').on('changed.bs.select', '.sender_address_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected == 'new'){
+            $('#addnewsenderaddress').removeClass('kt-hidden');
+        }else if(selected != ''){
+            $('#addnewsenderaddress').addClass('kt-hidden');
+        }
+    });
+    $('body').on('click', '#addnewsenderaddress .save', function(e){
+        e.preventDefault();
+        var parent = $('#addnewsenderaddress');
+        var validation = 1;
+        parent.find('input,select').each(function(){
+            if($(this).is(':hidden')){
+                return;
+            }
+            if($(this).valid() == false){
+                validation = 0;
+            }
+        });
+
+        if(validation){
+            KTApp.blockPage({
+                overlayColor: '#000000',
+                type: 'v2',
+                state: 'primary',
+                message: '{{"Processing, please wait"|__}}...'
+            });
+            //alert($('#sender_id').val());
+            $.request('onNewclientaddress', {
+                {% if addShipmentForm == "add_form_normal" %}
+                 data: {client_id: $('#sender_id').val(),street_addr: parent.find('.street_addr').val(), city_id: parent.find('.city_id').find("option:selected").val(), postal_code: parent.find('.postal_code').val(),  country_id: parent.find('.country_id').find("option:selected").val()},
+                 {% else %}
+                 data: {client_id: $('#sender_id').val(), street_addr: parent.find('.street_addr').val(), lat: parent.find('.lat').val(), lng: parent.find('.lng').val(), url: parent.find('.url').val(), area_id: parent.find('.area_id').find("option:selected").val(), city_id: parent.find('.city_id').find("option:selected").val(), postal_code: parent.find('.postal_code').val(), state_id: parent.find('.state_id').find("option:selected").val(), country_id: parent.find('.country_id').find("option:selected").val()},
+                 {% endif %}                 
+                 error: function(response, status, xhr, $form) {
+                     swal.fire({
+                         title: '{{"Error!"|__}}',
+                         text: response.responseText,
+                         type: 'error',
+                         buttonsStyling: false,
+                         confirmButtonText: '{{"OK"|__}}',
+                         confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                     });
+                     KTApp.unblockPage();
+                 },
+                 success: function(response, status, xhr, $form) {
+                     $('select.sender_address_id').html(response.html).selectpicker('refresh');
+                     $('select.sender_address_id').val(response.default).selectpicker('refresh');
+                     KTApp.unblockPage();
+                     parent.find('input,select').each(function(){
+                         $(this).val('');
+                         $(this).selectpicker('refresh');
+                     });
+                     $('#addnewsenderaddress').addClass('kt-hidden');
+                 }
+            });
+        }
+    });
+    $('body').on('click', '#addnewsenderaddress .cancel', function(e){
+        e.preventDefault();
+        $('select.sender_address_id').val('').selectpicker('refresh');
+        $('#addnewsenderaddress').addClass('kt-hidden');
+    });
+
+
+
+    $('body').on('change', '#receiver_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected == 'new'){
+            $('select.receiver_address_id').html('').val('').selectpicker('refresh');
+            $('#addnewreceiver').removeClass('kt-hidden');
+        }else if(selected != ''){
+            $('#addnewreceiver').addClass('kt-hidden');
+            $.request('onClientaddresses', {
+                 data: {id: selected},
+                 success: function(response, status, xhr, $form) {
+                     $('select.receiver_address_id').html(response.html).selectpicker('refresh');
+                     $('select.receiver_address_id').val(response.default).selectpicker('refresh');
+                     if(response.default == 'new'){
+                         $('#addnewreceiveraddress').removeClass('kt-hidden');
+                     }else if(selected != ''){
+                         $('#addnewreceiveraddress').addClass('kt-hidden');
+                     }
+                 }
+            });
+        }
+    });
+    $('body').on('click', '#addnewreceiver .save', function(e){
+        e.preventDefault();
+        var parent = $('#addnewreceiver');
+        var validation = 1;
+        parent.find('input,select').each(function(){
+            if($(this).is(':hidden')){
+                return;
+            }
+            if($(this).valid() == false){
+                validation = 0;
+            }
+        });
+
+        if(validation){
+            KTApp.blockPage({
+                overlayColor: '#000000',
+                type: 'v2',
+                state: 'primary',
+                message: '{{"Processing, please wait"|__}}...'
+            });
+            $.request('onNewclient', {
+                 data: {name: parent.find('.name').val(), mobile: parent.find('.mobile').val(), email: parent.find('.email').val(), gender: parent.find('.gender:checked').val(), street_addr: parent.find('.street_addr').val(), lat: parent.find('.lat').val(), lng: parent.find('.lng').val(), url: parent.find('.url').val(), area_id: parent.find('.area_id').find("option:selected").val(), city_id: parent.find('.city_id').find("option:selected").val(), postal_code: parent.find('.postal_code').val(), state_id: parent.find('.state_id').find("option:selected").val(), country_id: parent.find('.country_id').find("option:selected").val(), connect: parent.find('.connect:checked').val(), username: parent.find('.username').val(), password: parent.find('.password').val()},
+                 error: function(response, status, xhr, $form) {
+                     swal.fire({
+                         title: '{{"Error!"|__}}',
+                         text: response.responseText,
+                         type: 'error',
+                         buttonsStyling: false,
+                         confirmButtonText: '{{"OK"|__}}',
+                         confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                     });
+                     KTApp.unblockPage();
+                 },
+                 success: function(response, status, xhr, $form) {
+                     var newOption = new Option(response.name, response.id, false, true);
+                     $('#receiver_id').append(newOption).trigger('change');
+                     $('select.receiver_address_id').html('<option value="'+response.address_id+'">'+response.address_name+'</option>').selectpicker('refresh');
+                     $('select.receiver_address_id').val(response.address_id).selectpicker('refresh');
+                     KTApp.unblockPage();
+                     parent.find('input,select').each(function(){
+                         $(this).val('');
+                         $(this).selectpicker('refresh');
+                     });
+                     $('#addnewreceiver').addClass('kt-hidden');
+                 }
+            });
+        }
+    });
+    $('body').on('click', '#addnewreceiver .cancel', function(e){
+        e.preventDefault();
+        var newOption = new Option('', '', false, true);
+        $('#receiver_id').append(newOption).trigger('change');
+        $('#addnewreceiver').addClass('kt-hidden');
+    });
+
+    $('body').on('changed.bs.select', '.receiver_address_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected == 'new'){
+            $('#addnewreceiveraddress').removeClass('kt-hidden');
+        }else if(selected != ''){
+            $('#addnewreceiveraddress').addClass('kt-hidden');
+        }
+    });
+    $('body').on('click', '#addnewreceiveraddress .save', function(e){
+        e.preventDefault();
+        var parent = $('#addnewreceiveraddress');
+        var validation = 1;
+        parent.find('input,select').each(function(){
+            if($(this).is(':hidden')){
+                return;
+            }
+            if($(this).valid() == false){
+                validation = 0;
+            }
+        });
+
+        if(validation){
+            KTApp.blockPage({
+                overlayColor: '#000000',
+                type: 'v2',
+                state: 'primary',
+                message: '{{"Processing, please wait"|__}}...'
+            });
+            $.request('onNewclientaddress', {
+                 data: {client_id: $('#receiver_id').val(), street_addr: parent.find('.street_addr').val(), lat: parent.find('.lat').val(), lng: parent.find('.lng').val(), url: parent.find('.url').val(), area_id: parent.find('.area_id').find("option:selected").val(), city_id: parent.find('.city_id').find("option:selected").val(), postal_code: parent.find('.postal_code').val(), state_id: parent.find('.state_id').find("option:selected").val(), country_id: parent.find('.country_id').find("option:selected").val()},
+                 error: function(response, status, xhr, $form) {
+                     swal.fire({
+                         title: '{{"Error!"|__}}',
+                         text: response.responseText,
+                         type: 'error',
+                         buttonsStyling: false,
+                         confirmButtonText: '{{"OK"|__}}',
+                         confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                     });
+                     KTApp.unblockPage();
+                 },
+                 success: function(response, status, xhr, $form) {
+                     $('select.receiver_address_id').html(response.html).selectpicker('refresh');
+                     $('select.receiver_address_id').val(response.default).selectpicker('refresh');
+                     KTApp.unblockPage();
+                     parent.find('input,select').each(function(){
+                         $(this).val('');
+                         $(this).selectpicker('refresh');
+                     });
+                     $('#addnewreceiveraddress').addClass('kt-hidden');
+                 }
+            });
+        }
+    });
+    $('body').on('click', '#addnewreceiveraddress .cancel', function(e){
+        e.preventDefault();
+        $('select.receiver_address_id').val('').selectpicker('refresh');
+        $('#addnewreceiveraddress').addClass('kt-hidden');
+    });
+
+
+    $('body').on('changed.bs.select', '.country_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        var parent = $(e.currentTarget).parent().parent().parent().parent();
+        if(selected != ''){
+            {% if addShipmentForm == "add_form_normal" %}
+            $.request('onListcities', {
+                 data: {id: selected},
+                 success: function(response, status, xhr, $form) {
+                      parent.find('select.city_id').selectpicker({title: '{{'Select'|__}}'}).selectpicker('refresh');
+                      parent.find('select.city_id').html(response.html).selectpicker('refresh');
+                 }
+            });
+            {% else %}
+            $.request('onListstates', {
+                 data: {id: selected},
+                 success: function(response, status, xhr, $form) {
+                      parent.find('select.state_id').selectpicker({title: '{{'Select'|__}}'}).selectpicker('refresh');
+                      parent.find('select.state_id').html(response.html).selectpicker('refresh');
+                 }
+            });
+            {% endif %}
+       }
+    });
+    $('body').on('changed.bs.select', '.state_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        var parent = $(e.currentTarget).parent().parent().parent().parent();
+        if(selected != ''){
+            $.request('onListcities', {
+                 data: {id: selected},
+                 success: function(response, status, xhr, $form) {
+                      parent.find('select.city_id').selectpicker({title: '{{'Select'|__}}'}).selectpicker('refresh');
+                      parent.find('select.city_id').html(response.html).selectpicker('refresh');
+                 }
+            });
+       }
+    });
+    $('body').on('changed.bs.select', '.city_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        var parent = $(e.currentTarget).parent().parent().parent().parent();
+        if(selected != ''){
+            $.request('onListareas', {
+                 data: {id: selected},
+                 success: function(response, status, xhr, $form) {
+                      parent.find('select.area_id').selectpicker({title: '{{'Select'|__}}'}).selectpicker('refresh');
+                      parent.find('select.area_id').html(response.html).selectpicker('refresh');
+                 }
+            });
+       }
+    });
+
+
+    $(".clients").select2({
+        {% if currentLang == 'ar'%}
+            dir: "rtl",
+        {% endif %}
+        language: {
+            errorLoading: function () {
+                return "{{'There is an error while searching'|__}}...";
+            },
+            inputTooLong: function (args) {
+                return "{{'You must enter less characters'|__}}...";
+            },
+            inputTooShort: function (args) {
+                return "{{'You must enter more characters'|__}}...";
+            },
+            loadingMore: function () {
+                return "{{'Loading More'|__}}...";
+            },
+            maximumSelected: function (args) {
+                return "{{'Maximum element has been selected'|__}}...";
+            },
+            noResults: function () {
+                return "{{'No result found'|__}}...";
+            },
+            searching: function () {
+                return "{{'Searching'|__}}...";
+            }
+        },
+        placeholder: "{{'Search for client'|__}}",
+        allowClear: true,
+        ajax: {
+            transport: function(params, success, failure) {
+                var $request = $.request('onGetclients', {
+                    data: params.data,
+                })
+                $request.done(success)
+                $request.fail(failure)
+
+                return $request
+            },
+            dataType: 'json',
+            processResults: function (response) {
+                return {
+                    results: response
+                };
+            },
+            cache: true
+        },
+        escapeMarkup: function(markup) {
+            return markup;
+        },
+        minimumInputLength: 0,
+        templateResult: formatRepo,
+        templateSelection: formatRepoSelection
+    });
+    $('#kt_repeater_1').repeater({
+        initEmpty: false,
+        show: function () {
+            $(this).slideDown();
+            $('.selectpicker').selectpicker({
+                noneSelectedText: '{{"Nothing selected"|__}}',
+            });
+            $('.bootstrap-touchspin-vertical-btn').TouchSpin({
+                buttondown_class: 'btn btn-secondary',
+                buttonup_class: 'btn btn-secondary',
+                verticalbuttons: true,
+                verticalup: '<i class="la la-plus"></i>',
+                verticaldown: '<i class="la la-minus"></i>'
+            });
+        },
+        hide: function (deleteElement) {
+            $(this).slideUp(deleteElement);
+        }
+    });
+    $('#kt_repeater_1 .new .delete_btn').trigger('click');
+    $('.bootstrap-touchspin-vertical-btn').TouchSpin({
+        buttondown_class: 'btn btn-secondary',
+        buttonup_class: 'btn btn-secondary',
+        verticalbuttons: true,
+        verticalup: '<i class="la la-plus"></i>',
+        verticaldown: '<i class="la la-minus"></i>'
+    });
+
+    $('.address').each(function(){
+        var address = $(this);
+        address.geocomplete({
+            map: ".map_canvas.map_"+address.attr('rel'),
+            mapOptions: {
+                zoom: 18
+            },
+            markerOptions: {
+                draggable: true
+            },
+            details: ".location-"+$(this).attr('rel'),
+            detailsAttribute: 'data-'+$(this).attr('rel'),
+            autoselect: true,
+        });
+        address.bind("geocode:dragged", function(event, latLng){
+            $("input[data-"+address.attr('rel')+"=lat]").val(latLng.lat());
+            $("input[data-"+address.attr('rel')+"=lng]").val(latLng.lng());
+        });
+
+    });
+
+    $('body').on('click', '.connect', function(){
+        if($(this).is(":checked")){
+            $('#connect_'+$(this).val()).removeClass('kt-hidden');
+        }else{
+            $('#connect_'+$(this).val()).addClass('kt-hidden');
+        }
+    });
+
+     $('body').on('change', '#label_other', function(){
+        if($(this).val() == 'other')
+            $('#div_label_other').removeClass('kt-hidden');
+        else
+            $('#div_label_other').addClass('kt-hidden');
+    });
+
+    $('body').on('change', '.feeRadio', function(){
+        if($(this).val() == 'yes')
+            $('#cost').removeClass('kt-hidden');
+        else
+            $('#cost').addClass('kt-hidden');
+    });
+
+    $('body').on('change', '.cfeeRadio', function(){
+        if($(this).val() == 'yes')
+            $('#ccost').removeClass('kt-hidden');
+        else
+            $('#ccost').addClass('kt-hidden');
+    });
+
+    $('body').on('click', '.return_defray', function(){
+        if($(this).val() == 1){
+            $('.package_fee').removeClass('kt-hidden');
+        }else{
+            $('.package_fee').addClass('kt-hidden');
+        }
+    });
+    $(".fees").inputmask('999{{primary_currency.thousand_separator}}999{{primary_currency.thousand_separator}}999{{primary_currency.decimal_point}}{% for i in '1'..primary_currency.initbiz_money_fraction_digits %}9{% endfor %}', {
+        numericInput: true
+    });
+
+    $("body").on('keyup', '.mask', function(e){
+        $(this).val(('{% for i in '1'..settings.tracking.numbers_order %}0{% endfor %}' + $(this).val()).slice(-{{settings.tracking.numbers_order}}));
+    });
+});
+</script>
+{% endput %}

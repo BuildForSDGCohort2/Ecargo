@@ -1,0 +1,534 @@
+title = "Employees"
+url = "/dashboard/employees"
+layout = "admin"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/dashboard"
+menu_breadcrumb = "employees"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+function onStart(){
+    if(!Auth::getUser()->hasUserPermission(["employees"],'r')) {
+        \Flash::error($this['theme_lang']['not_allowed']);
+    }
+
+    $this->page->listing        = true;
+
+    if(Auth::getUser()->hasUserPermission(["employees"],'c')    &&  Auth::getUser()->hasUserPermission(["departments"],'c')){
+        $this->page->actions = array(
+            'buttons'   =>  array(
+                array(
+                    'id'    =>  'addNew',
+                    'title' =>  $this['theme_lang']['add_new'],
+                    'icon'  =>  'flaticon2-add',
+                    'type'  =>  'success',
+                    'url'   =>  url('dashboard/settings/employees/create'),
+                ),
+                array(
+                    'id'    =>  'manageDepartments',
+                    'title' =>  $this['theme_lang']['manage_departmeents'],
+                    'icon'  =>  'flaticon-app',
+                    'type'  =>  'info',
+                    'url'   =>  url('dashboard/settings/departments'),
+                ),
+            ),
+        );
+    }elseif(Auth::getUser()->hasUserPermission(["employees"],'c')){
+        $this->page->actions = array(
+            'buttons'   =>  array(
+                array(
+                    'id'    =>  'addNew',
+                    'title' =>  $this['theme_lang']['add_new'],
+                    'icon'  =>  'flaticon2-add',
+                    'type'  =>  'success',
+                    'url'   =>  url('dashboard/employees/create'),
+                ),
+            ),
+        );
+
+    }
+
+}
+function onDelete()
+{
+
+    if($this['settings']['demo_mode']){
+      throw new ApplicationException('NOT ALLAOWED IN DEMO');
+      return false;
+    }
+
+    $data = post();
+    if(!Auth::getUser()->hasUserPermission(["employees"],'d')) {
+        return Response::json(['error' => $this['theme_lang']['not_allowed']], 401);
+    }
+
+    if(null !== post('id')){
+        if(is_array(post('id'))){
+            \RainLab\User\Models\User::whereIn('id',post('id'))->delete();
+        }else{
+            \RainLab\User\Models\User::find($data['id'])->delete();
+        }
+        return Redirect::back();
+    }
+}
+?>
+==
+<!--begin::Portlet-->
+<div class="kt-portlet">
+    <div class="kt-portlet__body">
+        <div class="kt-datatable"></div>
+    </div>
+</div>
+<!--end::Portlet-->
+
+{% put scripts %}
+<script type="text/javascript">
+"use strict";
+var KTAppUserListDatatable = function () {
+    // variables
+    var datatable;
+
+    // init
+    var init = function () {
+        // columns definition
+
+        datatable = $('.kt-datatable').KTDatatable({
+            translate: {
+                records: {
+                    processing: '{{"Please wait"|__}}...',
+                    noRecords: '{{"No records found"|__}}'
+                },
+                toolbar: {
+                    pagination: {
+                        items: {
+                            default: {
+                                first: '{{"First"|__}}',
+                                prev: '{{"Previous"|__}}',
+                                next: '{{"Next"|__}}',
+                                last: '{{"Last"|__}}',
+                                more: '{{"More pages"|__}}',
+                                input: '{{"Page number"|__}}',
+                                select: '{{"Select page size"|__}}'
+                            },
+
+                            info: "{{"Displaying"|__}} {{ '{{' }}start{{ '}}' }} - {{ '{{' }}end{{ '}}' }} {{"of"|__}} {{total}} {{"records"|__}}"
+                        }
+                    }
+                }
+            },
+
+            // layout definition
+            layout: {
+                scroll: true, // enable/disable datatable scroll both horizontal and vertical when needed.
+                footer: false, // display/hide footer
+            },
+
+            // column sorting
+            sortable: true,
+
+            pagination: true,
+
+            search: {
+                input: $('#generalSearch'),
+                delay: 400,
+            },
+            data: {
+                type: 'remote',
+                source: {
+                    read: {
+                        url: '{{url("api/employees")}}',
+                    },
+                },
+                pageSize: 10, // display 20 records per page
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true,
+            },
+            // columns definition
+
+            columns: [
+                {
+                    field: 'id',
+                    title: '#',
+                    sortable: false,
+                    width: 20,
+                    selector: {
+                        class: 'kt-checkbox--solid'
+                    },
+                    textAlign: 'center',
+                },
+                {
+                    field: "name",
+                    title: "{{'Name'|__}}",
+                    autoHide: false,
+                    sortable: false,
+                    width: 'auto',
+    				template: function(data, i) {
+    					var output = '\
+                            <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                                <div class="kt-user-card-v2__details">\
+                                    <a href="{{url('dashboard/employees')}}/'+data.id+'/view" class="kt-user-card-v2__name">' + data.name + '</a>\
+                                </div>\
+                            </div>';
+    					return output;
+    				}
+                },
+                {
+                    field: "role",
+                    title: "{{'Role'|__}}",
+                    autoHide: false,
+                    sortable: false,
+                    width: 'auto',
+                },
+                {
+                    field: "groups",
+                    title: "{{'Departments'|__}}",
+                    autoHide: false,
+                    sortable: false,
+                    width: 'auto',
+                    template: function (data) {
+                        if(data.groups){
+                            var i;
+                            var text = '-';
+                            for (i = 0; i < data.groups.length; i++) {
+                                if(text == '-'){
+                                    text = data.groups[i];
+                                }else{
+                                    if(i < data.groups.length){
+                                        text += ', ';
+                                    }
+                                    text += data.groups[i];
+                                }
+                            }
+                            return text;
+                        }else{
+                            return '-';
+                        }
+                    },
+                },
+                {
+                    field: "Actions",
+                    width: 'auto',
+                    title: "{{'Actions'|__}}",
+                    sortable: false,
+                    autoHide: false,
+                    overflow: 'visible',
+                    template: function (data) {
+                        return '' +
+                        '<div class="btn-group btn-group" role="group" aria-label="...">'+
+                            '<a href="{{url("dashboard/employees")}}/'+data.id+'/view" class="btn btn-success btn-sm"><i class="flaticon-eye"></i>&nbsp;{{"View"|__}}</button>'+
+                            {% if user.hasUserPermission('employees', 'u') %}
+                            '<a href="{{url("dashboard/settings/employees")}}/'+data.id+'/edit" class="btn btn-info btn-sm"><i class="flaticon-edit"></i>&nbsp;{{"Edit"|__}}</button>'+
+                            {% endif %}
+                            {% if user.hasUserPermission('employees', 'd') %}
+                            '<a href="javascript:void(0);" class="btn btn-danger btn-sm delete_record kt-font-light" rel="'+data.id+'" data-type="employees"><i class="flaticon2-delete"></i>&nbsp;{{"Delete"|__}}</a>'+
+                            {% endif %}
+                        '</div>';
+                    },
+                }
+            ]
+        });
+    };
+
+    // search
+    var search = function () {
+        $('#filter_form select,#filter_form input').each(function(){
+            $(this).on('change', function () {
+                datatable.search($(this).val().toLowerCase(), $(this).attr('name'));
+            });
+        });
+        $('#reset').on('click', function () {
+            datatable.destroy();
+            $('#generalSearch').val('');
+            $('#filter_form select,#filter_form input').each(function(){
+                $(this).val('');
+            });
+            $('#filter_form select').each(function(){
+                $(this).selectpicker("refresh");
+            });
+            init();
+        });
+    };
+
+    // selection
+    var selection = function () {
+        // init form controls
+        //$('#kt_form_status, #kt_form_type').selectpicker();
+
+        // event handler on check and uncheck on records
+        datatable.on('kt-datatable--on-check kt-datatable--on-uncheck kt-datatable--on-layout-updated', function (e) {
+            var checkedNodes = datatable.rows('.kt-datatable__row--active').nodes(); // get selected records
+            var count = checkedNodes.length; // selected records count
+
+            $('#kt_subheader_group_selected_rows').html(count);
+
+            if (count > 0) {
+                $('#kt_subheader_search').addClass('kt-hidden');
+                $('#kt_subheader_group_actions').removeClass('kt-hidden');
+            } else {
+                $('#kt_subheader_search').removeClass('kt-hidden');
+                $('#kt_subheader_group_actions').addClass('kt-hidden');
+            }
+        });
+    }
+
+    // selected records status update
+    var selectedStatusUpdate = function () {
+        $('#kt_subheader_group_actions_status_change').on('click', "[data-toggle='status-change']", function () {
+            var status = $(this).find(".kt-nav__link-text").html();
+
+            // fetch selected IDs
+            var ids = datatable.rows('.kt-datatable__row--active').nodes().find('.kt-checkbox--single > [type="checkbox"]').map(function (i, chk) {
+                return $(chk).val();
+            });
+
+            if (ids.length > 0) {
+                // learn more: //sweetalert2.github.io/
+                swal.fire({
+                    buttonsStyling: false,
+
+                    html: "{{"Are you sure to update"|__}} " + ids.length + " {{"selected records status to"|__}} " + status + " ?",
+                    type: "info",
+
+                    confirmButtonText: "{{"Yes, update"|__}}!",
+                    confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+
+                    showCancelButton: true,
+                    cancelButtonText: "{{"No, cancel"|__}}",
+                    cancelButtonClass: "btn btn-sm btn-bold btn-default"
+                }).then(function (result) {
+                    if (result.value) {
+                        swal.fire({
+                            title: '{{"Deleted"|__}}!',
+                            text: '{{"Your selected records statuses have been updated"|__}}!',
+                            type: 'success',
+                            buttonsStyling: false,
+                            confirmButtonText: "{{"OK"|__}}",
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        })
+                        // result.dismiss can be 'cancel', 'overlay',
+                        // 'close', and 'timer'
+                    } else if (result.dismiss === 'cancel') {
+                        swal.fire({
+                            title: '{{"Cancelled"|__}}',
+                            text: '{{"You selected records statuses have not been updated"|__}}!',
+                            type: 'error',
+                            buttonsStyling: false,
+                            confirmButtonText: "{{"OK"|__}}",
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    // selected records delete
+    var selectedDelete = function () {
+        $('#kt_subheader_group_actions_delete_all').on('click', function () {
+            // fetch selected IDs
+            var selected = [];
+            var type    = $('.delete_record').attr('data-type');
+            var ids = datatable.rows('.kt-datatable__row--active').nodes().find('.kt-checkbox--single > [type="checkbox"]').map(function (i, chk) {
+                selected[$(chk).val()] = $(chk).val();
+                return $(chk).val();
+            });
+
+            if (ids.length > 0) {
+                // learn more: //sweetalert2.github.io/
+                swal.fire({
+                    buttonsStyling: false,
+
+                    text: "{{'Are you sure to delete'|__}} " + ids.length + " {{'selected records ?'|__}}",
+                    type: "error",
+
+                    confirmButtonText: "{{'Yes, delete!'|__}}",
+                    confirmButtonClass: "btn btn-sm btn-bold btn-danger",
+
+                    showCancelButton: true,
+                    cancelButtonText: '{{"No, cancel"|__}}',
+                    cancelButtonClass: "btn btn-sm btn-bold btn-brand"
+                }).then(function (result) {
+                    if (result.value) {
+                        $.request('onDelete', {
+                            data: {id: selected,type: type},
+                            success: function(data) {
+                                swal.fire({
+                                    title: '{{"Deleted!"|__}}',
+                                    text: '{{"Your selected records have been deleted! :("|__}}',
+                                    type: 'success',
+                                    buttonsStyling: false,
+                                    confirmButtonText: '{{"OK"|__}}',
+                                    confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                                });
+                                datatable.reload();
+                            }
+                        });
+                        // result.dismiss can be 'cancel', 'overlay',
+                        // 'close', and 'timer'
+                    } else if (result.dismiss === 'cancel') {
+                        swal.fire({
+                            title: '{{"Cancelled"|__}}',
+                            text: '{{"You selected records have not been deleted! :)"|__}}',
+                            type: 'error',
+                            buttonsStyling: false,
+                            confirmButtonText: '{{"OK"|__}}',
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        });
+                    }
+                });
+            }
+        });
+
+
+        $('body').on('click','.delete_record',function(){
+            var id      = $(this).attr('rel');
+            var type    = $(this).attr('data-type');
+            swal.fire({
+                buttonsStyling: false,
+
+                text: "{{'Are you sure to delete this item ?'|__}}",
+                type: "danger",
+
+                confirmButtonText: "{{'Yes, delete!'|__}}",
+                confirmButtonClass: "btn btn-sm btn-bold btn-danger",
+
+                showCancelButton: true,
+                cancelButtonText: '{{"No, cancel"|__}}',
+                cancelButtonClass: "btn btn-sm btn-bold btn-brand"
+            }).then(function (result) {
+                if (result.value) {
+                    $.request('onDelete', {
+                        data: {id: id, type: type},
+                        success: function(data) {
+
+                            swal.fire({
+                                title: '{{"Deleted!"|__}}',
+                                text: '{{"Your selected record has been deleted! :("|__}}',
+                                type: 'success',
+                                buttonsStyling: false,
+                                confirmButtonText: '{{"OK"|__}}',
+                                confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                            });
+                            datatable.reload();
+                        }
+                    });
+                    // result.dismiss can be 'cancel', 'overlay',
+                    // 'close', and 'timer'
+                } else if (result.dismiss === 'cancel') {
+                    swal.fire({
+                        title: '{{"Cancelled"|__}}',
+                        text: '{{"You selected record has not been deleted! :)"|__}}',
+                        type: 'error',
+                        buttonsStyling: false,
+                        confirmButtonText: '{{"OK"|__}}',
+                        confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                    });
+                }
+            });
+        });
+
+
+        $('body').on('click', '#createManifest', function (e) {
+            e.preventDefault();
+
+            // fetch selected IDs
+            var selected = [];
+            var ids = datatable.rows('.kt-datatable__row--active').nodes().find('.kt-checkbox--single > [type="checkbox"]').map(function (i, chk) {
+                selected[$(chk).val()] = $(chk).val();
+                return $(chk).val();
+            });
+            if (ids.length > 0) {
+                // learn more: //sweetalert2.github.io/
+                swal.fire({
+                    buttonsStyling: false,
+
+                    text: "{{'Are you sure you want to create new manifest with'|__}} " + ids.length + " {{'selected records ?'|__}}",
+                    type: "error",
+
+                    confirmButtonText: "{{'Yes!'|__}}",
+                    confirmButtonClass: "btn btn-sm btn-bold btn-danger",
+
+                    showCancelButton: true,
+                    cancelButtonText: '{{"No, cancel"|__}}',
+                    cancelButtonClass: "btn btn-sm btn-bold btn-brand"
+                }).then(function (result) {
+                    if (result.value) {
+                        $('#manifest_id').val(selected);
+                        $('#manifest_modal').modal('toggle');
+                    } else if (result.dismiss === 'cancel') {
+                        swal.fire({
+                            title: '{{"Cancelled"|__}}',
+                            text: '{{"Your manifest not created! :)"|__}}',
+                            type: 'error',
+                            buttonsStyling: false,
+                            confirmButtonText: '{{"OK"|__}}',
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        });
+                    }
+                });
+            }
+        });
+
+        $('body').on('click', '#PrintEmployeeOrders', function (e) {
+            e.preventDefault();
+            $('#chooseEmployee').modal('toggle');
+        });
+
+    }
+
+    var updateTotal = function () {
+        datatable.on('kt-datatable--on-layout-updated', function () {
+            $('#kt_subheader_total').html(datatable.getTotalRows() + ' {{"Total"|__}}');
+        });
+    };
+
+    var reload = function () {
+        datatable.reload();
+    };
+
+    var destroy = function () {
+        datatable.destroy();
+        $('#generalSearch').val('');
+        $('#filter_form select,#filter_form input').each(function(){
+            $(this).val('');
+        });
+        $('#filter_form select').each(function(){
+            $(this).selectpicker("refresh");
+        });
+    };
+
+    return {
+        // public functions
+        init: function (type) {
+            init(type);
+            search();
+            selection();
+            selectedStatusUpdate();
+            selectedDelete();
+            updateTotal();
+        },
+
+        reload: function(){
+            reload();
+        },
+
+        destroy: function(){
+            destroy();
+        }
+    };
+}();
+
+KTUtil.ready(function () {
+    KTAppUserListDatatable.init();
+});
+</script>
+{% endput %}

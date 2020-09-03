@@ -1,0 +1,173 @@
+title = "Transaction View"
+url = "/dashboard/transactions/:id/view"
+layout = "admin"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/transactions"
+menu_breadcrumb = "transaction"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+function onStart(){
+    if(!Auth::getUser()->hasUserPermission(["transaction"],'r')) {
+        \Flash::error($this['theme_lang']['not_allowed']);
+    }
+
+    $this['item']      =   $item  =   \Spot\Shipment\Models\Payment::find($this->param('id'));
+    if(!$item){
+        \Flash::error($this['theme_lang']['404']);
+        return Redirect::to('dashboard/shipments');
+    }
+
+    $this->page->actions = array(
+        'buttons'   =>  array(
+            array(
+                'id'    =>  'Print',
+                'title' =>  $this['theme_lang']['print'],
+                'icon'  =>  'flaticon2-print',
+                'type'  =>  'info',
+                'url'   =>  url('dashboard/transactions/'.$this->param('id').'/print'),
+            ),
+        ),
+    );
+}
+?>
+==
+<div class="row">
+    <div class="col-xl-12">
+        <!--begin:: Widgets/Order Statistics-->
+        <div class="kt-portlet kt-portlet--height-fluid">
+        	<div class="kt-portlet__head">
+        		<div class="kt-portlet__head-label">
+        			<h3 class="kt-portlet__head-title">
+        				{{'Transaction Details'|__}}
+        			</h3>
+        		</div>
+        	</div>
+        	<div class="kt-portlet__body kt-portlet__body--fluid">
+        		<div class="kt-widget12">
+        			<div class="kt-widget12__content">
+                        <div class="kt-widget12__item">
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'ID'|__}}</span>
+                                <span class="kt-widget12__value">{{item.id}}</span>
+                            </div>
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'Date'|__}}</span>
+                                <span class="kt-widget12__value">{{item.date|date(settings.dateformat)}}</span>
+                            </div>
+                        </div>
+                        <div class="kt-widget12__item">
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'Movement'|__}}</span>
+                                <span class="kt-widget12__value">
+                                    {% if item.movement == 1 %}
+                                        <span class="btn btn-label-info btn-sm btn-bold btn-upper">{{"Withdrawl"|__}}</span>
+                                    {% elseif item.movement == 2 %}
+                                        <span class="btn btn-label-info btn-sm btn-bold btn-upper">{{"Deposit"|__}}</span>
+                                    {% elseif item.movement == 3 %}
+                                        <span class="btn btn-label-info btn-sm btn-bold btn-upper">{{"Deduction from the wallet"|__}}</span>
+                                    {% elseif item.movement == 4 %}
+                                        <span class="btn btn-label-info btn-sm btn-bold btn-upper">{{"Add to wallet"|__}}</span>
+                                    {% elseif item.movement == 5 %}
+                                        <span class="btn btn-label-info btn-sm btn-bold btn-upper">{{"Deduction of commission balance"|__}}</span>
+                                    {% elseif item.movement == 6 %}
+                                        <span class="btn btn-label-info btn-sm btn-bold btn-upper">{{"Add to the commission balance"|__}}</span>
+                                    {% elseif item.movement == 7 %}
+                                        <span class="btn btn-label-info btn-sm btn-bold btn-upper">{{"Deduction from the balance of packages"|__}}</span>
+                                    {% elseif item.movement == 8 %}
+                                        <span class="btn btn-label-info btn-sm btn-bold btn-upper">{{"Add  to the balance of packages"|__}}</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <!--
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Status'|__}}</span>
+                                    <span class="kt-widget12__value">
+                                        {% if item.movement == 1 %}
+                                            <span class="btn btn-label-warning btn-sm btn-bold btn-upper">{{"Pending"|__}}</span>
+                                        {% elseif item.movement == 2 %}
+                                            <span class="btn btn-label-info btn-sm btn-bold btn-upper">{{"Canceled"|__}}</span>
+                                        {% elseif item.movement == 3 %}
+                                            <span class="btn btn-label-success btn-sm btn-bold btn-upper">{{"Paid"|__}}</span>
+                                        {% elseif item.movement == 4 %}
+                                            <span class="btn btn-label-danger btn-sm btn-bold btn-upper">{{"Delyed"|__}}</span>
+                                        {% elseif item.movement == 5 %}
+                                            <span class="btn btn-label-success btn-sm btn-bold btn-upper">{{"Delivered"|__}}</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            -->
+                        </div>
+                        <div class="kt-widget12__item">
+                            {% if item.other or item.user or item.branch %}
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'For'|__}}</span>
+                                <span class="kt-widget12__value">{% if item.type == 1 %}{% if item.other %}{{item.other}}{% else %}{{item.user.name}}{% endif %}{% else %}{{item.branch.name}}{% endif %}</span>
+                                <span class="kt-widget12__value kt-font-sm">{% if item.type == 1 %}{% if item.other %}{% else %}{{item.user.role.name}}{% endif %}{% endif %}</span>
+                            </div>
+                            {% endif %}
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'Amount'|__}}</span>
+                                <span class="kt-widget12__value">{{item.amount|currency}}</span>
+                            </div>
+                            {% if item.treasury %}
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Treasury'|__}}</span>
+                                    <span class="kt-widget12__value">{{item.treasury.name}}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% if item.description %}
+                            <div class="kt-widget12__item">
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Description'|__}}</span>
+                                    <span class="kt-widget12__value">{{item.description}}</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if item.payment_type or item.payment_with %}
+                            <div class="kt-widget12__item">
+                                {% if item.payment_type %}
+                                    <div class="kt-widget12__info">
+                                        <span class="kt-widget12__desc">{{'Payment Type'|__}}</span>
+                                        <span class="kt-widget12__value">{{item.payment_type|replace({'_':' '})|capitalize|__}}</span>
+                                    </div>
+                                {% endif %}
+                                {% if item.payment_with and item.gotit.id != item.for_id %}
+                                    <div class="kt-widget12__info">
+                                        <span class="kt-widget12__desc">{{'Payment With'|__}}</span>
+                                        <span class="kt-widget12__value">{{item.gotit.name}}</span>
+                                        <span class="kt-widget12__value kt-font-sm">{{item.gotit.role.name}}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        {% if item.item_id %}
+                            <div class="kt-widget12__item">
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Shipment'|__}}</span>
+                                    <span class="kt-widget12__value"><a href="{{url('dashboard/shipments')}}/{{item.item_id}}/view">#{{item.item_id}}</a></span>
+                                </div>
+                            </div>
+                        {% endif %}
+        			</div>
+        		</div>
+        	</div>
+        </div>
+        <!--end:: Widgets/Order Statistics-->
+    </div>
+</div>
+{% put scripts %}
+<script type="text/javascript">
+KTUtil.ready(function () {
+});
+</script>
+{% endput %}

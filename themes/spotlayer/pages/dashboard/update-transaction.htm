@@ -1,0 +1,249 @@
+title = "Update Transaction"
+url = "/dashboard/transactions/:id/edit"
+layout = "admin"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/transactions"
+menu_breadcrumb = "transaction"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+function onStart() {
+    if(!Auth::getUser()->hasUserPermission(["transaction"],'u')) {
+        \Flash::error($this['theme_lang']['not_allowed']);
+        return Redirect::to('dashboard/transactions');
+    }
+
+    $this['employees']      =   \RainLab\User\Models\User::whereNotIn('role_id',[1,5])->select('id','name')->get();
+    $this['customers']      =   \RainLab\User\Models\User::where('role_id',5)->select('id','name')->get();
+    $this['offices']        =   \Spot\Shipment\Models\Office::get();
+    $this['item']           =   \Spot\Shipment\Models\Payment::find($this->param('id'));
+}
+function onSave()
+{
+    if(!Auth::getUser()->hasUserPermission(["fees"],'u')) {
+        throw new ApplicationException($this['theme_lang']['not_allowed']);
+    }
+    $data = post();
+
+    $item                   = \Spot\Shipment\Models\Payment::find($this->param('id'));
+    $item->type             = 1;
+    if($data['customer_id'] != ''){
+        $item->for_id           = htmlspecialchars($data['customer_id']);
+    }
+    if($data['employee_id'] != ''){
+        $item->for_id           = htmlspecialchars($data['employee_id']);
+    }
+    $item->movement         = htmlspecialchars($data['movement']);
+    if($data['other'] != ''){
+        $item->other            = htmlspecialchars($data['other']);
+    }
+    $item->description      = htmlspecialchars($data['description']);
+    $item->amount           = htmlspecialchars($data['amount']);
+    $item->status           = 5;
+    if(Auth::getUser()->role_id == 4){
+        $treasury               = \Spot\Shipment\Models\Treasury::where('office_id', Auth::getUser()->office)->first();
+        if(!$treasury){
+            $treasury           = \Spot\Shipment\Models\Treasury::where('default', 1)->first();
+        }
+    }else{
+        $treasury               = \Spot\Shipment\Models\Treasury::where('office_id', $data['office_id'])->first();
+        if(!$treasury){
+            $treasury           = \Spot\Shipment\Models\Treasury::where('default', 1)->first();
+        }
+    }
+    $item->treasury_id      = $treasury->id;
+    $item->updated_at       = \Carbon\Carbon::now();
+    $item->save();
+
+    \Flash::success($this['theme_lang']['created_successfully']);
+    return Redirect::to('dashboard/transactions');
+}
+?>
+==
+
+{{ form_ajax('onSave', { success: 'created successfully!', flash: true, class: 'kt_form' }) }}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="kt-portlet kt-portlet--mobile">
+            <div class="kt-portlet__body">
+                <div class="form-group form-group-last kt-hide">
+                    <div class="alert alert-danger kt_form_msg" role="alert">
+                        <div class="alert-icon"><i class="flaticon-warning"></i></div>
+                        <div class="alert-text">
+                            {{'Oh snap! Change a few things up and try submitting again'|__}}.
+                        </div>
+                        <div class="alert-close">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true"><i class="la la-close"></i></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'For'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    <div class="col-lg-9 col-xl-6">
+                        <select class="form-control" id="type" required>
+                            <option data-hidden="true"></option>
+                            <option value="employee">{{'Employee'|__}}</option>
+                            <option value="customer">{{'Client'|__}}</option>
+                            <option value="other">{{'Other'|__}}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Movement'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    <div class="col-lg-9 col-xl-6">
+                        <select class="form-control" name="movement" id="movement" required>
+                            <option data-hidden="true"></option>
+                            <option value="1">{{"Withdrawl"|__}}</option>
+                            <option value="2">{{"Deposit"|__}}</option>
+                            <option value="3">{{"Deduction from the wallet"|__}}</option>
+                            <option value="4">{{"Add to wallet"|__}}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row kt-hidden" id="other">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Other'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    <div class="col-lg-9 col-xl-6">
+                        <input type="text" class="form-control" name="other" required/>
+                    </div>
+                </div>
+                <div class="form-group row kt-hidden" id="employee">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Employee'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    <div class="col-lg-9 col-xl-6">
+                        <select class="form-control" data-live-search="true"  name="employee_id" required>
+                            <option data-hidden="true"></option>
+                            {% for employee in employees %}
+                                <option value="{{employee.id}}">{{employee.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row kt-hidden" id="customer">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Client'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    <div class="col-lg-9 col-xl-6">
+                        <select class="form-control" data-live-search="true" name="customer_id" required>
+                            <option data-hidden="true"></option>
+                            {% for customer in customers %}
+                                <option value="{{customer.id}}">{{customer.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Amount'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    <div class="col-lg-9 col-xl-6">
+                        <div class="input-group">
+                            {% if primary_currency.place_symbol_before == 1 %}
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">
+                                        {{primary_currency.currency_symbol}}
+                                    </span>
+                                </div>
+                            {% endif %}
+                                <input type="text" class="form-control decimal" data-type='currency' name="amount" required />
+                            {% if primary_currency.place_symbol_before == 0 %}
+                                <div class="input-group-append">
+                                    <span class="input-group-text">
+                                        {{primary_currency.currency_symbol}}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Date'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    <div class="col-lg-9 col-xl-6">
+
+                        <div class="input-group date">
+                            <input type="text" class="form-control date" readonly="" name="date" value="{{now|date(settings.dateformat)}}" required>
+                            <div class="input-group-append">
+                                <span class="input-group-text">
+                                    <i class="la la-calendar"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Description'|__}}</label>
+                    <div class="col-lg-9 col-xl-6">
+                        <textarea class="form-control" name="description"></textarea>
+                    </div>
+                </div>
+                {% if user.role_id != 4 %}
+                    <div class="form-group row">
+                        <label class="col-xl-3 col-lg-3 col-form-label">{{'Branch'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <div class="col-lg-9 col-xl-6">
+                            <select class="form-control" data-live-search="true"  name="office_id" required>
+                                <option data-hidden="true"></option>
+                                {% for office in offices %}
+                                    <option value="{{office.id}}">{{office.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-12">
+        <div class="kt-portlet">
+            <div class="kt-portlet__foot">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <button type="submit" class="btn btn-primary save">{{'Save'|__}}</button>
+                        <span class="kt-margin-left-10">{{'or'|__}} <a href="{{this.page.child_of|page}}" class="kt-link">{{'Cancel'|__}}</a></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{ form_close() }}
+
+{% put scripts %}
+<script type="text/javascript">
+KTUtil.ready(function () {
+
+    $( ".kt_form" ).validate({
+        ignore: ":hidden,.date",
+        invalidHandler: function(event, validator) {
+            var alert = $('.kt_form_msg');
+            alert.removeClass('kt--hide').show();
+            KTUtil.scrollTop();
+        }
+    });
+
+
+    $('body').on('changed.bs.select', '#type', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+            $('#other,#customer,#employee').addClass('kt-hidden');
+            $('#movement').html('<option data-hidden="true"></option>').selectpicker('refresh');
+        if(selected == 'other'){
+            $('#movement').html('<option data-hidden="true"></option><option value="1">{{"Withdrawl"|__}}</option><option value="2">{{"Deposit"|__}}</option>').selectpicker('refresh');
+            $('#other').removeClass('kt-hidden');
+        }else if(selected == 'employee'){
+            $('#movement').html('<option data-hidden="true"></option><option value="3">{{"Deduction from the wallet"|__}}</option><option value="4">{{"Add to wallet"|__}}</option>').selectpicker('refresh');
+            $('#employee').removeClass('kt-hidden');
+        }else if(selected == 'customer'){
+            $('#movement').html('<option data-hidden="true"></option><option value="3">{{"Deduction from the wallet"|__}}</option><option value="4">{{"Add to wallet"|__}}</option>').selectpicker('refresh');
+            $('#customer').removeClass('kt-hidden');
+        }
+    });
+
+});
+</script>
+{% endput %}

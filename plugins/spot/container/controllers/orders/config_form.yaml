@@ -1,0 +1,10 @@
+name: Orders
+form: $/spot/container/models/ordercontainer/fields.yaml
+modelClass: spot\Container\Models\OrderContainer
+defaultRedirect: spot/container/orders
+create:
+    redirect: 'spot/container/orders/update/:id'
+    redirectClose: spot/container/orders
+update:
+    redirect: spot/container/orders
+    redirectClose: spot/container/orders

@@ -1,0 +1,19 @@
+# ===================================
+#  List Behavior Config
+# ===================================
+
+title: spot.userpermissions::lang.permissions.menu_label
+list: ~/plugins/spot/userpermissions/models/permission/columns.yaml
+modelClass: Spot\UserPermissions\Models\Permission
+recordUrl: spot/userpermissions/permissions/update/:id
+
+noRecordsMessage: backend::lang.list.no_records
+
+recordsPerPage: 20
+
+showSetup: true
+
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: backend::lang.list.search_prompt

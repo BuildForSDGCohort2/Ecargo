@@ -1,0 +1,545 @@
+title = "Report Print"
+url = "/dashboard/reports/:category/:type/print"
+layout = "blank"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/shipments"
+menu_breadcrumb = "order"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+function onStart(){
+    if(!Auth::getUser()->hasUserPermission(["report"],'r')) {
+        \Flash::error($this['theme_lang']['not_allowed']);
+    }
+
+    $this['user']       =   Auth::getUser();
+
+
+    if($this->param('category') == 'shipments'){
+
+        $created_at         =   \Session::get('created_at');
+        $sender_id          =   \Session::get('sender_id');
+        $employee_id        =   \Session::get('employee_id');
+
+        $records            =   \Spot\Shipment\Models\Order::orderBy('id', 'DESC');
+        if($this->param('type') == 'delayed'){
+            $records            =   $records->whereIn('requested',[0,1,3])->where('delivery_date', '<', \Carbon\Carbon::now()->format('Y-m-d'));
+        }
+        if($this->param('type') == 'delivered'){
+            $records            =   $records->whereIn('requested',[4])->where('delivery_date', '<', \Carbon\Carbon::now()->format('Y-m-d'));
+        }
+
+        if(isset($created_at) && $created_at != ''){
+            $this['created_at'] =   $created_at;
+            $created_at     =   explode(" - ", $created_at);
+            $start          =   \Carbon\Carbon::parse(\Carbon\Carbon::createFromFormat($this['settings']['dateformat'], $created_at[0]));
+            if(!isset($created_at[1])){
+                $start          =   $start->copy()->startOfDay();
+                $end            =   $start->copy()->endOfDay();
+            }else{
+                $end            =   \Carbon\Carbon::parse(\Carbon\Carbon::createFromFormat($this['settings']['dateformat'], $created_at[1]));
+                $start          =   $start->copy()->startOfDay();
+                $end            =   $end->copy()->endOfDay();
+            }
+
+            $records        =   $records->where('created_at', '>=', $start);
+            $records        =   $records->where('created_at', '<=', $end);
+        }
+        if(isset($employee_id) && $employee_id != ''){
+            $this['employee_id'] =   $employee_id;
+            $this['employee'] =   RainLab\User\Models\User::find($employee_id);
+            $records    =   $records->where(function($q) use($employee_id){
+                $q->where('assigned_id', $employee_id)
+                ->orWhere(function($q) use($employee_id){
+                    $q->whereHas('manifest',function($q) use($employee_id){
+                        $q->where('driver_id', $employee_id)
+                        ->orWhere('employee_id', $employee_id);
+                    });
+                });
+            });
+        }
+        if(isset($sender_id) && $sender_id != ''){
+            $this['sender_id'] =   $sender_id;
+            $this['sender'] =   RainLab\User\Models\User::find($sender_id);
+            $records    =   $records->where('sender_id', $sender_id);
+        }
+    }elseif($this->param('category') == 'transactions'){
+
+
+        $created_at         =   \Session::get('created_at');
+        $for_id             =   \Session::get('for_id');
+        $status_id          =   \Session::get('status_id');
+
+        $records            =   \Spot\Shipment\Models\Payment::orderBy('id', 'DESC');
+        if($this->param('type') == 'deposited'){
+            $records    =   $records->whereIn('movement',[2,4,6,8]);
+        }
+        if($this->param('type') == 'withdrwal'){
+            $records    =   $records->whereIn('movement',[1,3,5,7]);
+        }
+
+
+        if(isset($created_at) && $created_at != ''){
+            $this['created_at'] =   $created_at;
+            $created_at     =   explode(" - ", $created_at);
+            $start          =   \Carbon\Carbon::parse(\Carbon\Carbon::createFromFormat($this['settings']['dateformat'], $created_at[0]));
+            if(!isset($created_at[1])){
+                $start          =   $start->copy()->startOfDay();
+                $end            =   $start->copy()->endOfDay();
+            }else{
+                $end            =   \Carbon\Carbon::parse(\Carbon\Carbon::createFromFormat($this['settings']['dateformat'], $created_at[1]));
+                $start          =   $start->copy()->startOfDay();
+                $end            =   $end->copy()->endOfDay();
+            }
+
+            $records        =   $records->where('created_at', '>=', $start);
+            $records        =   $records->where('created_at', '<=', $end);
+        }
+        if(isset($for_id) && $for_id != ''){
+            $this['for_id'] =   $for_id;
+            $this['for']    =   RainLab\User\Models\User::find($for_id);
+            $records        =   $records->where('for_id', $for_id);
+        }
+        if(isset($status_id) && $status_id != ''){
+            $this['status_id'] =   $status_id;
+            $records        =   $records->where('status', $status_id);
+        }
+    }
+    $this['orders']     =   $records->get();
+
+    Session::forget('created_at');
+    Session::forget('sender_id');
+    Session::forget('employee_id');
+    Session::forget('for_id');
+    Session::forget('status_id');
+
+}
+?>
+==
+<div id="page-wrap">
+    <table width="100%">
+        <tr>
+            <td style="border: 0;  text-align: left" width="18%">
+			<div id="logo">
+				<img src='{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}' border='0' width='190' height='39'>            </td>
+    			<td style="border: 0;  text-align: center" width="56%">
+    				{% if settings.company.tax_number %}{{'Tax'|__}}: {{ settings.company.tax_number }} </br>{% endif %}
+    				{% if settings.company.company_phone %}{{'Phone'|__}}: {{ settings.company.company_phone }} </br>{% endif %}
+    				{% if settings.company.primary_email %}{{'Email'|__}}: {{ settings.company.primary_email }} </br>{% endif %}
+    				{% if settings.company.address %}{{'Street'|__}}: {{ settings.company.address }}{% endif %}
+                </td>
+                <td style="border: 0;  text-align: center" width="48%">
+    			</td>
+			</div>
+        </tr>
+    </table>
+    <hr>
+    </br>
+    <div id="customer">
+
+        <table id="meta">
+            <tr>
+                <td rowspan="5" style="border: 1px solid white; border-{% if currentLang == 'ar' %}left{% else %}right{% endif %}: 1px solid black;text-align: {% if currentLang == 'ar' %}right{% else %}left{% endif %}" width="62%">
+                    {% if this.param.type == 'delayed' %}
+                        <strong class="kt-padding-t-40">{{'Shipments Delayed Reports'|__}}</strong>
+                    {% elseif this.param.type == 'delivered' %}
+                        <strong class="kt-padding-t-40">{{'Shipments Delivered Reports'|__}}</strong>
+                    {% elseif this.param.type == 'deposited' %}
+                        <strong class="kt-padding-t-40">{{'Transactions Deposited Reports'|__}}</strong>
+                    {% elseif this.param.type == 'withdrwal' %}
+                        <strong class="kt-padding-t-40">{{'Transactions Withdrawl Reports'|__}}</strong>
+                    {% endif %}
+				</td>
+            </tr>
+            <tr>
+                <td class="meta-head"><p style="color:white;margin:0">{{'Date'|__}}</p></td>
+                <td>{{now|date(settings.dateformat)}}</td>
+            </tr>
+        </table>
+
+    </div>
+    {% if created_at or sender_id or employee_id  or for_id  or status_id %}
+        </br>
+        <div id="customer">
+
+            <table id="meta">
+                <tr>
+                    {% if created_at %}
+                        <td class="meta-head"><p style="color:white;margin:0">{{'Date'|__}}</p></td>
+                        <td>{{created_at}}</td>
+                    {% endif %}
+
+                    {% if sender_id %}
+                        <td  style="border: 1px solid white; border-{% if currentLang == 'ar' %}left{% else %}right{% endif %}: 1px solid black;text-align: {% if currentLang == 'ar' %}right{% else %}left{% endif %}" width="1%"></td>
+
+                        <td class="meta-head"><p style="color:white;margin:0">{{'Sender'|__}}</p></td>
+                        <td>{{sender.name|capitalize}}</td>
+                    {% endif %}
+
+                    {% if employee_id %}
+                        <td  style="border: 1px solid white; border-{% if currentLang == 'ar' %}left{% else %}right{% endif %}: 1px solid black;text-align: {% if currentLang == 'ar' %}right{% else %}left{% endif %}" width="1%"></td>
+
+                        <td class="meta-head"><p style="color:white;margin:0">{{'Responsiable'|__}}</p></td>
+                        <td>{{employee.name|capitalize}}</td>
+                    {% endif %}
+
+                    {% if for_id %}
+                        <td  style="border: 1px solid white; border-{% if currentLang == 'ar' %}left{% else %}right{% endif %}: 1px solid black;text-align: {% if currentLang == 'ar' %}right{% else %}left{% endif %}" width="1%"></td>
+
+                        <td class="meta-head"><p style="color:white;margin:0">{{'User'|__}}</p></td>
+                        <td>{{for.name|capitalize}}</td>
+                    {% endif %}
+
+                    {% if status_id %}
+                        <td  style="border: 1px solid white; border-{% if currentLang == 'ar' %}left{% else %}right{% endif %}: 1px solid black;text-align: {% if currentLang == 'ar' %}right{% else %}left{% endif %}" width="1%"></td>
+
+                        <td class="meta-head"><p style="color:white;margin:0">{{'Status'|__}}</p></td>
+                        <td>
+                            {% if status_id == 1 %}
+                                {{'Pending'|__}}
+                            {% elseif status_id == 2 %}
+                                {{'Canceled'|__}}
+                            {% elseif status_id == 3 %}
+                                {{'Paid'|__}}
+                            {% elseif status_id == 4 %}
+                                {{'Delayed'|__}}
+                            {% elseif status_id == 5 %}
+                                {{'Delivered'|__}}
+                            {% endif %}
+                        </td>
+                    {% endif %}
+                </tr>
+            </table>
+
+        </div>
+    {% endif %}
+    <table id="items">
+        {% if this.param.category == 'shipments' %}
+            <tr>
+                <th align="center"><p style="color:white;">{{'id'|__}}</p></th>
+                <th align="center"><p style="color:white;">{{'Created On'|__}}</p></th>
+                <th align="center"><p style="color:white;">{{'Payment'|__}}</p></th>
+                <th align="center"><p style="color:white;">{{'Sender Details'|__}}</p></th>
+                <th align="center"><p style="color:white;">{{'Area'|__}}</p></th>
+                <th align="center"><p style="color:white;">{{'Office'|__}}</p></th>
+                <th align="center"><p style="color:white;">{{'Status'|__}}</p></th>
+                <th align="center"><p style="color:white;">{{'Mobile'|__}}</p></th>
+                <th align="center"><p style="color:white;">#</p></th>
+            </tr>
+            {% for item in orders %}
+                <tr>
+                    <th align="center" style="background:#fff"><p style="margin:0">{{item.id}}</p></th>
+                    <th style="background:#fff"><p style="margin:0">{{item.created_at|date(settings.dateformat)}}</p></th>
+                    <th style="background:#fff">
+                        {% if item.payment == 1%}
+                            <span class="kt-badge kt-badge--success kt-badge--dot"></span>&nbsp;<span class="kt-font-bold kt-font-success">{{'Postpaid'|__}}</span>
+                        {% else %}
+                            <span class="kt-badge kt-badge--info kt-badge--dot"></span>&nbsp;<span class="kt-font-bold kt-font-info">{{'Prepaid'|__}}</span>
+                        {% endif %}
+                    </th>
+
+                    {% set shipping_from_area = null %}
+                    {% set shipping_to_area = null %}
+                    {% set shipping_from_area_id = null %}
+                    {% set shipping_to_area_id = null %}
+                    {% if item.sender_address %}
+                        {% if item.sender_address.area %}
+                            {% set shipping_from_area =   item.sender_address.area.name %}
+                            {% set shipping_from_area_id =   item.sender_address.area.id %}
+                        {% elseif item.sender_address.city %}
+                            {% set shipping_from_area =   item.sender_address.city.name %}
+                            {% set shipping_from_area_id =   item.sender_address.city.id %}
+                        {% elseif item.sender_address.state %}
+                            {% set shipping_from_area =   item.sender_address.state.name %}
+                            {% set shipping_from_area_id =   item.sender_address.state.id %}
+                        {% elseif item.sender_address.country %}
+                            {% set shipping_from_area =   item.sender_address.country.name %}
+                            {% set shipping_from_area_id =   item.sender_address.country.id %}
+                        {% endif %}
+                    {% endif %}
+                    {% if item.receiver_address %}
+                        {% if item.receiver_address.area %}
+                            {% set shipping_to_area =   item.receiver_address.area.name %}
+                            {% set shipping_to_area_id =   item.receiver_address.area.id %}
+                        {% elseif item.sender_address.city %}
+                            {% set shipping_to_area =   item.receiver_address.city.name %}
+                            {% set shipping_to_area_id =   item.receiver_address.city.id %}
+                        {% elseif item.sender_address.state %}
+                            {% set shipping_to_area =   item.receiver_address.state.name %}
+                            {% set shipping_to_area_id =   item.receiver_address.state.id %}
+                        {% elseif item.sender_address.country %}
+                            {% set shipping_to_area =   item.receiver_address.country.name %}
+                            {% set shipping_to_area_id =   item.receiver_address.country.id %}
+                        {% endif %}
+                    {% endif %}
+
+        			<th align="center" style="background:#fff">
+                        <div class="kt-user-card-v2 kt-user-card-v2--uncircle">
+                            <div class="kt-user-card-v2__details">
+                                <a href="javascript:;" class="kt-user-card-v2__name">{{ item.sender.name}}</a>
+                                <span class="kt-user-card-v2__email">{{shipping_from_area}}</span>
+                            </div>
+                        </div>
+                    </th>
+        			<th align="center" style="background:#fff"><p style="margin:0">{% if item.type == 1 %}{{shipping_from_area_id}}{% else %}{{shipping_to_area_id}}{% endif %}</p></th>
+        			<th align="center" style="background:#fff"><p style="margin:0">{{item.office.name}}</p></th>
+        			<th align="center" style="background:#fff"><p style="margin:0"><span class="btn btn-bold btn-sm btn-label-{{item.status.color}}">{{item.status.name}}</span></p></th>
+        			<th align="center" style="background:#fff"><p style="margin:0">{% if item.type == 1 %}{{item.sender.mobile}}{% else %}{{item.receiver.mobile}}{% endif %}</p></th>
+        			<th align="center" style="background:#fff"><p style="border:1px solid #333;padding:10px;display:block"></p></th>
+                </tr>
+            {% else %}
+                <tr>
+                    <th align="center" style="background:#fff;text-align:center;padding:10px 10px 0;" colspan="9"><p style="margin:0">{{'No orders found'|__}}</p></th>
+                </tr>
+            {% endfor %}
+        {% elseif this.param.category == 'transactions' %}
+
+            <tr>
+                <th align="center"><p style="color:white;">{{'id'|__}}</p></th>
+                <th align="center"><p style="color:white;">{{'Created On'|__}}</p></th>
+                <th align="center"><p style="color:white;">{{'For'|__}}</p></th>
+                <th align="center"><p style="color:white;">{{'Movement'|__}}</p></th>
+                <th align="center"><p style="color:white;">{{'Description'|__}}</p></th>
+                <th align="center"><p style="color:white;">{{'Amount'|__}}</p></th>
+                <th align="center"><p style="color:white;">{{'Date'|__}}</p></th>
+                <th align="center"><p style="color:white;">{{'Shipment'|__}}</p></th>
+            </tr>
+            {% for item in orders %}
+                <tr>
+                    <th align="center" style="background:#fff"><p style="margin:0">{{item.id}}</p></th>
+                    <th style="background:#fff"><p style="margin:0">{{item.created_at|date(settings.dateformat)}}</p></th>
+                    <th style="background:#fff"><p style="margin:0">
+                        {% if item.type == 1 %}
+                            {% if item.payment_with %}
+                                {{item.gotit.name}} ({{"Employee"|__}})
+                            {% else %}
+                                {{item.user.name}} ({{"Client"|__}})
+                            {% endif %}
+                        {% elseif item.type == 3 %}
+                            {{item.treasury.name}} ({{"Treasury"|__}})
+                        {% endif %}
+                    </p></th>
+                    <th style="background:#fff">
+                        {% if item.movement == 1 %}
+                            <span class="kt-badge kt-badge--info kt-badge--dot"></span>&nbsp;<span class="kt-font-bold kt-font-info">{{'Withdrawl'|__}}</span>
+                        {% elseif item.movement == 2 %}
+                            <span class="kt-badge kt-badge--info kt-badge--dot"></span>&nbsp;<span class="kt-font-bold kt-font-info">{{'Deposit'|__}}</span>
+                        {% elseif item.movement == 3 %}
+                            <span class="kt-badge kt-badge--info kt-badge--dot"></span>&nbsp;<span class="kt-font-bold kt-font-info">{{'Deduction from the wallet'|__}}</span>
+                        {% elseif item.movement == 4 %}
+                            <span class="kt-badge kt-badge--info kt-badge--dot"></span>&nbsp;<span class="kt-font-bold kt-font-info">{{'Add to wallet'|__}}</span>
+                        {% elseif item.movement == 5 %}
+                            <span class="kt-badge kt-badge--info kt-badge--dot"></span>&nbsp;<span class="kt-font-bold kt-font-info">{{'Deduction of commission balance'|__}}</span>
+                        {% elseif item.movement == 6 %}
+                            <span class="kt-badge kt-badge--info kt-badge--dot"></span>&nbsp;<span class="kt-font-bold kt-font-info">{{'Add to the commission balance'|__}}</span>
+                        {% elseif item.movement == 7 %}
+                            <span class="kt-badge kt-badge--info kt-badge--dot"></span>&nbsp;<span class="kt-font-bold kt-font-info">{{'Deduction from the balance of packages'|__}}</span>
+                        {% elseif item.movement == 8 %}
+                            <span class="kt-badge kt-badge--info kt-badge--dot"></span>&nbsp;<span class="kt-font-bold kt-font-info">{{'Add  to the balance of packages'|__}}</span>
+                        {% endif %}
+                    </th>
+        			<th align="center" style="background:#fff"><p style="margin:0">{{item.description}}</p></th>
+        			<th align="center" style="background:#fff"><p style="margin:0">{{item.amount|currency}}</p></th>
+        			<th align="center" style="background:#fff"><p style="margin:0">{{item.date|date(settings.dateformat)}}</p></th>
+        			<th align="center" style="background:#fff"><p style="margin:0">{% if item.item_id %}#{{item.item_id}}{% else %}-{% endif %}</p></th>
+                </tr>
+            {% else %}
+                <tr>
+                    <th align="center" style="background:#fff;text-align:center;padding:10px 10px 0;" colspan="7"><p style="margin:0">{{'No transactions found'|__}}</p></th>
+                </tr>
+            {% endfor %}
+        {% endif %}
+    </table>
+
+    <!--    end related transactions -->
+
+        <div id="terms">
+			</br></br></br>
+			<table id="signing">
+				<tr class="noBorder">
+					<td align="center" width="50%"><h4>{{user.name}}</h4></td>
+					<td align="center" width="50%" style="padding-top:28px;"><h4></h4></td>
+				</tr>
+				<tr class="noBorder">
+					<td align="center">{{'Printed By'|__}}</td>
+					<td align="center">{{'Responsiable'|__}}</td>
+				</tr>
+			</table>
+        </div>
+</div>
+
+{% put styles %}
+    <style>
+    body { background: #fff}
+
+    * { margin: 0; padding: 0; }
+    body {
+        font: 14px/1.4 Helvetica, Arial, sans-serif;
+    }
+    #page-wrap { width: 800px; margin: 0 auto; }
+
+    textarea { border: 0; font: 14px Helvetica, Arial, sans-serif; overflow: hidden; resize: none; }
+    table { border-collapse: collapse; }
+    table td, table th { border: 1px solid black; padding: 5px; }
+	tr.noBorder td {
+	  border: 0;
+	}
+
+	td.Border td {
+	  border: 1px;
+	}
+    {% if currentLang == 'ar' %}
+        p,b, strong{
+            font-family: Cairo;
+            font-weight: bold;
+        }
+    {% endif %}
+
+    #header { height: 15px; width: 100%; margin: 20px 0; background: #222; text-align: center; color: white; font: bold 15px Helvetica, Sans-Serif; text-decoration: uppercase; letter-spacing: 20px; padding: 8px 0px; }
+
+    #address { width: 250px; height: 150px; float: left; }
+    #customer { overflow: hidden; }
+
+    #logo { text-align: right; float: right; position: relative; margin-top: 25px; border: 1px solid #fff; max-width: 540px; overflow: hidden; }
+    #customer-title { font-size: 20px; font-weight: bold; float: left; }
+
+    #meta { margin-top: 1px; width: 100%; float: right; }
+    #meta td { text-align: right;  }
+    #meta td.meta-head { text-align: left; background: #6c757d; }
+    #meta td textarea { width: 100%; height: 20px; text-align: right; }
+
+	#signing { margin-top: 0px; width: 100%; float: center; }
+    #signing td { text-align: center;  }
+    #signing td.signing-head { text-align: center; background: #eee; }
+    #signing td textarea { width: 100%; height: 20px; text-align: center; }
+
+    #items { clear: both; width: 100%; margin: 30px 0 0 0; border: 1px solid black; }
+    #items th { background: #6c757d; }
+    #items textarea { width: 80px; height: 50px; }
+    #items tr.item-row td {  vertical-align: top; }
+    #items td.description { width: 300px; }
+    #items td.item-name { width: 175px; }
+    #items td.description textarea, #items td.item-name textarea { width: 100%; }
+    #items td.total-line { border-right: 0; text-align: {% if currentLang == 'ar' %}left{% else %}right{% endif %}; }
+    #items td.total-value { border-left: 0; padding: 10px; }
+    #items td.total-value textarea { height: 20px; background: none; }
+    #items td.balance { background: #6c757d; }
+    #items td.blank { border: 0; }
+
+    #terms { text-align: center; margin: 20px 0 0 0; }
+    #terms h5 { text-transform: uppercase; font: 13px Helvetica, Sans-Serif; letter-spacing: 10px; border-bottom: 1px solid black; padding: 0 0 8px 0; margin: 0 0 8px 0; }
+    #terms textarea { width: 100%; text-align: center;}
+
+
+
+    .delete-wpr { position: relative; }
+    .delete { display: block; color: #000; text-decoration: none; position: absolute; background: #EEEEEE; font-weight: bold; padding: 0px 3px; border: 1px solid; top: -6px; left: -22px; font-family: Verdana; font-size: 12px; }
+
+    /* Extra CSS for Print Button*/
+    .button {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        overflow: hidden;
+        margin-top: 20px;
+        padding: 12px 12px;
+        cursor: pointer;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-transition: all 60ms ease-in-out;
+        transition: all 60ms ease-in-out;
+        text-align: center;
+        white-space: nowrap;
+        text-decoration: none !important;
+
+        color: #fff;
+        border: 0 none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.3;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+
+        -webkit-box-pack: center;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+        -webkit-box-flex: 0;
+        -webkit-flex: 0 0 160px;
+        -ms-flex: 0 0 160px;
+        flex: 0 0 160px;
+    }
+    .button:hover {
+        -webkit-transition: all 60ms ease;
+        transition: all 60ms ease;
+        opacity: .85;
+    }
+    .button:active {
+        -webkit-transition: all 60ms ease;
+        transition: all 60ms ease;
+        opacity: .75;
+    }
+    .button:focus {
+        outline: 1px dotted #959595;
+        outline-offset: -4px;
+    }
+
+    .button.-regular {
+        color: #202129;
+        background-color: #edeeee;
+    }
+    .button.-regular:hover {
+        color: #202129;
+        background-color: #e1e2e2;
+        opacity: 1;
+    }
+    .button.-regular:active {
+        background-color: #d5d6d6;
+        opacity: 1;
+    }
+
+    .button.-dark {
+        color: #FFFFFF;
+        background: #333030;
+    }
+    .button.-dark:focus {
+        outline: 1px dotted white;
+        outline-offset: -4px;
+    }
+
+    @media print
+    {
+        .no-print, .no-print *
+        {
+            display: none !important;
+        }
+    }
+	h4 {
+		border-bottom: 1px solid black;
+	}
+    </style>
+{% endput %}
+{% put scripts %}
+<script type="text/javascript">
+KTUtil.ready(function () {
+    window.print();
+    //setTimeout(function(){window.close();},10);
+});
+</script>
+{% endput %}

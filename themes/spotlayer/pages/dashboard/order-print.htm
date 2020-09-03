@@ -1,0 +1,1100 @@
+title = "Shipment Print"
+url = "/dashboard/shipments/:id/print/:type"
+layout = "blank"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/shipments"
+menu_breadcrumb = "order"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+localeTitle[ar] = "مشاهدة الطلب"
+==
+
+<?php
+use \Spot\Shipment\Models\Settings;
+function onStart(){
+    if(!Auth::getUser()->hasUserPermission(["order"],'r')) {
+        \Flash::error($this['theme_lang']['not_allowed']);
+    }
+    $this['printTemplate'] = $printTemplate       =   Settings::get('printTemplate',true);
+    if($printTemplate == "print_template_advance" && $this->param('type') == "label"  ){
+
+
+        if($this->param('id') == 'shipments'){
+            $newIDs = Session::get('printIds');
+            if(isset($newIDs) && !empty($newIDs)){
+              foreach($newIDs as $id){
+                  $this['orders']  =   $orders  =   \Spot\Shipment\Models\Order::whereIn('id', $newIDs)->get();
+              }
+              Session::forget('printIds');
+            }else{
+              return Redirect::to("/dashboard/shipments/all");
+            }
+        }else
+        {
+            $this['order']  =   $order  =   \Spot\Shipment\Models\Order::find($this->param('id'));
+        }
+
+    }
+    else{
+
+
+        $this['order']  =   $order  =   \Spot\Shipment\Models\Order::find($this->param('id'));
+
+        $progress           = 0;
+        $progress_status    = 'warning';
+        $shipdate           = \Carbon\Carbon::parse($order->ship_date);
+        $deliverydate       = (($order->deliverytime)? $shipdate->addHours($order->deliverytime->count) :null);
+        $today              = \Carbon\Carbon::now();
+
+        $time_diff          = $today->diffInDays($deliverydate, false);
+
+        switch($order->requested){
+            case 0:
+                $progress           = 0;
+                break;
+            case 1:
+                $progress           = 30;
+                break;
+            case 2:
+                $progress           = 100;
+                break;
+            case 3:
+                $progress           = 60;
+                break;
+            case 4:
+                $progress           = 100;
+                break;
+            default:
+                $progress           = 100;
+        }
+
+        if($progress == 100){
+            $progress_status    = 'success';
+        }else{
+            if($time_diff < 0){
+                if($order->requested < 4){
+                    $progress_status    = 'danger';
+                }
+            }
+        }
+
+        $this['progress']               =   $progress;
+        $this['progress_status']        =   $progress_status;
+
+        //0 = Pending | 1 = Approved | 2 = Refused | 3 = Delivered to driver | 4 = Delivered | 5 = Return request | 6 = Delivery of discards to the driver | 7 = Supply in stock | 8 = Returned
+    }
+}
+?>
+==
+
+
+
+
+
+    {% if this.param.type == 'shipment' %}
+    <div class="page-wrap" style="page-break-after: always;">
+        <table width="100%">
+            <tr>
+                <td style="border: 0;  text-align: left" width="18%">
+        			<div id="logo" style="text-align:left">
+        				<img src='{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}' style="max-height:70px">
+                    </div>
+                </td>
+    			<td style="border: 0;  text-align: center" width="56%">
+    				{% if settings.company.tax_number and settings.company.tax_number != '' and settings.company.tax_number != '-' %}{{'Tax'|__}}: {{ settings.company.tax_number }} </br>{% endif %}
+    				{% if settings.company.company_phone %}{{'Phone'|__}}: {{ settings.company.company_phone }} </br>{% endif %}
+    				{% if settings.company.primary_email %}{{'Email'|__}}: {{ settings.company.primary_email }} </br>{% endif %}
+    				{% if settings.company.address %}{{'Street'|__}}: {{ settings.company.address }}{% endif %}
+                </td>
+                <td style="border: 0;  text-align: center" width="48%" id="barcodeHTML">
+                    </br>
+                    {{ barcodeHTML({data: order.barcode, type: 'CODABAR', width: '1'}) }}
+                    <div class="clearfix"></div>
+                    <p>{{settings.tracking.prefix_order}}{{order.barcode}}</p>
+    			</td>
+            </tr>
+        </table>
+        <hr>
+        </br>
+        <div id="customer">
+
+            <table id="meta">
+                <tr>
+                    <td rowspan="5" style="border: 1px solid white; border-{% if currentLang == 'ar' %}left{% else %}right{% endif %}: 1px solid black;text-align: {% if currentLang == 'ar' %}right{% else %}left{% endif %}" width="62%">
+                    <strong>{{'Bill to'|__}}</strong> </br>
+    				<table id="items">
+    					<b>{{order.receiver.name}}</b></br> </br>
+    					{% if order.receiver_address.area %}{{order.receiver_address.area.name}} - {% endif %}{% if order.receiver_address.zipcode %}{{'ZIP'|__}}:{{order.receiver_address.zipcode}} </br>{% endif %}
+    					{% if order.receiver_address.thecity %}{{order.receiver_address.thecity.name}} | {% endif %}{% if order.receiver_address.thestate %}{{order.receiver_address.thestate.name}} | {% endif %}{% if order.receiver_address.thecountry %}{{order.receiver_address.thecountry.name}} {% endif %}</br>
+    					{{order.receiver.mobile}} </br>
+    					{{order.receiver.email}}
+    				</table>
+    				</td>
+                </tr>
+                {% if order.courier_id %}
+                    <tr>
+        				<td class="meta-head"><p style="color:white;">{{'Courier Company'|__}}</p></td>
+                        <td>{{order.courier.name}}</td>
+                    </tr>
+                {% endif %}
+                <tr>
+                    <td class="meta-head"><p style="color:white;">{{'Shipping date'|__}}</p></td>
+                    <td>{{order.ship_date|date(settings.dateformat)}}  {{order.ship_date|date('h:i a')}}</td>
+                    <!-- {{order.ship_date|date('h:i a')}} -->
+                </tr>
+                <tr>
+                    <td class="meta-head"><p style="color:white;">{{'Invoice No'|__}}.</p></td>
+                    <td><b>{{settings.tracking.prefix_order}}{{order.number}}</b></td>
+                </tr>
+            </table>
+        </div>
+        <table id="items">
+            <tr>
+                <th align="center"><p style="color:white;">{{'Category'|__}}</p></th>
+                <th width="48%"><p style="color:white;">{{'Description'|__}}</p></th>
+    			<th align="center"><p style="color:white;">{{'Quantity'|__}}</p></th>
+                <th {% if currentLang == 'ar' %}align="left"{% else %}align="right"{% endif %}><p style="color:white;">{{'Weight'|__}}</p></th>
+            </tr>
+            {% for item in order.items %}
+                <tr>
+                    <th align="center" style="background:#fff"><p>{{item.category.name|capitalize}}</p></th>
+                    <th width="48%" style="background:#fff"><p>{{item.description}}</p></th>
+        			<th align="center" style="background:#fff"><p>{{item.quantity}}</p></th>
+                    <th {% if currentLang == 'ar' %}align="left"{% else %}align="right"{% endif %} style="background:#fff"><p>{{item.weight}}</p></th>
+                </tr>
+            {% endfor %}
+
+            {% set total = 0 %}
+            {% if order.return_defray == 1 %}
+                {% set total = total + order.package_fee %}
+            {% endif %}
+            {% if order.return_package_fee == 1 %}
+                {% set total = total + order.return_courier_fee %}
+            {% endif %}
+            {% if order.payment_type == 1 %}
+                {% set total = total + (order.courier_fee+(order.tax/100*order.courier_fee)+(order.insurance/100*order.courier_fee)) %}
+            {% endif %}
+    		<tr>
+    			<td {% if currentLang == 'ar' %}align="left"{% else %}align="right"{% endif %} colspan="3" class="total-line">{{'Sub Total'|__}}</td>
+    			<td  align="right" class="total-value"><div id="total"><span class="price"> {{(total-(order.tax/100*order.courier_fee)-(order.insurance/100*order.courier_fee))|currency}} </span> </div></td>
+    		</tr>
+    		<tr>
+    			<td  {% if currentLang == 'ar' %}align="left"{% else %}align="right"{% endif %} colspan="3" class="total-line">{{'TAX'|__}} +</td>
+    			<td  align="right" class="total-value"><div id="total"> {{(order.tax/100*order.courier_fee)|currency}} </div></td>
+    		</tr>
+    		<tr>
+    			<td  {% if currentLang == 'ar' %}align="left"{% else %}align="right"{% endif %} colspan="3" class="total-line">{{'Insurance'|__}} +</td>
+    			<td  align="right" class="total-value"><div id="total"> {{(order.insurance/100*order.courier_fee)|currency}} </div></td>
+    		</tr>
+    		<tr>
+    			<td {% if currentLang == 'ar' %}align="left"{% else %}align="right"{% endif %} colspan="3" class="total-line balance"><p style="color:white;">{{'Grand total'|__}} </p></td>
+
+
+    			<td align="right" class="total-value balance"><div class="due"> <p style="color:white;"><b>{{total|currency}}</b></p></div></td>
+    		</tr>
+        </table>
+
+        <!--    end related transactions -->
+
+            <div id="terms">
+                <h5>{{'TERMS'|__}}</h5>
+    			 <table id="related_transactions" style="width: 100%">
+    				<p align="justify">{{settings.invoice.terms}}</p>
+    			</table>
+    			</br></br></br></br>
+    			<table id="signing">
+    				<tr class="noBorder">
+    					<td align="center"><h4></h4></td>
+    					<td align="center"><h4></h4></td>
+    				</tr>
+    				<tr class="noBorder">
+    					<td align="center">{{settings.invoice.signing_company|capitalize|__}}</td>
+    					<td align="center">{{settings.invoice.signing_customer|capitalize|__}}</td>
+    				</tr>
+    			</table>
+            </div>
+    </div>
+
+    {% elseif this.param.type == 'label' %}
+        {% if printTemplate == "print_template_advance" %}
+
+          {% if orders  %}
+
+            {% for order in orders %}
+              <table class="page-wrap">
+                <tr>
+                  <table width="100%">
+                      <tr>
+                          <td style="border: 0;  text-align: center;" width="100%">
+                              <h2>{{'Shipping Declaration'|__}}</h2>
+                          </td>
+                      </tr>
+                  </table>
+                </tr>
+                <tr>
+                  <div class="shipment">
+                      <div class="container l1">
+                          <div class="row">
+                              <div class="col-lg-4" id="logo">
+                                      <img src='{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}'      />
+                              </div>
+                          </div>
+                          <div class="row">
+                              <div class="barcode col-sm-4 ">
+                                  <p>{{ barcodeHTML({data: order.barcode, type: 'CODABAR',width:3}) }}</p>
+                              </div>
+                              <div class="col-sm-offset-4 col-sm-4 crbt">
+                                  <span>#{{'CRBT delivery'|__}}</span>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="container l2">
+                          <div class="row">
+                              <div class="col-sm-4 td">
+                                  <span class="spTitle">{{'Shipping'|__}}#: </span><span>{{order.number}}</span>
+                              </div>
+                              <div class="col-sm-4 td">
+                                  <span class="spTitle">{{'Sender'|__}}: </span><span>{{order.sender.name}}</span>
+                              </div>
+                              <div class="col-sm-4 td last">
+                                  <span class="spTitle">{{'Recipient'|__}}: </span><span>{{order.receiver.name}}</span>
+                              </div>
+                          </div>
+                          <div class="row">
+                              <div class="col-sm-4 td">
+                                  <span class="spTitle">{{'Date'|__}}: {{order.ship_date|date(settings.dateformat)}}  {{order.ship_date|date('h:i a')}}</span><span></span>
+                              </div>
+                              <div class="col-sm-4 td">
+                                  <span class="spTitle">{{'Phone'|__}}: </span><span>{{order.receiver.mobile}}</span>
+                              </div>
+                              <div class="col-sm-4 td last">
+                                  <span class="spTitle">{{'Address'|__}}: </span><span>{{order.receiver_address.name}}</span>
+                              </div>
+                          </div>
+                          <div class="row">
+                              <div class="col-sm-4 td">
+                                  <span class="spTitle">{{'barcode'|__}}</span><span>{{ barcodeHTML({data: order.barcode, type: 'CODABAR'}) }}</span>
+                              </div>
+                              <div class="col-sm-4 td">
+                                  <span class="spTitle">{{'Email'|__}}: </span><span>{{order.receiver.email}}</span>
+                              </div>
+                              <div class="col-sm-4 td last">
+                                  <span class="spTitle">{{'City'|__}}: </span><span>{{order.receiver_address.thecity.name}}</span>
+                              </div>
+                          </div>
+                          <div class="row">
+                              <div class="col-sm-offset-8 col-sm-4 last lastOne">
+                                  <span class="spTitle">{{'Sector'|__}}: </span><span></span>
+                              </div>
+                          </div>
+
+                      </div>
+
+                      <div class="container l3">
+                          <div class="row">
+                              <h3>{{'Package content'|__}}</h3>
+                          </div>
+                          <hr style="color:#bbb;width:100%;margin-top:-20px;" />
+                      </div>
+
+                      <div class="container l4">
+                          <table width="100%">
+                              <tr>
+                                  <th align="center"><p>{{'Product'|__}}</p></th>
+                                  <th align="center"><p>{{'Amount'|__}}</p></th>
+                                  <th align="center"><p>{{'Bottom return'|__}}</p></th>
+                                  <th align="center"><p>{{'CMD number'|__}}</p></th>
+                                  <th align="center"><p>{{'Weight'|__}}</p></th>
+                                  <th align="center"><p>{{'Comment'|__}}</p></th>
+                              </tr>
+                              {% for item in order.items %}
+                              <tr>
+                                  <td style="border: 0;  text-align: left" width="18%" >{{item.category.name|capitalize}}</td>
+                                  <td style="border: 0;  text-align: left" width="16%" >{{item.quantity}}</td>
+                                  <td style="border: 0;  text-align: left" width="16%" ></td>
+                                  <td style="border: 0;  text-align: left" width="14%" >{{item.id}}</td>
+                                  <td style="border: 0;  text-align: left" width="14%" >{{item.weight}}</td>
+                                  <td style="border: 0;  text-align: left" width="18%" >{{item.description}}</td>
+                              </tr>
+                              {% else %}
+                              <tr>
+                                  <td colspan="6" style="border: 0;  text-align: center" width="100%" >{{'No content added'|__}}</td>
+                              </tr>
+                              {% endfor %}
+                          </table>
+                      </div>
+                  </div>
+                </tr>
+              </table>
+
+            {% endfor %}
+          {% else %}
+              <div class="page-wrap" style="page-break-after: always;">
+                <table width="100%">
+                    <tr>
+                        <td style="border: 0;  text-align: center;" width="100%">
+                            <h2>{{'Shipping Declaration'|__}}</h2>
+                        </td>
+                    </tr>
+                </table>
+                <div class="shipment">
+                    <div class="container l1">
+                        <div class="row">
+                            <div class="col-lg-4" id="logo">
+                                    <img src='{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}'      />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="barcode col-sm-4 ">
+                                <p>{{ barcodeHTML({data: order.barcode, type: 'CODABAR',width:3}) }}</p>
+                            </div>
+                            <div class="col-sm-offset-4 col-sm-4 crbt">
+                                <span>#{{'CRBT delivery'|__}}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="container l2">
+                        <div class="row">
+                            <div class="col-sm-4 td">
+                                <span class="spTitle">{{'Shipping'|__}}#: </span><span>{{order.number}}</span>
+                            </div>
+                            <div class="col-sm-4 td">
+                                <span class="spTitle">{{'Sender'|__}}: </span><span>{{order.sender.name}}</span>
+                            </div>
+                            <div class="col-sm-4 td last">
+                                <span class="spTitle">{{'Recipient'|__}}: </span><span>{{order.receiver.name}}</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4 td">
+                                <span class="spTitle">{{'Date'|__}}: {{order.ship_date|date(settings.dateformat)}}  {{order.ship_date|date('h:i a')}}</span><span></span>
+                            </div>
+                            <div class="col-sm-4 td">
+                                <span class="spTitle">{{'Phone'|__}}: </span><span>{{order.receiver.mobile}}</span>
+                            </div>
+                            <div class="col-sm-4 td last">
+                                <span class="spTitle">{{'Address'|__}}: </span><span>{{order.receiver_address.name}}</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4 td">
+                                <span class="spTitle">{{'barcode'|__}}</span><span>{{ barcodeHTML({data: order.barcode, type: 'CODABAR'}) }}</span>
+                            </div>
+                            <div class="col-sm-4 td">
+                                <span class="spTitle">{{'Email'|__}}: </span><span>{{order.receiver.email}}</span>
+                            </div>
+                            <div class="col-sm-4 td last">
+                                <span class="spTitle">{{'City'|__}}: </span><span>{{order.receiver_address.thecity.name}}</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-offset-8 col-sm-4 last lastOne">
+                                <span class="spTitle">{{'Sector'|__}}: </span><span></span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="container l3">
+                        <div class="row">
+                            <h3>{{'Package content'|__}}</h3>
+                        </div>
+                        <hr style="color:#bbb;width:100%;margin-top:-20px;" />
+                    </div>
+
+                    <div class="container l4">
+                        <table width="100%">
+                            <tr>
+                                <th align="center"><p>{{'Product'|__}}</p></th>
+                                <th align="center"><p>{{'Amount'|__}}</p></th>
+                                <th align="center"><p>{{'Bottom return'|__}}</p></th>
+                                <th align="center"><p>{{'CMD number'|__}}</p></th>
+                                <th align="center"><p>{{'Weight'|__}}</p></th>
+                                <th align="center"><p>{{'Comment'|__}}</p></th>
+                            </tr>
+                            {% for item in order.items %}
+                            <tr>
+                                <td style="border: 0;  text-align: left" width="18%" >{{item.category.name|capitalize}}</td>
+                                <td style="border: 0;  text-align: left" width="16%" >{{item.quantity}}</td>
+                                <td style="border: 0;  text-align: left" width="16%" ></td>
+                                <td style="border: 0;  text-align: left" width="14%" >{{item.id}}</td>
+                                <td style="border: 0;  text-align: left" width="14%" >{{item.weight}}</td>
+                                <td style="border: 0;  text-align: left" width="18%" >{{item.description}}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" style="border: 0;  text-align: center" width="100%" >{{'No content added'|__}}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+          {% endif %}
+        {% else %}
+            <div id="page-wrap">
+              <div class="print-block">
+                <div class="row">
+                  <div class="col-md-12">
+                    <p>{{order.receiver.name}} </p>
+                  </div>
+                </div>
+
+                <div class="print-break"></div>
+
+                <div class="print-loction">
+
+                        <table width="100%">
+                            <tr>
+                                <td width="10%">
+                                    <h2 style="margin-top: -70px;padding-left: 20px;font-size:80px">
+                                        {% if settings.tracking.default_tracking_id == 1 %}
+                                            {{order.sender_address.thecountry.id}}
+                                        {% elseif settings.tracking.default_tracking_id == 2 %}
+                                            {{order.sender_address.thestate.id}}
+                                        {% elseif settings.tracking.default_tracking_id == 3 %}
+                                            {{order.sender_address.thecity.id}}
+                                        {% elseif settings.tracking.default_tracking_id == 4 %}
+                                            {{order.sender_address.area.id}}
+                                        {% endif %}
+                                        <br />
+                                        <span style="font-size:14px;display:block">{{'FROM'|__}}</span>
+                                    </h2>
+                                </td>
+                                <td width="80%" style="text-align:center;" class="barcode">
+                                    {{ barcodeHTML({data: order.barcode, type: 'CODABAR', width: '4', height: '50'}) }}
+                                    <p>{{order.barcode}}</p>
+                                </td>
+                                <td width="10%">
+                                    <h2 style="margin-top: -70px;padding-left: 20px;font-size:80px;text-align:right">
+                                        {% if order.receiver_address %}
+                                        {% if settings.tracking.default_tracking_id == 1 %}
+                                            {{order.receiver_address.thecountry.id}}
+                                        {% elseif settings.tracking.default_tracking_id == 2 %}
+                                            {{order.receiver_address.thestate.id}}
+                                        {% elseif settings.tracking.default_tracking_id == 3 %}
+                                            {{order.receiver_address.thecity.id}}
+                                        {% elseif settings.tracking.default_tracking_id == 4 %}
+                                            {{order.receiver_address.area.id}}
+                                        {% endif %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                        <br />
+                                        <span style="font-size:14px;display:block">{{'TO'|__}}</span>
+                                    </h2>
+                                </td>
+                            </tr>
+                        </table>
+
+                </div>
+                <div>
+                        <table>
+                            {% if order.receiver_address %}
+                            <tr>
+                                <td width="25%">{{'Address'|__}}:&nbsp;</td>
+                                <td>{{order.receiver_address.area.name}}{% if order.receiver_address.zipcode %}, {{'ZIP'|__}}:{{order.receiver_address.zipcode}}{% endif %}{% if order.receiver_address.thecity %}, {{order.receiver_address.thecity.name}}{% endif %}{% if order.receiver_address.thestate %}, {{order.receiver_address.thestate.name}}{% endif %}{% if order.receiver_address.thecountry %}, {{order.receiver_address.thecountry.name}}{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <td width="25%">{{'Phone'|__}}:&nbsp;</td>
+                                <td>{{order.receiver.mobile}}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td width="25%">{{'Sender'|__}}:&nbsp;</td>
+                                <td>{{order.sender.name}}</td>
+                            </tr>
+                        </table>
+                </div>
+              </div>
+            </div>
+        {% endif %}
+    {% elseif this.param.type == 'label-v2' %}
+        <div class="page-wrap" style="page-break-after: always;">
+            <table class="table" style=" margin-left: auto; margin-right: auto; font-family:Arial, Helvetica, sans-serif;" border="0" width="100%" >
+                <tbody>
+                    <tr>
+                        <td>
+                            <table style="text-align: center; table-layout:fixed;"   cellspacing="2" width="100%">
+                                <tbody>
+                                    <tr>
+                                        <td width="75%">
+                                            <p style="text-align: {% if currentLang == 'ar' %}right{% else %}left{% endif %};"><font size=6 face="arial"><strong>{{ settings.company.title }}</strong></font></p>
+                                        </td>
+                                        <td width="25%">
+                                            <p style="text-align: center;"><img src='{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo-10.png{% endif %}' border='0'></p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            {{'now'|date(settings.dateformat)}} {{'now'|date('h:i a')}}
+                            <hr />
+                            <table  width="100%" style="text-align: center; table-layout:fixed;">
+                                <tbody>
+                                    <tr bgcolor="#d6eeff">
+                                        <td width="50%">
+                                            <p style="text-align: center;"><strong><font size="5">{{'FROM'|__}}</font></strong></p>
+                                        </td>
+                                        <td width="50%">
+                                            <p style="text-align: center;"><font size="5" face="arial"><strong>{{'SHIP TO'|__}}</strong></font></p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <font size=4><td align="center"  style=" border-top-color:#000000; border-right-color:#333; border-right-width:2px;border-right-style:solid;  border-collapse: collapse;">
+                                            <p style="text-align: {% if currentLang == 'ar' %}right{% else %}left{% endif %};"><font size="4"><b>{{order.sender.name}}</b></font></p>
+                                            <p style="text-align: {% if currentLang == 'ar' %}right{% else %}left{% endif %}; ">{{order.sender.mobile}}</p>
+                                            <p style="text-align: {% if currentLang == 'ar' %}right{% else %}left{% endif %}; "><strong>{{order.sender_address.area.name}} {% if order.sender_address.zipcode %}- {{'ZIP'|__}}:{{order.sender_address.zipcode}}{% endif %}</strong></p>
+                                            <p style="text-align: {% if currentLang == 'ar' %}right{% else %}left{% endif %};"><font size=5><strong>{{order.sender_address.thecity.name}} | {{order.sender_address.thestate.name}} | {{order.sender_address.thecountry.name}}</strong></font></p>
+                                        </td>
+                                        <td>
+                                            <p style="text-align: {% if currentLang == 'ar' %}right{% else %}left{% endif %};"><font size="4"><b>{{order.receiver.name}}</b></font></p>
+                                            <p style="text-align: {% if currentLang == 'ar' %}right{% else %}left{% endif %}; ">{{order.receiver.mobile}}</p>
+                                            <p style="text-align: {% if currentLang == 'ar' %}right{% else %}left{% endif %}; "><strong>{{order.receiver_address.area.name}} {% if order.receiver_address.zipcode %}- {{'ZIP'|__}}:{{order.receiver_address.zipcode}}{% endif %}</strong></p>
+                                            <p style="text-align: {% if currentLang == 'ar' %}right{% else %}left{% endif %};"><font size=5><strong>{{order.receiver_address.thecity.name}} | {{order.receiver_address.thestate.name}} | {{order.receiver_address.thecountry.name}}</strong></font></p>
+                                        </td></font>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <hr />
+                            <table style="text-align: center;" width="100%">
+                                <tbody>
+                                    <tr>
+                                        <td width="50%">
+                                            <p><strong>{{'DELIVERY TIME'|__}}</strong></p>
+                                            <p><font size=4><b>{{order.deliverytime.name}}</b></font></p>
+                                        </td>
+                                        {% if order.courier %}
+                                            <td width="50%">
+                                                <p><strong>{{'COMPANY COURIER'|__}}</strong></p>
+                                                <p><font size=4><strong><b>{{order.courier.name}}</b></strong></p>
+                                            </td>
+                                        {% endif %}
+                                    </tr>
+                              </tbody>
+                          </table>
+                          <hr />
+                          <table style="text-align: center;" width="100%">
+                                <tbody>
+                                    <tr>
+                                        <td width="50%">
+                                            <p><strong>{{'PIECES'|__}} | {{'WEIGHT'|__}}</strong></p>
+                                        </td>
+                                        <td width="50%">
+                                            <p><strong>{{'CONTENTS'|__}}</strong></p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%">
+                                            <p><font size=4>{{order.items.count}} | {{order.items.sum('weight')}}</font></p>
+                                        </td>
+                                        <td width="50%">
+                                            <p>
+                                                {% for item in order.items %}
+                                                    <font size=4>{{item.category.name|capitalize}}</font></br>
+                                                {% endfor %}
+                                        </p>
+                                        </td>
+                                    </tr>
+                              </tbody>
+                          </table>
+                          <hr />
+                          <center  width="100%">
+                            <div class="output">
+                              <p style='padding:5px; text-align:center; font-size:100px; font-weight:bold;font-family:Arial,Helvetica;'>
+                                  {{order.receiver_address.area.id}}
+                              </p>
+                            </div>
+                          </center>
+                          <hr />
+                          <center  width="100%">
+                            <div class="output">
+                              <p style='padding:5px; text-align:center; font-size:24px; font-family:Arial,Helvetica;'>{{'TRACKING'|__}} #</p>
+                              <section class="output">
+                                  {{ barcodeHTML({data: order.barcode, type: 'CODABAR', width: '4', height: '100'}) }}<br />
+                                  <h2>{{order.barcode}}</h2>
+                              </section>
+                            </div>
+                          </center>
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          {{ barcodeHTML({data: order.barcode, type: 'QRCODE', width: '5', height: '5'}) }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+{% put styles %}
+    <style>
+    body { background: #fff;color: black}
+
+
+
+    {% if this.param.type == 'shipment' %}
+        * { margin: 0; padding: 0; }
+        body {
+            font: 14px/1.4 Helvetica, Arial, sans-serif;
+        }
+        .page-wrap { width: 800px; margin: 0 auto;page-break-after: always; }
+
+        textarea { border: 0; font: 14px Helvetica, Arial, sans-serif; overflow: hidden; resize: none; }
+        table { border-collapse: collapse; }
+        table td, table th { border: 1px solid black; padding: 5px; }
+		tr.noBorder td {
+		  border: 0;
+		}
+
+		td.Border td {
+		  border: 1px;
+		}
+        {% if currentLang == 'ar' %}
+            p,b, strong{
+                font-family: Cairo;
+                font-weight: bold;
+            }
+        {% endif %}
+
+        #header { height: 15px; width: 100%; margin: 20px 0; background: #222; text-align: center; color: white; font: bold 15px Helvetica, Sans-Serif; text-decoration: uppercase; letter-spacing: 20px; padding: 8px 0px; }
+
+        #address { width: 250px; height: 150px; float: left; }
+        #customer { overflow: hidden; }
+        #barcodeHTML  { text-align: center;}
+        #barcodeHTML > div { margin:auto}
+        #customer-title { font-size: 20px; font-weight: bold; float: left; }
+
+        #meta { margin-top: 1px; width: 100%; float: right; }
+        #meta td { text-align: right;  }
+        #meta td.meta-head { text-align: left; background: #6c757d; }
+        #meta td textarea { width: 100%; height: 20px; text-align: right; }
+
+		#signing { margin-top: 0px; width: 100%; float: center; }
+        #signing td { text-align: center;  }
+        #signing td.signing-head { text-align: center; background: #eee; }
+        #signing td textarea { width: 100%; height: 20px; text-align: center; }
+
+        #items { clear: both; width: 100%; margin: 30px 0 0 0; border: 1px solid black; }
+        #items th { background: #6c757d; }
+        #items textarea { width: 80px; height: 50px; }
+        #items tr.item-row td {  vertical-align: top; }
+        #items td.description { width: 300px; }
+        #items td.item-name { width: 175px; }
+        #items td.description textarea, #items td.item-name textarea { width: 100%; }
+        #items td.total-line { border-right: 0; text-align: {% if currentLang == 'ar' %}left{% else %}right{% endif %}; }
+        #items td.total-value { border-left: 0; padding: 10px; }
+        #items td.total-value textarea { height: 20px; background: none; }
+        #items td.balance { background: #6c757d; }
+        #items td.blank { border: 0; }
+
+        #terms { text-align: center; margin: 20px 0 0 0; }
+        #terms h5 { text-transform: uppercase; font: 13px Helvetica, Sans-Serif; letter-spacing: 10px; border-bottom: 1px solid black; padding: 0 0 8px 0; margin: 0 0 8px 0; }
+        #terms textarea { width: 100%; text-align: center;}
+
+
+
+        .delete-wpr { position: relative; }
+        .delete { display: block; color: #000; text-decoration: none; position: absolute; background: #EEEEEE; font-weight: bold; padding: 0px 3px; border: 1px solid; top: -6px; left: -22px; font-family: Verdana; font-size: 12px; }
+
+        /* Extra CSS for Print Button*/
+        .button {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            overflow: hidden;
+            margin-top: 20px;
+            padding: 12px 12px;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-transition: all 60ms ease-in-out;
+            transition: all 60ms ease-in-out;
+            text-align: center;
+            white-space: nowrap;
+            text-decoration: none !important;
+
+            color: #fff;
+            border: 0 none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.3;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+
+            -webkit-box-pack: center;
+            -webkit-justify-content: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            -webkit-box-align: center;
+            -webkit-align-items: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-box-flex: 0;
+            -webkit-flex: 0 0 160px;
+            -ms-flex: 0 0 160px;
+            flex: 0 0 160px;
+        }
+        .button:hover {
+            -webkit-transition: all 60ms ease;
+            transition: all 60ms ease;
+            opacity: .85;
+        }
+        .button:active {
+            -webkit-transition: all 60ms ease;
+            transition: all 60ms ease;
+            opacity: .75;
+        }
+        .button:focus {
+            outline: 1px dotted #959595;
+            outline-offset: -4px;
+        }
+
+        .button.-regular {
+            color: #202129;
+            background-color: #edeeee;
+        }
+        .button.-regular:hover {
+            color: #202129;
+            background-color: #e1e2e2;
+            opacity: 1;
+        }
+        .button.-regular:active {
+            background-color: #d5d6d6;
+            opacity: 1;
+        }
+
+        .button.-dark {
+            color: #FFFFFF;
+            background: #333030;
+        }
+        .button.-dark:focus {
+            outline: 1px dotted white;
+            outline-offset: -4px;
+        }
+
+        @media print
+        {
+        .page-wrap { page-break-after: always; }
+            .no-print, .no-print *
+            {
+                display: none !important;
+            }
+        }
+		h4 {
+			border-bottom: 1px solid black;
+		}
+
+    {% elseif this.param.type == 'label' or this.param.type == 'label-1' %}
+        {% if printTemplate == "print_template_advance"   %}
+            body {
+                font: 14px/1.4 Helvetica, Arial, sans-serif;
+
+            }
+            .page-wrap { width: 90%; margin: auto;page-break-after: always;float: none;position: relative;display: block;}
+            .shipment{margin-top:20px;margin-bottom:20px;font-size:30px   }
+            table{margin-top:10px;margin-bottom:10px }
+            table tr{margin-bottom:15px; }
+            table tr td h2{margin-top: 30px;font-size:35px;font-weight:bold;  }
+            .row{margin-bottom:20px }
+            #logo img{width:250px;height:120px  }
+            .crbt{float: right;font-weight: bold;margin-top:20px;margin-left:30%; }
+            .l2{margin-top:20px;margin-bottom:20px;  }
+            .l2 div.row{margin-bottom:0 }
+            .l2 div.row div.td{width:30%;border-right:solid 1px #bbb;padding:5px 10px 5px 30px   }
+            .l2 div.row div.last{border: none;}
+            .lastOne{margin-left:69%  }
+            .l2 .spTitle{font-weight:bold;  }
+            .l4 table tr{border-bottom:#bbb solid 1px }
+            @media print
+            {
+            .page-wrap { page-break-after: always;float: none;position: relative;display: block;     height: 100mm;
+    max-height: 100mm;
+    min-height: 100mm;}
+                .no-print, .no-print *
+                {
+                    display: none !important;
+                }
+            }
+        {% else %}
+            #page-wrap {
+              width: 6in;
+              min-height: 4in;
+            }
+            .table th, .table td {
+                border-top: 0 !important;
+            }
+            hr {
+              height: 1px;
+              background-color: black;
+            }
+
+            .print-loction .barcode > div {
+                margin: auto !important;
+            }
+
+            .delete-wpr { position: relative; }
+            	.delete { display: block; color: #000; text-decoration: none; position: absolute; background: #EEEEEE; font-weight: bold; padding: 0px 3px; border: 1px solid; top: -6px; left: -22px; font-family: Verdana; font-size: 12px; }
+
+            	/* Extra CSS for Print Button*/
+            	.button {
+            		display: -webkit-box;
+            		display: -webkit-flex;
+            		display: -ms-flexbox;
+            		display: flex;
+            		overflow: hidden;
+            		margin-top: 20px;
+            		padding: 12px 12px;
+            		cursor: pointer;
+            		-webkit-user-select: none;
+            		-moz-user-select: none;
+            		-ms-user-select: none;
+            		user-select: none;
+            		-webkit-transition: all 60ms ease-in-out;
+            		transition: all 60ms ease-in-out;
+            		text-align: center;
+            		white-space: nowrap;
+            		text-decoration: none !important;
+
+            		color: #fff;
+            		border: 0 none;
+            		border-radius: 4px;
+            		font-size: 14px;
+            		font-weight: 500;
+            		line-height: 1.3;
+            		-webkit-appearance: none;
+            		-moz-appearance: none;
+
+            		-webkit-box-pack: center;
+            		-webkit-justify-content: center;
+            		-ms-flex-pack: center;
+            		justify-content: center;
+            		-webkit-box-align: center;
+            		-webkit-align-items: center;
+            		-ms-flex-align: center;
+            		align-items: center;
+            		-webkit-box-flex: 0;
+            		-webkit-flex: 0 0 160px;
+            		-ms-flex: 0 0 160px;
+            		flex: 0 0 160px;
+            	}
+            	.button:hover {
+            		-webkit-transition: all 60ms ease;
+            		transition: all 60ms ease;
+            		opacity: .85;
+            	}
+            	.button:active {
+            		-webkit-transition: all 60ms ease;
+            		transition: all 60ms ease;
+            		opacity: .75;
+            	}
+            	.button:focus {
+            		outline: 1px dotted #959595;
+            		outline-offset: -4px;
+            	}
+
+            	.button.-regular {
+            		color: #202129;
+            		background-color: #edeeee;
+            	}
+            	.button.-regular:hover {
+            		color: #202129;
+            		background-color: #e1e2e2;
+            		opacity: 1;
+            	}
+            	.button.-regular:active {
+            		background-color: #d5d6d6;
+            		opacity: 1;
+            	}
+
+            	.button.-dark {
+            		color: #FFFFFF;
+            		background: #333030;
+            	}
+            	.button.-dark:focus {
+            		outline: 1px dotted white;
+            		outline-offset: -4px;
+            	}
+
+            	@media print
+            	{
+            		.no-print, .no-print *
+            		{
+            			display: none !important;
+            		}
+            	}
+
+                .print-block {
+                    border: 1px solid black;
+                    padding: 10px;
+                    -webkit-border-radius: 2px;
+                    -moz-border-radius: 2px;
+                    border-radius: 15px;
+                    width: 98%;
+                    margin-bottom: 120px;
+                    /* height: 275px; */
+                    background-color: #ffffff !important;
+                    color: black;
+                    margin: 10px auto;
+                }
+            	.print-block{
+                    font-size: 19px;
+                    font-weight: bold;
+            	}
+
+            	.print-break{
+            		border: 1px solid black;
+            	    margin-bottom: 5px;
+            	    margin-top: -10px;
+            	}
+            	.print-loction h2{
+            		color: black;
+            	}
+                @media  print {
+                    .print-block {
+                        background-color: #ffffff !important;
+                        -webkit-print-color-adjust: exact;
+                    }
+                    #kt_header{
+                    	display: none;
+                    }
+                    div#kt_content{
+                    	padding-top: 0px;
+                    }
+                    div#kt_header, div#kt_aside, button#kt_aside_close_btn, div#kt_header_mobile{
+                    	display: none !important;
+                    }
+                }
+            {% endif %}
+        {% elseif this.param.type == 'label-v2' %}
+            .page-wrap { width: 800px; margin: 0 auto;page-break-after: always;  }
+            .table th, .table td {
+                border-top: 0 !important;
+            }
+            hr {
+              height: 1px;
+              background-color: black;
+            }
+
+            .delete-wpr { position: relative; }
+            	.delete { display: block; color: #000; text-decoration: none; position: absolute; background: #EEEEEE; font-weight: bold; padding: 0px 3px; border: 1px solid; top: -6px; left: -22px; font-family: Verdana; font-size: 12px; }
+
+            	/* Extra CSS for Print Button*/
+            	.button {
+            		display: -webkit-box;
+            		display: -webkit-flex;
+            		display: -ms-flexbox;
+            		display: flex;
+            		overflow: hidden;
+            		margin-top: 20px;
+            		padding: 12px 12px;
+            		cursor: pointer;
+            		-webkit-user-select: none;
+            		-moz-user-select: none;
+            		-ms-user-select: none;
+            		user-select: none;
+            		-webkit-transition: all 60ms ease-in-out;
+            		transition: all 60ms ease-in-out;
+            		text-align: center;
+            		white-space: nowrap;
+            		text-decoration: none !important;
+
+            		color: #fff;
+            		border: 0 none;
+            		border-radius: 4px;
+            		font-size: 14px;
+            		font-weight: 500;
+            		line-height: 1.3;
+            		-webkit-appearance: none;
+            		-moz-appearance: none;
+
+            		-webkit-box-pack: center;
+            		-webkit-justify-content: center;
+            		-ms-flex-pack: center;
+            		justify-content: center;
+            		-webkit-box-align: center;
+            		-webkit-align-items: center;
+            		-ms-flex-align: center;
+            		align-items: center;
+            		-webkit-box-flex: 0;
+            		-webkit-flex: 0 0 160px;
+            		-ms-flex: 0 0 160px;
+            		flex: 0 0 160px;
+            	}
+            	.button:hover {
+            		-webkit-transition: all 60ms ease;
+            		transition: all 60ms ease;
+            		opacity: .85;
+            	}
+            	.button:active {
+            		-webkit-transition: all 60ms ease;
+            		transition: all 60ms ease;
+            		opacity: .75;
+            	}
+            	.button:focus {
+            		outline: 1px dotted #959595;
+            		outline-offset: -4px;
+            	}
+
+            	.button.-regular {
+            		color: #202129;
+            		background-color: #edeeee;
+            	}
+            	.button.-regular:hover {
+            		color: #202129;
+            		background-color: #e1e2e2;
+            		opacity: 1;
+            	}
+            	.button.-regular:active {
+            		background-color: #d5d6d6;
+            		opacity: 1;
+            	}
+
+            	.button.-dark {
+            		color: #FFFFFF;
+            		background: #333030;
+            	}
+            	.button.-dark:focus {
+            		outline: 1px dotted white;
+            		outline-offset: -4px;
+            	}
+
+            	@media print
+            	{
+              .page-wrap { page-break-after: always; }
+            		.no-print, .no-print *
+            		{
+            			display: none !important;
+            		}
+            	}
+            {% endif %}
+            @page {
+              size: A4;
+              margin: 0;
+            }
+            @media print {
+              .page-wrap {
+                page-break-after: always;
+                position: relative;
+                float: none;
+              }
+              /* ... the rest of the rules ... */
+            }
+    </style>
+{% endput %}
+{% put scripts %}
+<script type="text/javascript">
+KTUtil.ready(function () {
+    window.print(".shipment");
+    //setTimeout(function(){window.close();},10);
+});
+</script>
+{% endput %}

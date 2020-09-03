@@ -1,0 +1,42 @@
+.tcolor {color: #9ac827 !important;}
+.kl-cta-ribbon .trisvg {fill: #9ac827;}
+.logo-container .logo-infocard .left-side {background-color: #88b31b;}
+.logo-container .logo-infocard .right-side {background-color: #9ac827;}
+.site-header[data-header-style="2"] .site-header-main-wrapper,
+.site-header[data-header-style="3"],
+.site-header[data-header-style="10"] {border-bottom: 3px solid #9ac827;}
+.site-header[data-header-style="4"] .logo-container, 
+.site-header[data-header-style="6"] .logo-container {border-top-color: #9ac827;}
+.site-header[data-header-style="5"] {border-top: 3px solid #9ac827;}
+.btn-fullcolor, 
+.btn-fullcolor:focus {background-color: #9ac827;}
+.cart-container .buttons .button.wc-forward {background-color: #9ac827;}
+.how_to_shop .number {background-color: #9ac827;}
+.m_title {color: #9ac827;}
+.site-header .kl-cart-button .fas:after {background-color: #9ac827;}
+.cart-container .cart_list .product-title:hover {color: #8bb129;}
+.btn-fullcolor.btn-skewed:before {background-color: #9ac827;}
+.btn-fullcolor:hover, 
+.btn-fullcolor.btn-skewed:hover:before, 
+.cart-container .buttons .button.wc-forward:hover {background-color: #8bb129;}
+.ctabutton {background-color: #9ac827;}
+.kl-cta-ribbon .trisvg path {fill: #9ac827;}
+@media screen and (min-width: 992px) {
+	.main-nav > ul > li > a:before {background-color: #9ac827;}
+	.main-nav .hg_mega_container li a:not(.zn_mega_title):before {background-color: #9ac827;}
+}
+.chaser .main-menu li.active>a {background: #9ac827;}
+.logo-container .logo-infocard {background: #8bb129;}
+.kl-ios-selectors-block.bullets2 .item.selected::before, 
+.kl-ios-selectors-block.bullets2 .item:hover:before {background-color: #9ac827;}
+body .kl-ioscaption--style4 .more:before {border-color: #9ac827; background: rgba(154, 200, 39, 0.7);}
+.grid-ibx__icon img {width: 55px; margin: 0 auto;}
+.fun-fact .fun-number {color: #9ac827; font-weight: 400;}
+.fun-fact .fun-thing {color: #fff;}
+.fun-fact .kl-icon img {width: 70px; margin: 0 auto; margin-bottom: 20px;}
+.image-boxes__carousel-wrapper .inner-slide .imgprev {background: #9ac827;}
+.image-boxes__carousel-wrapper .inner-slide:hover a {color: #9ac827;}
+body .kl-ioscaption--style4 .more:hover:before {background: rgba(154, 200, 39, 0.9);}
+.media-container:hover .kl-title-block {padding-bottom: 10px;}
+.testimonial_slider__carousel-wrapper .testimonialbox .who strong {color: #9ac827;}
+.testimonial_slider__carousel-wrapper .testimonialSlider-slickNav li.slick-active .slickBtn {background-color: #9ac827;}

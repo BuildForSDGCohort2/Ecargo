@@ -1,0 +1,97 @@
+fields:
+    display_name:
+        label: Name
+        span: full
+        required: 1
+        type: text
+    username:
+        label: Username
+        span: auto
+        type: text
+    password:
+        label: Password
+        span: auto
+        type: password
+    email:
+        label: E-mail
+        span: auto
+        required: 1
+        type: text
+    contact_email:
+        label: 'Contact Email'
+        span: auto
+        type: text
+    vat_number:
+        label: 'VAT Number'
+        span: auto
+        type: text
+    budget:
+        label: Budget
+        span: auto
+        type: number
+    country:
+        label: Country
+        span: auto
+        required: 1
+        type: text
+    postcode:
+        label: 'Post Code'
+        span: auto
+        required: 1
+        type: text
+    city:
+        label: City
+        span: auto
+        required: 1
+        type: text
+    street:
+        label: Street
+        span: auto
+        required: 1
+        type: text
+    box:
+        label: Box
+        span: auto
+        type: text
+    number:
+        label: Number
+        span: auto
+        required: 1
+        type: text
+    language:
+        label: Language
+        span: full
+        type: text
+    payment_term:
+        label: 'Payment Term'
+        span: auto
+        type: text
+    storage_fee:
+        label: 'Does this customer pay storage fee?'
+        options:
+            1: 'Yes'
+            2: 'No'
+        span: auto
+        type: radio
+    clearance:
+        label: Clearance
+        span: auto
+        type: number
+    fiscal_representation:
+        label: 'Fiscal Representation'
+        span: auto
+        type: number
+    cost_24:
+        label: 'Storage cost after 24 hours'
+        span: auto
+        required: 1
+        type: number
+    cost_48:
+        label: 'Storage cost after 48 hours'
+        span: auto
+        required: 1
+        type: number
+    kg_price:
+        label: 'Handling price per kg'
+        span: full
+        type: number

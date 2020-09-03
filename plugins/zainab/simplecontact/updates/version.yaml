@@ -1,0 +1,31 @@
+1.0.1:
+    - 'Initialize plugin.'
+1.0.2:
+    - 'Created table zainab_simplecontact_contact'
+    - builder_table_create_zainab_simplecontact_contact.php
+1.0.3:
+    - 'Updated table zainab_simplecontact_contact'
+    - builder_table_update_zainab_simplecontact_contact.php
+1.0.4:
+    - 'Change Alias bug fixed'
+1.0.5:
+    - 'Dashboard widget added'
+    - 'Language added -- Portuguese (Brazil)'
+1.0.6:
+    - 'grecaptcha reset bug fixed'
+1.1.0:
+    - 'sql_modes NO_ZERO_IN_DATE,NO_ZERO_DATE fixed'
+    - 'minor bugs fixed'
+1.1.1:
+    - 'Language added -- Russian'
+    - 'minor bug fixed'
+2.0.0:
+    - 'Translate Plugin Dependency Added (RainLab.Translate)'
+    - 'Languages Added (Arabic, Chinese)'
+2.0.1:
+    - 'Migration Bug Fixed'
+    - 'Notification Email Updated'
+2.0.2:
+    - 'Languages Added (Czech, Turkish)'
+2.0.3:
+    - 'Language Added (French), fixed punctuation'    

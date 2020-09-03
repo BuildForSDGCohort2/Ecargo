@@ -1,0 +1,834 @@
+title = "Containers"
+url = "/dashboard/containers/:type?"
+layout = "admin"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/dashboard"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+==
+
+
+<?php
+function onStart(){
+    if(!Auth::getUser()->hasUserPermission(["order"],'r')) {
+        \Flash::error($this['theme_lang']['not_allowed']);
+    }
+
+    $this->page->listing        = true;
+
+    if(Auth::getUser()->hasUserPermission(["order"],'c')){
+        if(Auth::getUser()->role_id == 5){
+            $this->page->actions = array(
+	            'buttons'   =>  array(
+	                array(
+	                    'id'    =>  'addNew',
+	                    'title' =>  $this['theme_lang']['add_new'],
+	                    'icon'  =>  'flaticon2-add',
+	                    'type'  =>  'info',
+	                    'url'   =>  url('dashboard/containers/create'),
+	                )
+	            ),
+	            'listing'   =>  array(
+	                array(
+	                    'id'    =>  'updateStatus',
+	                    'title' =>  "Edit Status",
+	                    'icon'  =>  false,
+	                    'type'  =>  'success',
+	                    'url'   =>  'javascript:;',
+	                ),
+	                array(
+	                    'id'    =>  'printContainers',
+	                    'title' =>  "Print Containers",
+	                    'icon'  =>  false,
+	                    'type'  =>  'info',
+	                    'url'   =>  'javascript:;',
+	                )
+
+	            ),
+	            'delete'    =>  true,
+	        );
+        }elseif(Auth::getUser()->role_id == 4){
+            $this->page->actions = array(
+                'buttons'   =>  array(
+                    array(
+                        'id'    =>  'addNew',
+                        'title' =>  $this['theme_lang']['add_new'],
+                        'icon'  =>  'flaticon2-add',
+                        'type'  =>  'info',
+                        'url'   =>  url('dashboard/containers/create'),
+                    ),
+                    array(
+                        'id'    =>  'PrintYourOrders',
+                        'title' =>  $this['theme_lang']['print_orders'],
+                        'icon'  =>  'flaticon2-print',
+                        'type'  =>  'info',
+                        'url'   =>  'javascript:;',
+                    ),
+                ),
+            );
+        }else{
+            $this->page->actions = array(
+                'buttons'   =>  array(
+                    array(
+                        'id'    =>  'addNew',
+                        'title' =>  $this['theme_lang']['add_new'],
+                        'icon'  =>  'flaticon2-add',
+                        'type'  =>  'info',
+                        'url'   =>  url('dashboard/containers/create'),
+                    ),
+                    array(
+                        'id'    =>  'PrintEmployeeOrders',
+                        'title' =>  $this['theme_lang']['print_orders'],
+                        'icon'  =>  'flaticon2-print',
+                        'type'  =>  'info',
+                        'url'   =>  'javascript:;',
+                    ),
+                ),
+            );
+        }
+    }
+
+
+    $this['containerStatuses']       =   \Spot\Container\Models\Status::select('id','name')->get();
+}
+function onEnd(){
+    switch($this->param('type')){
+        case 'saved':
+            $this->page->title ="Saved Containers" ;//$this['theme_lang']['containers_saved'];
+            break;
+        case 'requests':
+            $this->page->title ="New Request" ;//$this['theme_lang']['containers_blocked'];
+            break;    
+        case 'blocked':
+            $this->page->title ="Blocked Containers" ;//$this['theme_lang']['containers_blocked'];
+            break;
+        case 'registered':
+            $this->page->title ="Registered Containers"; //$this['theme_lang']['containers_registered'];
+            break;
+        case 'loaded':
+            $this->page->title ="Loaded Containers"; //$this['theme_lang']['containers_loaded'];
+            break;    
+        case 'released':
+            $this->page->title ="Released Containers"; //$this['theme_lang']['containers_released'];
+            break;
+        case 'all':
+            $this->page->title ="All Containers" ;//$this['theme_lang']['containers_all'];
+            break;
+        default:
+            if(Auth::getUser()->role_id == 5){
+                $this->page->title ="Saved Containers" ;//$this['theme_lang']['containers_saved'];
+            }else{
+                $this->page->title ="All Containers"; //$this['theme_lang']['containers_registered'];
+            }
+    }
+}
+
+
+function onEditStatus()
+{
+    if(Auth::getUser()->hasUserPermission(["order"],'c')){
+
+        $data = post();
+
+        $ids    =   explode(",",$data['ids']);
+        foreach($ids as $id){
+            if($id == '' || $id == null){
+                continue;
+            }
+            $subitem                   = \Spot\Shipment\Models\Order::find($id);
+            $subitem->status_id      = $data['status_id'];
+            $subitem->updated_at       = \Carbon\Carbon::now();
+            $subitem->update();
+        }
+
+    //    $event_data =   array(
+    //        'sender'                =>  Auth::getUser(),
+    //        'shipping_sender'       =>  (($item->sender_id) ? $item->sender_id : null),,
+    //        'shipping_receiver'     =>  (($item->receiver_id) ? $item->receiver_id : null),
+    //        'shipping_responsible'  =>  $responsiable,
+    //        'item'                  =>  $item,
+    //        'type'                  =>  $type,
+    //        'thumb'                 =>  'icon',
+    //        'icon'                  =>  'flaticon-gift',
+    //        'subject'               =>  $this['theme_lang'][$type],
+    //        'message'               =>  $this['theme_lang'][$type],
+    //        'url'                   =>  url('dashboard/shipments/manifest/'.$item->id.'/view'),
+    //        'badge'                 =>  'success',
+    //    );
+    //    \Event::fire('spot.event', [$this['pusher'],$this['settings'],$event_data]);
+
+    //    $activity                   = new \Spot\Shipment\Models\Activity;
+    //    $activity->user_id          = Auth::getUser()->id;
+    //    $activity->description      = "Edit Statuses";
+    //    $activity->created_at       = \Carbon\Carbon::now();
+    //    $activity->updated_at       = \Carbon\Carbon::now();
+    //    $activity->save();
+
+        \Flash::success($this['theme_lang']['created_successfully']);
+         return Redirect::back();
+    }
+}
+
+function onPrintShipments()
+{
+    $data = post();
+    $newIDs=null;
+    $ids    =   explode(",",$data['ids']);
+    foreach($ids as $id){
+        if($id == '' || $id == null){
+            continue;
+        }
+        $newIDs[]=$id;
+    }
+    Session::put('printIds', $newIDs);
+
+    //var_dump($newIDs);
+    return Redirect::to("/dashboard/shipments/shipments/print/"."label");
+    //return redirect("/dashboard/shipments/".$newIDs[0]."/print/"."label")->with('ids',$newIDs);
+}
+
+
+
+
+function onDelete()
+{
+    $data = post();
+    if(!Auth::getUser()->hasUserPermission(["order"],'d')) {
+        return Response::json(['error' => $this['theme_lang']['not_allowed']], 401);
+    }
+
+    if(null !== post('id')){
+        if(is_array(post('id'))){
+            foreach(post('id') as $id){
+                $item = \Spot\Shipment\Models\Order::where('id',$id)->first();
+
+                $activity                   = new \Spot\Shipment\Models\Activity;
+                $activity->user_id          = Auth::getUser()->id;
+                $activity->order_id         = $item->id;
+                $activity->description      = 'deleted';
+                $activity->created_at       = \Carbon\Carbon::now();
+                $activity->updated_at       = \Carbon\Carbon::now();
+                $activity->save();
+
+                $item->payments->each->delete();
+                $item->activities->each->delete();
+                $item->tasks->each->delete();
+                $item->items->each->delete();
+                $item->delete();
+            }
+        }else{
+            $item = \Spot\Shipment\Models\Order::where('id',$data['id'])->first();
+
+            $activity                   = new \Spot\Shipment\Models\Activity;
+            $activity->user_id          = Auth::getUser()->id;
+            $activity->order_id         = $item->id;
+            $activity->description      = 'deleted';
+            $activity->created_at       = \Carbon\Carbon::now();
+            $activity->updated_at       = \Carbon\Carbon::now();
+            $activity->save();
+
+            $item->payments->each->delete();
+            $item->activities->each->delete();
+            $item->tasks->each->delete();
+            $item->items->each->delete();
+            $item->delete();
+        }
+        return Redirect::back();
+    }
+}
+function onPrint()
+{
+    $data = post();
+    if(Auth::getUser()->role_id != 4){
+        return Redirect::to('dashboard/shipments/employee/'.$data['employee_id'].'/print/'.str_replace('/','-',$data['date']));
+    }else{
+        return Redirect::to('dashboard/shipments/employee/'.Auth::getUser()->id.'/print/'.str_replace('/','-',$data['date']));
+    }
+}
+?>
+==
+<!--begin::Portlet-->
+<div class="kt-portlet kt-portlet--tabs">
+    <div class="kt-portlet__head">
+        <div class="kt-portlet__head-toolbar">
+            <ul class="nav nav-tabs nav-tabs-line nav-tabs-line-brand nav-tabs-line-2x nav-tabs-line-right nav-tabs-bold" role="tablist">
+                {% if user.role_id == 5 %}
+                <li class="nav-item">
+                    <a class="nav-link {% if (this.param.type is empty and user.role_id == 5) or this.param.type == 'saved' %}active{% endif %}" data-toggle="tab" href="#saved" role="tab">
+                        <i class="flaticon-folder-2" aria-hidden="true"></i>{{'Saved'|__}}
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a class="nav-link {% if  this.param.type == 'requests' %}active{% endif %}" data-toggle="tab" href="#requests" role="tab">
+                        <i class="flaticon-alert" aria-hidden="true"></i>{{'New Request'|__}}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if this.param.type == 'registered' %}active{% endif %}" data-toggle="tab" href="#registered" role="tab">
+                        <i class="flaticon-alert" aria-hidden="true"></i>{{'Registered'|__}}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if this.param.type == 'loaded' %}active{% endif %}" data-toggle="tab" href="#loaded" role="tab">
+                        <i class="flaticon-like" aria-hidden="true"></i>{{"Loaded"|__}}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if this.param.type == 'released' %}active{% endif %}" data-toggle="tab" href="#released" role="tab">
+                        <i class="flaticon-network" aria-hidden="true"></i>{{'Released'|__}}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if this.param.type == 'blocked' %}active{% endif %}" data-toggle="tab" href="#blocked" role="tab">
+                        <i class="flaticon-suitcase" aria-hidden="true"></i>{{'Blocked'|__}}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if (this.param.type == 'all' or this.param.type is empty) %}active{% endif %}" data-toggle="tab" href="#all" role="tab">
+                        <i class="flaticon-shopping-basket" aria-hidden="true"></i>{{'All Containers'|__}}
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="kt-portlet__body">
+        <div class="tab-content">
+            {% if user.role_id == 5 %}
+                <div class="tab-pane  {% if (this.param.type is empty and user.role_id == 5) or this.param.type == 'saved' %}active{% endif %}" id="saved" role="tabpanel">
+                    <div class="kt-datatable-saved"></div>
+                </div>
+            {% endif %}
+            <div class="tab-pane  {% if  this.param.type == 'requests' %}active{% endif %}" id="requests" role="tabpanel">
+                <div class="kt-datatable-requests"></div>
+            </div>
+            <div class="tab-pane  {% if this.param.type == 'registered' %}active{% endif %}" id="registered" role="tabpanel">
+                <div class="kt-datatable-registered"></div>
+            </div>
+            <div class="tab-pane {% if this.param.type == 'loaded' %}active{% endif %}" id="loaded" role="tabpanel">
+                <div class="kt-datatable-loaded"></div>
+            </div>
+            <div class="tab-pane {% if this.param.type == 'released' %}active{% endif %}" id="released" role="tabpanel">
+                <div class="kt-datatable-released"></div>
+            </div>
+            <div class="tab-pane {% if this.param.type == 'blocked' %}active{% endif %}" id="blocked" role="tabpanel">
+                <div class="kt-datatable-blocked"></div>
+            </div>
+            <div class="tab-pane {% if (this.param.type is empty or this.param.type == 'all') %}active{% endif %}" id="all" role="tabpanel">
+                <div class="kt-datatable-all"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--end::Portlet-->
+
+<!-- statuses modal -->
+<div class="modal fade" id="change_status" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" >{{'Edit Containers Statuses'|__}}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                </button>
+            </div>
+
+            {{ form_ajax('onEditStatus', { success: 'created successfully!', flash: true, class: 'kt_form', novalidate: true }) }}
+                <div class="modal-body">
+                    <div class="row">
+                        <input type="hidden" id="containers_statuses_id" class="form-control" name="ids" />
+                        {% if user.role_id != 4 %}
+                            <div class="form-group col-lg-12">
+                                <label>{{'Status'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                <select class="form-control"name="status_id" data-live-search="true" required>
+                                    <option data-hidden="true"></option>
+                                    {% for status in containerStatuses %}
+                                        <option value="{{status.id}}">{{status.name}}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{{'Close'|__}}</button>
+                    <button type="submit" class="btn btn-primary print">{{'Update'|__}}</button>
+                </div>
+            {{ form_close() }}
+        </div>
+    </div>
+</div>
+
+
+{% put scripts %}
+<script type="text/javascript">
+"use strict";
+var KTAppUserListDatatable = function () {
+    // variables
+    var datatable;
+
+    // init
+    var init = function (type) {
+        // init the datatables. Learn more: //keenthemes.com/metronic/?page=docs&section=datatable
+            var columns = [
+                {
+                    field: 'id',
+                    title: '#',
+                    sortable: false,
+                    width: 20,
+                    selector: {
+                        class: 'kt-checkbox--solid'
+                    },
+                    textAlign: 'center',
+                },
+                {
+                    field: "number",
+                    title: "{{'Tracking'|__}}",
+                    sortable: true,
+                    width: 100,
+                    template: function(row) {
+                        return '<a href="{{url('dashboard/containers')}}/'+row.id+'/view">'+row.container_number+'</a>';
+                    }
+                },
+                {
+                    field: "details",
+                    title: "{{'Container Details'|__}}",
+                    sortable: false,
+                    width: 'auto',
+                    template: function(data, i) {
+                       // alert(data);
+                            var output  = '\
+                                <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                                    <div class="kt-user-card-v2__details">\
+                                         <a href="{% if user.hasUserPermission('client', 'r') %}{{url('dashboard/clients')}}/'+data.customer.id+'/view{% else %}javascript:;{% endif %}" class="kt-user-card-v2__name"><b class="kt-font-boldest">{{"Customer"|__}}:</b> ' + data.customer.name + '</a>\
+                                        <span class="kt-user-card-v2__email"><b class="kt-font-boldest">{{"From"|__}}:</b> ' + data.destination.name + '</span>';    
+                       
+                        output      += '\
+                                </div>\
+                            </div>';
+                        return output;
+                    }
+                },
+                {
+                    field: "cc",
+                    title: "{{'Cc'|__}}",
+                    sortable: false,
+                    width: 100,
+                    template: function(data, i) {
+                        if(data.cc == 1 )
+                            return '<a href="javascript:;">{{"Yes"|__}}</a>';
+                        else
+                            return '<a href="javascript:;">{{"No"|__}}</a>';
+                    }
+                },
+                {
+                    field: "status",
+                    title: "{{'Status'|__}}",
+                    sortable: false,
+                    width: 'auto',
+                    template: function(row) {
+                        if(row.status == 100){
+                            var output = '<span class="btn btn-bold btn-sm btn-label-primary">{{"Saved"|__}}</span>';
+                        }else{
+                            var output = '<span class="btn btn-bold btn-sm btn-label-' + row.status.color + '">' + row.status.name + '</span>';
+                        }
+
+                        return output;
+                    }
+                },
+                {
+                    field: "loading_date",
+                    title: "{{'Date'|__}}",
+                    sortable: false,
+                    width: 100,
+                },
+                {
+                    field: "Actions",
+                    width: 100,
+                    title: "{{'Actions'|__}}",
+                    sortable: false,
+                    overflow: 'visible',
+                    template: function (data) {
+                        var output = '' +
+                        '<div class="btn-group btn-group" role="group" aria-label="...">'+
+                            '<a href="{{url("dashboard/containers")}}/'+data.id+'/view" class="btn btn-brand btn-sm btn-icon" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"View container"|__}}"><i class="la la-eye"></i></button>';
+                            {% if user.hasUserPermission('container', 'u') and user.role_id != 5 %}
+                                if(data.status.equal   ==  2 || data.status.equal == 3 ){
+                                    output += '<a href="{{url("dashboard/containers")}}/'+data.id+'/edit" class="btn btn-brand btn-sm btn-icon" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"Edit Container"|__}}"><i class="la la-edit"></i></button>';
+                                }
+                            {% endif %}
+                            {% if user.role_id == 5 %}
+                                if((data.status.equal   ==  1 ) && data.customer == {{user.id}}){
+                                    output += '<a href="{{url("dashboard/containers")}}/'+data.id+'/edit" class="btn btn-brand btn-sm btn-icon" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"Edit Container"|__}}"><i class="la la-edit"></i></button>';
+                                }
+                            {% endif %}
+                                if((data.status.equal   !=  1 && data.status.equal   !=  2 && data.status.equal != 3)){
+                                    output += '<a href="{{url("dashboard/containers")}}/'+data.id+'/print/container" target="_blank" class="btn btn-info btn-sm btn-icon" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"Print Container"|__}}"><i class="la la-print"></i></button>';
+                                }
+                            {% if user.hasUserPermission('container', 'u') %}
+                                if((data.status.equal   ==  1 || data.status.equal   ==  2 || data.status.equal == 3)){
+                                    output += '<a href="{{url("dashboard/containers")}}/'+data.id+'/print/label" class="btn btn-info btn-sm btn-icon" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"Print Label"|__}}" target="_blank" ><i class="la la-qrcode"></i></button>';
+                                }
+                            {% endif %}
+                            //0 = Pending | 1 = Approved | 2 = Refused | 3 = Delivered to driver | 4 = Delivered | 5 = Return request | 6 = Delivery of discards to the driver | 7 = Supply in stock | 8 = Returned | 9 = received
+
+
+                            {% if user.hasUserPermission('container', 'u') and user.role_id != 5 %}
+                                // if((data.status.equal   ==  1 || data.status.equal   ==  2 || data.status.equal   ==  3)){
+                                //     output += '<a href="{{url("dashboard/containers")}}/'+data.id+'/update" class="btn btn-info btn-sm btn-icon" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"Update Status"|__}}"><i class="la la-street-view"></i></button>';
+                                // }
+                            {% endif %}
+                            {% if user.hasUserPermission('order', 'd') %}
+                                if(data.status.equal   ==  1 || data.status.equal == 2 || data.status.equal == 3){
+                                    output += '<a href="javascript:void(0);" class="btn btn-danger btn-sm delete_record kt-font-light btn-icon" rel="'+data.id+'" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"Delete Container"|__}}"><i class="la la-remove"></i></a>';
+                                }
+                            {% endif %}
+                            {% if user.role_id == 5 %}
+                                if((data.status.equal   ==  2 ) && data.customer == {{user.id}}){
+                                    output += '<a href="javascript:void(0);" class="btn btn-danger btn-sm delete_record kt-font-light btn-icon" rel="'+data.id+'" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"Delete Container"|__}}"><i class="la la-remove"></i></a>';
+                                }
+                            {% endif %}
+                        '</div>';
+
+                        return output;
+                    }
+                },
+            ]
+   
+       datatable = $('.kt-datatable-'+type).KTDatatable({
+            translate: {
+                records: {
+                    processing: '{{"Please wait"|__}}...',
+                    noRecords: '{{"No records found"|__}}'
+                },
+                toolbar: {
+                    pagination: {
+                        items: {
+                            default: {
+                                first: '{{"First"|__}}',
+                                prev: '{{"Previous"|__}}',
+                                next: '{{"Next"|__}}',
+                                last: '{{"Last"|__}}',
+                                more: '{{"More pages"|__}}',
+                                input: '{{"Page number"|__}}',
+                                select: '{{"Select page size"|__}}'
+                            },
+
+                            info: "{{"Displaying"|__}} {{ '{{' }}start{{ '}}' }} - {{ '{{' }}end{{ '}}' }} {{"of"|__}} {{total}} {{"records"|__}}"
+                        }
+                    }
+                }
+            },
+
+            // layout definition
+            layout: {
+                scroll: true, // enable/disable datatable scroll both horizontal and vertical when needed.
+                footer: false, // display/hide footer
+            },
+
+            // column sorting
+            sortable: true,
+
+            pagination: true,
+
+            search: {
+                input: $('#generalSearch'),
+                delay: 400,
+            },
+            data: {
+                type: 'remote',
+                source: {
+                    read: {
+                        url: '{{url("api/containers")}}/'+type,
+                    },
+                },
+                pageSize: 10, // display 20 records per page
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true,
+            },
+            // columns definition
+            columns: columns
+        });
+
+
+        return datatable;
+    };
+
+    // search
+    var search = function () {
+        $('#filter_form select,#filter_form input').each(function(){
+            $(this).on('change', function () {
+                datatable.search($(this).val().toLowerCase(), $(this).attr('name'));
+            });
+        });
+        $('#reset').on('click', function () {
+            datatable.destroy();
+            $('#generalSearch').val('');
+            $('#filter_form select,#filter_form input').each(function(){
+                $(this).val('');
+            });
+            $('#filter_form select').each(function(){
+                $(this).selectpicker("refresh");
+            });
+            init();
+        });
+    };
+
+    // selection
+    var selection = function () {
+        // init form controls
+        //$('#kt_form_status, #kt_form_type').selectpicker();
+
+        // event handler on check and uncheck on records
+        datatable.on('kt-datatable--on-check kt-datatable--on-uncheck kt-datatable--on-layout-updated', function (e) {
+            var checkedNodes = datatable.rows('.kt-datatable__row--active').nodes(); // get selected records
+            var count = checkedNodes.length; // selected records count
+
+            $('#kt_subheader_group_selected_rows').html(count);
+
+            if (count > 0) {
+                $('#kt_subheader_search').addClass('kt-hidden');
+                $('#kt_subheader_group_actions').removeClass('kt-hidden');
+            } else {
+                $('#kt_subheader_search').removeClass('kt-hidden');
+                $('#kt_subheader_group_actions').addClass('kt-hidden');
+            }
+        });
+    }
+
+    // selected records status update
+    var selectedStatusUpdate = function () {
+        $('#kt_subheader_group_actions_status_change').on('click', "[data-toggle='status-change']", function () {
+            var status = $(this).find(".kt-nav__link-text").html();
+
+            // fetch selected IDs
+            var ids = datatable.rows('.kt-datatable__row--active').nodes().find('.kt-checkbox--single > [type="checkbox"]').map(function (i, chk) {
+                return $(chk).val();
+            });
+
+            if (ids.length > 0) {
+                // learn more: //sweetalert2.github.io/
+                swal.fire({
+                    buttonsStyling: false,
+
+                    html: "{{"Are you sure to update"|__}} " + ids.length + " {{"selected records status to"|__}} " + status + " ?",
+                    type: "info-",
+
+                    confirmButtonText: "{{"Yes, update"|__}}!",
+                    confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+
+                    showCancelButton: true,
+                    cancelButtonText: "{{"No, cancel"|__}}",
+                    cancelButtonClass: "btn btn-sm btn-bold btn-default"
+                }).then(function (result) {
+                    if (result.value) {
+                        swal.fire({
+                            title: '{{"Deleted"|__}}!',
+                            text: '{{"Your selected records statuses have been updated"|__}}!',
+                            type: 'success',
+                            buttonsStyling: false,
+                            confirmButtonText: "{{"OK"|__}}",
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        })
+                        // result.dismiss can be 'cancel', 'overlay',
+                        // 'close', and 'timer'
+                    } else if (result.dismiss === 'cancel') {
+                        swal.fire({
+                            title: '{{"Cancelled"|__}}',
+                            text: '{{"You selected records statuses have not been updated"|__}}!',
+                            type: 'error',
+                            buttonsStyling: false,
+                            confirmButtonText: "{{"OK"|__}}",
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        });
+                    }
+                });
+            }
+        });
+    }
+    // selected records status update
+    var selectedFilter = function () {
+    }
+
+    // selected records delete
+    var selectedDelete = function () {
+        $('#kt_subheader_group_actions_delete_all').on('click', function () {
+            // fetch selected IDs
+            var selected = [];
+            var type    = $('.delete_record').attr('data-type');
+            var ids = datatable.rows('.kt-datatable__row--active').nodes().find('.kt-checkbox--single > [type="checkbox"]').map(function (i, chk) {
+                selected[$(chk).val()] = $(chk).val();
+                return $(chk).val();
+            });
+
+            if (ids.length > 0) {
+                // learn more: //sweetalert2.github.io/
+                swal.fire({
+                    buttonsStyling: false,
+
+                    text: "{{'Are you sure to delete'|__}} " + ids.length + " {{'selected records ?'|__}}",
+                    type: "error",
+
+                    confirmButtonText: "{{'Yes, delete!'|__}}",
+                    confirmButtonClass: "btn btn-sm btn-bold btn-danger",
+
+                    showCancelButton: true,
+                    cancelButtonText: '{{"No, cancel"|__}}',
+                    cancelButtonClass: "btn btn-sm btn-bold btn-brand"
+                }).then(function (result) {
+                    if (result.value) {
+                        $.request('onDelete', {
+                            data: {id: selected,type: type},
+                            success: function(data) {
+                                swal.fire({
+                                    title: '{{"Deleted!"|__}}',
+                                    text: '{{"Your selected records have been deleted! :("|__}}',
+                                    type: 'success',
+                                    buttonsStyling: false,
+                                    confirmButtonText: '{{"OK"|__}}',
+                                    confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                                });
+                                datatable.reload();
+                            }
+                        });
+                        // result.dismiss can be 'cancel', 'overlay',
+                        // 'close', and 'timer'
+                    } else if (result.dismiss === 'cancel') {
+                        swal.fire({
+                            title: '{{"Cancelled"|__}}',
+                            text: '{{"You selected records have not been deleted! :)"|__}}',
+                            type: 'error',
+                            buttonsStyling: false,
+                            confirmButtonText: '{{"OK"|__}}',
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        });
+                    }
+                });
+            }
+        });
+        
+
+    }
+
+    var updateTotal = function () {
+        datatable.on('kt-datatable--on-layout-updated', function () {
+            $('#kt_subheader_total').html(datatable.getTotalRows() + ' {{"Total"|__}}');
+        });
+    };
+
+    var reload = function () {
+        datatable.reload();
+    };
+
+    var filter = function (status) {
+        datatable.search(status, 'type');
+    };
+
+    var destroy = function () {
+        datatable.destroy();
+        $('#generalSearch').val('');
+        $('#filter_form select,#filter_form input').each(function(){
+            $(this).val('');
+        });
+        $('#filter_form select').each(function(){
+            $(this).selectpicker("refresh");
+        });
+    };
+
+    return {
+        // public functions
+        init: function (type) {
+            init(type);
+            search();
+            selection();
+            selectedStatusUpdate();
+            selectedFilter();
+            selectedDelete();
+            updateTotal();
+        },
+
+        reload: function(){
+            reload();
+        },
+
+        destroy: function(){
+            destroy();
+        },
+
+        filter: function(status){
+            filter(status);
+        }
+    };
+}();
+
+KTUtil.ready(function () {
+    $('.kt_subheader_filter_form').on('submit', function (e) {
+        e.preventDefault();
+        if($(this).find("button").hasClass('active')){
+            $('.kt_subheader_filter_form button').removeClass('active');
+            $("#filter_selected").html('');
+            KTAppUserListDatatable.filter(0);
+        }else{
+            $('.kt_subheader_filter_form button').removeClass('active');
+            $("#filter_selected").html(':&nbsp;'+$(this).find("button").text());
+            $(this).find("button").addClass('active');
+            var status = $(this).find("input.filter").val();
+            KTAppUserListDatatable.filter(status);
+        }
+    });
+
+    {% if this.param.type is empty %}
+        KTAppUserListDatatable.init('all');
+    {% else %}
+        KTAppUserListDatatable.init('{{this.param.type}}');
+    {% endif %}
+
+    $('body').on('click', 'a.nav-link',function(){
+        $('.kt_subheader_filter_form button').removeClass('active');
+        $("#filter_selected").html('');
+        window.history.pushState(null, null, '{{url(currentLang~"/dashboard/containers")}}/'+$(this).attr('href').replace('#',''));
+        if($(this).attr('href').replace('#','') == 'registered'){
+            $('#kt_subheader h3.kt-subheader__title').html('{{"Registered Containers"|__}}');
+        }else if($(this).attr('href').replace('#','') == 'loaded'){
+            $('#kt_subheader h3.kt-subheader__title').html('{{"Loaded Containers"|__}}');
+        }else if($(this).attr('href').replace('#','') == 'released'){
+            $('#kt_subheader h3.kt-subheader__title').html('{{"Released Containers"|__}}');
+        }else if($(this).attr('href').replace('#','') == 'blocked'){
+            $('#kt_subheader h3.kt-subheader__title').html('{{"Blocked Containers"|__}}');
+        }else if($(this).attr('href').replace('#','') == 'all'){
+            $('#kt_subheader h3.kt-subheader__title').html('{{"All Containers"|__}}');
+        }
+
+        var url = '{{url("dashboard/containers")}}/'+$(this).attr('href').replace('#','');
+        $('.kt-menu__item.kt-menu__item--open.kt-menu__item--here.kt-menu__item--submenu .kt-menu__submenu .kt-menu__link').each(function(){
+            var item = $(this);
+            var parent = item.parent().parent();
+            if(item.attr('href') == url){
+                parent.find('.kt-menu__item.kt-menu__item--open').removeClass('kt-menu__item--open');
+                parent.find('.kt-menu__item.kt-menu__item--here').removeClass('kt-menu__item--here');
+                item.parent('.kt-menu__item').addClass('kt-menu__item--open').addClass('kt-menu__item--here');
+            }
+        });
+
+        KTApp.blockPage({
+            overlayColor: '#000000',
+            type: 'v2',
+            state: 'primary',
+            message: '{{"Processing, please wait"|__}}...'
+        });
+        KTAppUserListDatatable.destroy();
+        KTAppUserListDatatable.init($(this).attr('href').replace('#',''));
+        KTApp.unblockPage();
+
+    });
+
+
+    
+});
+</script>
+{% endput %}

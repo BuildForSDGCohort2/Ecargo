@@ -1,0 +1,95 @@
+[
+    {
+        "name": "brick/math",
+        "version": "0.8.8",
+        "version_normalized": "0.8.8.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/brick/math.git",
+            "reference": "b77bf303449ac66e46d521e5022cedd1663ab6bd"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/brick/math/zipball/b77bf303449ac66e46d521e5022cedd1663ab6bd",
+            "reference": "b77bf303449ac66e46d521e5022cedd1663ab6bd",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=7.1"
+        },
+        "require-dev": {
+            "php-coveralls/php-coveralls": "2.*",
+            "phpunit/phpunit": "7.*"
+        },
+        "time": "2019-04-25T14:55:49+00:00",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Brick\\Math\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "description": "Arbitrary-precision arithmetic library",
+        "keywords": [
+            "Arbitrary-precision",
+            "BigInteger",
+            "BigRational",
+            "arithmetic",
+            "bigdecimal",
+            "brick",
+            "math"
+        ]
+    },
+    {
+        "name": "brick/money",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/brick/money.git",
+            "reference": "259f9f566dc72fd63a178f43850959c51e7236e4"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/brick/money/zipball/259f9f566dc72fd63a178f43850959c51e7236e4",
+            "reference": "259f9f566dc72fd63a178f43850959c51e7236e4",
+            "shasum": ""
+        },
+        "require": {
+            "brick/math": "~0.7.3 || ~0.8.0",
+            "php": ">=7.1"
+        },
+        "require-dev": {
+            "brick/varexporter": "~0.2.1",
+            "ext-dom": "*",
+            "ext-pdo": "*",
+            "php-coveralls/php-coveralls": "2.*",
+            "phpunit/phpunit": "7.*"
+        },
+        "suggest": {
+            "ext-intl": "Required to format Money objects"
+        },
+        "time": "2019-07-04T15:08:30+00:00",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "psr-4": {
+                "Brick\\Money\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "description": "Money and currency library",
+        "keywords": [
+            "brick",
+            "currency",
+            "money"
+        ]
+    }
+]

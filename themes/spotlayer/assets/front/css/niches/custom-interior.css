@@ -1,0 +1,32 @@
+.tcolor {color: #e86e2a !important;}
+.kl-cta-ribbon .trisvg {fill: #e86e2a;}
+
+.logo-container .logo-infocard .left-side {background-color: #e86e2a;}
+.logo-container .logo-infocard .right-side {background-color: #EF8A52;}
+
+.m_title {color: #e86e2a;}
+.kl-iconbox__icon.small {width: 65px;}
+.photo-wall .pw-item::after {background-color: #EF8A52;}
+.btn-fullcolor, 
+.btn-fullcolor:focus {background-color: #EF8A52;}
+.btn-fullcolor:hover, 
+.btn-fullcolor.btn-skewed:hover:before, 
+.cart-container .buttons .button.wc-forward:hover {background-color: #e86e2a;}
+.cart-container .buttons .button.wc-forward {background-color: #EF8A52;}
+.btn-lined.lined-custom {color: #e86e2a; border-color: #e86e2a;}
+.mfp-gallery.small img {height: 93px; float: left; margin-right: 20px; margin-bottom: 20px;}
+.logo-container .logo-infocard {background: #e86e2a;}
+.chaser .main-menu li.active>a,
+.how_to_shop .number {background: #e86e2a;}
+.kl-cta-ribbon,
+.skills_wgt .skill-bar[data-color="green"] > i {background: #e86e2a;}
+.kl-cta-ribbon .trisvg path {fill: #e86e2a;}
+.site-header .kl-cart-button .fa-shopping-basket:after {background-color: #e86e2a;}
+@media (min-width: 1200px) {
+	.col-normal.first {padding-left: 100px;}
+}
+
+@media (min-width: 992px) {
+	.main-nav > ul > li > a:before,
+	.main-nav .hg_mega_container li a:not(.zn_mega_title):before {background-color: #e86e2a;}
+}

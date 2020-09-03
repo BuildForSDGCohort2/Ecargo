@@ -1,0 +1,336 @@
+title = "All Notifications"
+url = "/dashboard/notifications/:id?"
+layout = "admin"
+description = "Review all your notifications"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/dashboard"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+localeTitle[ar] = "كل الإشعارات"
+localeDescription[ar] = "مراجعة جميع إشعاراتك"
+==
+<?php
+function onStart() {
+    if($this->param('id')){
+        $notification           =   $this->user->notifications()->find($this->param('id'));
+        $notification->read_at  =   \Carbon\Carbon::now();
+        $notification->update();
+
+        if(isset($notification->data['url'])){
+            return Redirect::to($notification->data['url']);
+        }else{
+            return Redirect::to('dashboard/notifications');
+        }
+    }
+
+
+    $this->page->listing    = true;
+    $this->page->actions    = array(
+        'buttons'   =>  array(
+            'checkall'      =>  array(
+                'title'     =>  $this['theme_lang']['mark_all_readed'],
+                'id'        =>  'check_all',
+                'icon'      =>  'la la-check',
+            ),
+        ),
+    );
+}
+function onCheckall() {
+    Auth::getUser()->notifications()->where('read_at', null)->update(['read_at' => \Carbon\Carbon::now()]);
+}
+?>
+==
+<div class="kt-portlet kt-portlet--mobile">
+    <div class="kt-portlet__body kt-portlet__body--fit">
+        <!--begin: Datatable -->
+        <div class="kt-datatable"></div>
+        <!--end: Datatable -->
+    </div>
+</div>
+
+
+{% put scripts %}
+<script type="text/javascript">
+    var KTAppUserListDatatable = function () {
+
+        // variables
+        var datatable;
+
+        // init
+        var init = function () {
+            // init the datatables. Learn more: //keenthemes.com/metronic/?page=docs&section=datatable
+            datatable = $('.kt-datatable').KTDatatable({
+                translate: {
+                    records: {
+                        processing: '{{"Please wait"|__}}...',
+                        noRecords: '{{"No records found"|__}}'
+                    },
+                    toolbar: {
+                        pagination: {
+                            items: {
+                                default: {
+                                    first: '{{"First"|__}}',
+                                    prev: '{{"Previous"|__}}',
+                                    next: '{{"Next"|__}}',
+                                    last: '{{"Last"|__}}',
+                                    more: '{{"More pages"|__}}',
+                                    input: '{{"Page number"|__}}',
+                                    select: '{{"Select page size"|__}}'
+                                },
+                                //info: '{{"Displaying"|__}} {{start}} - {{end}} {{"of"|__}} {{total}} {{"records"|__}}'
+                            }
+                        }
+                    }
+                },
+                // datasource definition
+                data: {
+                    type: 'remote',
+                    source: {
+                        read: {
+                            url: '{{url("api/notifications")}}',
+                            params: {
+                              id: {{user.id}}
+                            }
+
+                        },
+                    },
+                    pageSize: 10, // display 20 records per page
+                    serverPaging: true,
+                    serverFiltering: true,
+                    serverSorting: true,
+                },
+
+                // layout definition
+                layout: {
+                    scroll: false, // enable/disable datatable scroll both horizontal and vertical when needed.
+                    footer: false, // display/hide footer
+                },
+
+                // column sorting
+                sortable: true,
+
+                pagination: true,
+
+                search: {
+                    input: $('#generalSearch'),
+                    delay: 400,
+                },
+
+
+                columns: [
+                  {
+                    field: 'sender',
+                    title: '{{"Sender"|__}}',
+                    sortable: false,
+                    // sortable: 'asc', // default sort
+                    filterable: true, // disable or enable filtering
+                    width: 200
+                  },
+                  {
+                    field: 'notification',
+                    title: '{{"Notification"|__}}',
+                    sortable: false,
+                    // sortable: 'asc', // default sort
+                    filterable: true, // disable or enable filtering
+                    width: 350,
+                    template: function(row) {
+                        if(row.notification == 'new_shipments'){
+                            return '<a href="{{ 'dashboard/notifications'|page }}/' + row.id + '" class="btn btn-bold btn-sm btn-font-sm">{{theme_lang.new_shipments}}</span>';
+                        }else if(row.notification == 'approved_shipment'){
+                            return '<a href="{{ 'dashboard/notifications'|page }}/' + row.id + '" class="btn btn-bold btn-sm btn-font-sm">{{theme_lang.approved_shipment}}</span>';
+                        }else if(row.notification == 'refused_shipment'){
+                            return '<a href="{{ 'dashboard/notifications'|page }}/' + row.id + '" class="btn btn-bold btn-sm btn-font-sm">{{theme_lang.refused_shipment}}</span>';
+                        }else if(row.notification == 'postponed_shipment'){
+                            return '<a href="{{ 'dashboard/notifications'|page }}/' + row.id + '" class="btn btn-bold btn-sm btn-font-sm">{{theme_lang.postponed_shipment}}</span>';
+                        }else if(row.notification == 'transfered_shipment'){
+                            return '<a href="{{ 'dashboard/notifications'|page }}/' + row.id + '" class="btn btn-bold btn-sm btn-font-sm">{{theme_lang.transfered_shipment}}</span>';
+                        }else{
+                            return '<a href="{{ 'dashboard/notifications'|page }}/' + row.id + '" class="btn btn-bold btn-sm btn-font-sm">'+row.notification+'</span>';
+                        }
+                    },
+                  },
+                  {
+                      field: 'status',
+                      title: '{{"Status"|__}}',
+                      responsive: {visible: 'lg'},
+                      // callback function support for column rendering
+                      template: function(row) {
+          					var status = {
+          						'new': {
+          							'title': '{{"New"|__}}',
+          							'class': ' btn-label-success'
+          						},
+          						'readed': {
+          							'title': '{{"Readed"|__}}',
+          							'class': ' btn-label-dark'
+          						}
+          					};
+          					return '<span class="btn btn-bold btn-sm btn-font-sm ' + status[row.status].class + '">' + status[row.status].title + '</span>';
+                      },
+                  },
+                 ]
+            });
+        };
+
+        // search
+        var search = function () {
+            $('#filter_form select,#filter_form input').each(function(){
+                $(this).on('change', function () {
+                    datatable.search($(this).val().toLowerCase(), $(this).attr('name'));
+                });
+            });
+            $('#reset').on('click', function () {
+                datatable.destroy();
+                $('#filter_form select,#filter_form input').each(function(){
+                    $(this).val('');
+                });
+                $('#filter_form select').each(function(){
+                    $(this).selectpicker("refresh");
+                });
+                init();
+            });
+        };
+
+        // selection
+        var selection = function () {
+            // init form controls
+            //$('#kt_form_status, #kt_form_type').selectpicker();
+
+            // event handler on check and uncheck on records
+            datatable.on('kt-datatable--on-check kt-datatable--on-uncheck kt-datatable--on-layout-updated', function (e) {
+                var checkedNodes = datatable.rows('.kt-datatable__row--active').nodes(); // get selected records
+                var count = checkedNodes.length; // selected records count
+
+                $('#kt_subheader_group_selected_rows').html(count);
+
+                if (count > 0) {
+                    $('#kt_subheader_search').addClass('kt-hidden');
+                    $('#kt_subheader_group_actions').removeClass('kt-hidden');
+                } else {
+                    $('#kt_subheader_search').removeClass('kt-hidden');
+                    $('#kt_subheader_group_actions').addClass('kt-hidden');
+                }
+            });
+        }
+
+        // selected records status update
+        var selectedStatusUpdate = function () {
+            $('#kt_subheader_group_actions_status_change').on('click', "[data-toggle='status-change']", function () {
+                var status = $(this).find(".kt-nav__link-text").html();
+
+                // fetch selected IDs
+                var ids = datatable.rows('.kt-datatable__row--active').nodes().find('.kt-checkbox--single > [type="checkbox"]').map(function (i, chk) {
+                    return $(chk).val();
+                });
+
+                if (ids.length > 0) {
+                    // learn more: //sweetalert2.github.io/
+                    swal.fire({
+                        buttonsStyling: false,
+
+                        html: "{{"Are you sure to update"|__}} " + ids.length + " {{"selected records status to"|__}} " + status + " ?",
+                        type: "info",
+
+                        confirmButtonText: "{{"Yes, update"|__}}!",
+                        confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+
+                        showCancelButton: true,
+                        cancelButtonText: "{{"No, cancel"|__}}",
+                        cancelButtonClass: "btn btn-sm btn-bold btn-default"
+                    }).then(function (result) {
+                        if (result.value) {
+                            swal.fire({
+                                title: '{{"Deleted"|__}}!',
+                                text: '{{"Your selected records statuses have been updated"|__}}!',
+                                type: 'success',
+                                buttonsStyling: false,
+                                confirmButtonText: "{{"OK"|__}}",
+                                confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                            })
+                            // result.dismiss can be 'cancel', 'overlay',
+                            // 'close', and 'timer'
+                        } else if (result.dismiss === 'cancel') {
+                            swal.fire({
+                                title: '{{"Cancelled"|__}}',
+                                text: '{{"You selected records statuses have not been updated"|__}}!',
+                                type: 'error',
+                                buttonsStyling: false,
+                                confirmButtonText: "{{"OK"|__}}",
+                                confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        // selected records delete
+        var selectedDelete = function () {
+            $('#check_all').on('click', function (e) {
+                e.preventDefault();
+                // learn more: //sweetalert2.github.io/
+                swal.fire({
+                    buttonsStyling: false,
+
+                    text: "{{'Are you sure to mark all notifications as readed?'|__}}",
+                    type: "question",
+
+                    confirmButtonText: "{{'Yes!'|__}}",
+                    confirmButtonClass: "btn btn-sm btn-bold btn-danger",
+
+                    showCancelButton: true,
+                    cancelButtonText: '{{"No, cancel"|__}}',
+                    cancelButtonClass: "btn btn-sm btn-bold btn-brand"
+                }).then(function (result) {
+                    if (result.value) {
+                        $.request('onCheckall', {
+                            success: function(data) {
+                                swal.fire({
+                                    title: '{{"Readed!"|__}}',
+                                    text: '{{"All notifications has been marked as read!"|__}}',
+                                    type: 'success',
+                                    buttonsStyling: false,
+                                    confirmButtonText: '{{"OK"|__}}',
+                                    confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                                });
+                                datatable.reload();
+                            }
+                        });
+                    }
+                });
+
+            });
+        }
+
+        var updateTotal = function () {
+            datatable.on('kt-datatable--on-layout-updated', function () {
+                $('#kt_subheader_total').html(datatable.getTotalRows() + ' {{"Total"|__}}');
+            });
+        };
+
+        return {
+            // public functions
+            init: function () {
+                init();
+                search();
+                selection();
+                selectedStatusUpdate();
+                selectedDelete();
+                updateTotal();
+            },
+        };
+    }();
+
+    // On document ready
+    KTUtil.ready(function () {
+        KTAppUserListDatatable.init();
+    });
+</script>
+{% endput %}

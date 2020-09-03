@@ -1,0 +1,31 @@
+fields:
+    license_palate:
+        label: 'License Palate'
+        span: full
+        required: 1
+        type: text
+    weight:
+        label: Weight
+        span: auto
+        type: number
+    size:
+        label: Size
+        options:
+            20: '20 ft'
+            40: '40 ft'
+            45: '45 ft'
+        span: auto
+        type: radio
+    num_box:
+        label: 'Number of boxes'
+        span: auto
+        type: number
+    num_pallets:
+        label: 'Number of pallets'
+        span: auto
+        type: number
+    container_id:
+        label: 'Container Order'
+        showSearch: true
+        span: full
+        type: dropdown

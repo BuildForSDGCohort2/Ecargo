@@ -1,0 +1,312 @@
+title = "Create New Department"
+url = "/dashboard/settings/departments/create"
+layout = "admin"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/settings"
+child_of_page = "departments"
+settings_breadcrumb = "employees"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+function onStart() {
+    if(!Auth::getUser()->hasUserPermission(["departments"],'c')) {
+        \Flash::error($this['theme_lang']['not_allowed']);
+        return Redirect::to('dashboard/settings/'.$this->page->child_of_page);
+    }
+    $this['permissions']    =   \Spot\UserPermissions\Models\Permission::get();
+}
+function onSave()
+{
+    if(!Auth::getUser()->hasUserPermission(["departments"],'c')) {
+        throw new ApplicationException($this['theme_lang']['not_allowed']);
+    }
+    $data = post();
+    $item                   = new \RainLab\User\Models\UserGroup;
+    $item->name             = htmlspecialchars($data['name']);
+    $item->code             = \Str::slug(htmlspecialchars($data['name']));
+    $item->description      = htmlspecialchars($data['description']);
+    $item->created_at       = \Carbon\Carbon::now();
+    $item->updated_at       = \Carbon\Carbon::now();
+    $item->save();
+
+    $permissions = [];
+    if(isset($data['permissions'])){
+        foreach($data['permissions'] as $permission => $val){
+            if(in_array('c', $val) || in_array('u', $val) || in_array('d', $val))
+            {
+                if(!in_array('r', $val)){
+                    array_push($val,"r");
+                }
+            }
+            $value = '';
+            if(in_array('c', $val)){
+                $value .= 'c';
+            }
+            if(in_array('r', $val)){
+                $value .= 'r';
+            }
+            if(in_array('u', $val)){
+                $value .= 'u';
+            }
+            if(in_array('d', $val)){
+                $value .= 'd';
+            }
+            $permissions[$permission] = $value;
+        }
+        foreach($permissions as $permission => $val){
+            \Db::table('spot_userpermissions_group_permission')
+            ->where('group_id', $item->id)
+            ->where('permission_id', $permission)
+            ->update(['permission_state' => $val, 'updated_at' => \Carbon\Carbon::now()]);
+        }
+    }
+
+    \Flash::success($this['theme_lang']['created_successfully']);
+    return Redirect::to('dashboard/settings/'.$this->page->child_of_page);
+}
+?>
+==
+<div class="kt-grid kt-grid--desktop kt-grid--ver-desktop  kt-inbox" id="kt_inbox">
+
+    <!-- begin:: Aside -->
+    {% partial 'settingsmenu' %}
+    <!-- end:: Aside -->
+    <!--Begin:: Inbox List-->
+    <div class="kt-grid__item kt-grid__item--fluid    kt-portlet    kt-inbox__list kt-inbox__list--shown" id="kt_inbox_list">
+        <div class="kt-portlet__head">
+    		<div class="kt-portlet__head-label">
+    			<h3 class="kt-portlet__head-title">
+    				{{this.page.title|__}}
+    			</h3>
+    		</div>
+        </div>
+        {{ form_ajax('onSave', { id: 'kt_form', flash: true, class:'kt_form' }) }}
+            <div class="kt-portlet__body kt-portlet__body--fit-x kt-padding-l-20 kt-padding-r-20">
+                <div class="form-group form-group-last kt-hide">
+                    <div class="alert alert-danger kt_form_msg" role="alert">
+                        <div class="alert-icon"><i class="flaticon-warning"></i></div>
+                        <div class="alert-text">
+                            {{'Oh snap! Change a few things up and try submitting again'|__}}.
+                        </div>
+                        <div class="alert-close">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true"><i class="la la-close"></i></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Name'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    <div class="col-lg-9 col-xl-6">
+    					<input type="text" class="form-control" name="name" required />
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Description'|__}}</label>
+                    <div class="col-lg-9 col-xl-6">
+                        <textarea class="form-control" name="description"></textarea>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-12 col-form-label">{{'Permissions'|__}}</label>
+                    <div class="col-lg-12">
+                        <table class="table">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th class="text-center"></th>
+                                    <th class="text-center">
+                                        <label class="kt-font-bold">{{'Create'|__}}<span></span></label>
+                                        <label class="kt-checkbox kt-checkbox--state-success"><input type="checkbox" class="check_all check_all_c" value="c">{{'Select All'|__}}<span></span></label>
+                                    </th>
+                                    <th class="text-center">
+                                        <label class="kt-font-bold">{{'Read'|__}}<span></span></label>
+                                        <label class="kt-checkbox kt-checkbox--state-success"><input type="checkbox" class="check_all check_all_r" value="r">{{'Select All'|__}}<span></span></label>
+                                    </th>
+                                    <th class="text-center">
+                                        <label class="kt-font-bold">{{'Edit'|__}}<span></span></label>
+                                        <label class="kt-checkbox kt-checkbox--state-success"><input type="checkbox" class="check_all check_all_u" value="u">{{'Select All'|__}}<span></span></label>
+                                    </th>
+                                    <th class="text-center">
+                                        <label class="kt-font-bold">{{'Delete'|__}}<span></span></label>
+                                        <label class="kt-checkbox kt-checkbox--state-success"><input type="checkbox" class="check_all check_all_d" value="d">{{'Select All'|__}}<span></span></label>
+                                    </th>
+                                    <th class="text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for permission in permissions %}
+                                    <tr class="{{permission.id}}">
+                                        <td class="form-group">
+                                            <label class="control-label" for="permission_{{permission.id}}">
+                                                <b>{{permission.name|__}}</b> <br />
+                                                {{permission.description|__}}
+                                            </label>
+                                        </td>
+
+                                        {% if 'c' in permission.type %}
+                                            <td>
+                                                <div class="icheck text-center">
+                                                    <label class="kt-checkbox kt-checkbox--solid kt-checkbox--state-success"><input type="checkbox" class="check_c" value="c" name="permissions[{{permission.id}}][]"  id="permission_{{permission.id}}_c">{{'Create'|__}}<span></span></label>
+                                                </div>
+                                            </td>
+                                        {% endif %}
+                                        {% if 'r' in permission.type %}
+                                            <td>
+                                                <div class="icheck text-center">
+                                                    <label class="kt-checkbox kt-checkbox--solid kt-checkbox--state-success"><input type="checkbox" class="check_r" value="r" name="permissions[{{permission.id}}][]"  id="permission_{{permission.id}}_r">{{'Read'|__}}<span></span></label>
+                                                </div>
+                                            </td>
+                                        {% endif %}
+                                        {% if 'u' in permission.type %}
+                                            <td>
+                                                <div class="icheck text-center">
+                                                    <label class="kt-checkbox kt-checkbox--solid kt-checkbox--state-success"><input type="checkbox" class="check_u" value="u" name="permissions[{{permission.id}}][]"  id="permission_{{permission.id}}_u">{{'Update'|__}}<span></span></label>
+                                                </div>
+                                            </td>
+                                        {% endif %}
+                                        {% if 'd' in permission.type %}
+                                            <td>
+                                                <div class="icheck text-center">
+                                                    <label class="kt-checkbox kt-checkbox--solid kt-checkbox--state-success"><input type="checkbox" class="check_d" value="d" name="permissions[{{permission.id}}][]"  id="permission_{{permission.id}}_d">{{'Delete'|__}}<span></span></label>
+                                                </div>
+                                            </td>
+                                        {% endif %}
+                                        <td class="text-center">
+                                            <label class="kt-checkbox kt-checkbox--state-success"><input type="checkbox" class="check_row" value="crud">{{'All'|__}}<span></span></label>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+    		<div class="kt-portlet__foot">
+    			<div class="row">
+    				<div class="col-lg-8">
+                    </div>
+    				<div class="col-lg-4">
+    					<button type="submit" class="btn btn-primary">{{'Save'|__}}</button>
+    					<span class="kt-margin-left-10">{{'or'|__}} <a href="{{url('dashboard/settings')}}/{{this.page.child_of_page}}" class="kt-link">{{'Cancel'|__}}</a></span>
+    				</div>
+    			</div>
+    		</div>
+    	{{ form_close() }}
+    </div>
+</div>
+
+{% put styles %}
+    <style>
+        .accordion .card-icon{
+            width: 15px;
+            margin: 5px;
+        }
+    </style>
+{% endput %}
+{% put scripts %}
+<script type="text/javascript">
+    $( ".kt_form" ).validate({
+        // define validation rules
+        /*
+        rules: {
+            digits: {
+                required: true,
+                digits: true,
+                creditcard: true,
+                phoneUS: true,
+                required: true,
+                minlength: 10,
+                maxlength: 100
+            },
+        },
+        */
+
+        //display error alert on form submit
+        invalidHandler: function(event, validator) {
+            var alert = $('.kt_form_msg');
+            alert.removeClass('kt--hide').show();
+            KTUtil.scrollTop();
+        },
+
+        submitHandler: function (form) {
+            form[0].submit(); // submit the form
+        }
+    });
+
+
+    $('input.check_all').on('change', function(event) {
+        if ($(this).is(':checked')) {
+            if($(this).val() == 'c'){
+                $('input.check_c').prop('checked', true);
+            }
+            if($(this).val() == 'r'){
+                $('input.check_r').prop('checked', true);
+            }
+            if($(this).val() == 'u'){
+                $('input.check_u').prop('checked', true);
+            }
+            if($(this).val() == 'd'){
+                $('input.check_d').prop('checked', true);
+            }
+        } else {
+            if($(this).val() == 'c'){
+                $('input.check_c').prop('checked', false);
+            }
+            if($(this).val() == 'r'){
+                $('input.check_r').prop('checked', false);
+            }
+            if($(this).val() == 'u'){
+                $('input.check_u').prop('checked', false);
+            }
+            if($(this).val() == 'd'){
+                $('input.check_d').prop('checked', false);
+            }
+        }
+    });
+
+    $('input.check_row').on('change', function(event) {
+        if ($(this).is(':checked')) {
+            $(this).parent().parent().parent().find('input').prop('checked', true);
+        } else {
+            $(this).parent().parent().parent().find('input').prop('checked', false);
+        }
+    });
+
+    $('input.check_c').on('change', function(event){
+        if($('input.check_c').filter(':checked').length == $('input.check_c').length) {
+            $('input.check_all_c').prop('checked', 'checked');
+        } else {
+            $('input.check_all_c').removeProp('checked');
+        }
+    });
+    $('input.check_r').on('change', function(event){
+        if($('input.check_r').filter(':checked').length == $('input.check_r').length) {
+            $('input.check_all_r').prop('checked', 'checked');
+        } else {
+            $('input.check_all_r').removeProp('checked');
+        }
+    });
+    $('input.check_u').on('change', function(event){
+        if($('input.check_u').filter(':checked').length == $('input.check_u').length) {
+            $('input.check_all_u').prop('checked', 'checked');
+        } else {
+            $('input.check_all_u').removeProp('checked');
+        }
+    });
+    $('input.check_d').on('change', function(event){
+        if($('input.check_d').filter(':checked').length == $('input.check_d').length) {
+            $('input.check_all_d').prop('checked', 'checked');
+        } else {
+            $('input.check_all_d').removeProp('checked');
+        }
+    });
+</script>
+{% endput %}

@@ -1,0 +1,23 @@
+# ===================================
+#  List Column Definitions
+# ===================================
+
+columns:
+    id:
+        label: spot.userpermissions::lang.permission.model_id
+        type: text
+        searchable: true
+    code:
+        label: spot.userpermissions::lang.permission.model_code
+        type: text
+        width: 30%
+        searchable: true
+    name:
+        label: spot.userpermissions::lang.permission.model_name
+        type: text
+        width: 30%
+        searchable: true
+    description:
+        label: spot.userpermissions::lang.permission.model_desc
+        type: text
+        width: 40%

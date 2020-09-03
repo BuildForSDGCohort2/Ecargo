@@ -1,0 +1,43 @@
+.tcolor {color: #fbc42c !important;}
+.kl-cta-ribbon .trisvg {fill: #fbc42c;}
+.m_title {color: #fbc42c;}
+.how_to_shop .number {background: #fbc42c;}
+.bg-default {background-color: #fbc42c !important;}
+.site-header .kl-cart-button .fas:after {background-color: #fbc42c;}
+
+.logo-container .logo-infocard .left-side {background-color: #cea124;}
+.logo-container .logo-infocard .right-side {background-color: #fbc42c;}
+
+.cart-container .buttons .button.wc-forward {background-color: #fbc42c;}
+.cart-container .buttons .button.wc-forward:hover {background-color: #cea124;}
+
+.btn-fullcolor, 
+.btn-fullcolor:focus {background-color: #fbc42c;}
+.btn-fullcolor:hover {background-color: #c59d2e;}
+.btn-fullcolor.btn-skewed:before {background-color: #fbc42c;}
+.btn-fullcolor.btn-skewed:hover:before {background-color: #c59d2e;}
+.kl-cta-ribbon {background-color: #fbc42c;}
+.kl-cta-ribbon .trisvg path {fill: #fbc42c;}
+@media (min-width: 992px) {
+	.main-nav > ul > li > a:before {background-color: #fbc42c;}
+	.main-nav .hg_mega_container li a:not(.zn_mega_title):before {background-color: #fbc42c;}
+}
+@media (max-width: 991px) and (min-width: 768px) {
+	.kl-iconbox__content-wrapper {clear: none;}
+}
+
+.kl-iconbox__content-wrapper {overflow: visible;}
+.kl-iconbox--fleft .kl-iconbox__icon-wrapper {margin-bottom: 25px;}
+.kl-iconbox__desc-wrapper {float: left;}
+
+.bpost.bp-widget [data-role="title"] a:hover {color: #FBC42C;}
+.chaser .main-menu li.active>a {background: #fbc42c;}
+.logo-container .logo-infocard {background: #fbc42c;}
+.kl-iconbox__icon {width: 50px;}
+.kl-iconbox__title {color: #fbc42c;}
+.testimonial_slider__carousel-wrapper .testimonialbox .who strong {color: #fbc42c;}
+.testimonial_slider__carousel-wrapper .testimonialSlider-slickNav li.slick-active .slickBtn {background-color: #fbc42c;}
+.fun-fact .kl-icon img {width: 80px; margin: 0 auto; margin-bottom: 15px;}
+.hg_accordion_element.style5 .th-accordion a::before {background-color: #fbc42c;}
+.screenshot-box .left-side h3.title {color: #fbc42c;}
+.newsletter-signup input[type=submit] {background: #fbc42c;}

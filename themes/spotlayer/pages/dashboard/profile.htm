@@ -1,0 +1,1689 @@
+title = "My Profile"
+url = "/dashboard/account/:page?"
+layout = "admin"
+description = "Account settings and more"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/dashboard"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+
+[imageUploader avatar]
+placeholderText = "Click or drag images to upload"
+maxSize = 5
+fileTypes = ".gif,.jpg,.jpeg,.png"
+imageWidth = 100
+imageHeight = 100
+imageMode = "crop"
+modelClass = "RainLab\User\Models\User"
+modelKeyColumn = "avatar"
+deferredBinding = 0
+==
+<?php
+function onInit(){
+    $this->avatar->bindModel('avatar', Auth::getUser());
+}
+function onStart(){
+    //$this['today']  = \Spot\Shipment\Models\Task::where('due_date', '=<', \Carbon\Carbon::now()->toDateString())->get();
+    //$this['week']   = \Spot\Shipment\Models\Task::where('due_date', '>', \Carbon\Carbon::now()->addWeek()->toDateString())->where('due_date', '=<', \Carbon\Carbon::now()->addWeeks(2)->toDateString())->get();
+    //$this['month']   = \Spot\Shipment\Models\Task::where('due_date', '>', \Carbon\Carbon::now()->addWeeks(2)->toDateString())->where('due_date', '=<', \Carbon\Carbon::now()->addWeeks(2)->addMonth()->toDateString())->get();
+
+
+    $this['item']           =   \RainLab\User\Models\User::find(Auth::getUser()->id);
+    $this['permissions']    =   \Spot\UserPermissions\Models\Permission::get();
+    $this['countries']      =   \RainLab\Location\Models\Country::where('is_enabled', 1)->get();
+    $this['groups']         =   \RainLab\User\Models\UserGroup::get();
+    $this['roles']          =   \Vdomah\Roles\Models\Role::where('id', '!=', 5)->get();
+
+
+    $this['getData'] = new class {
+        public function countries($selected,$type = null,$select = null)
+        {
+            if($type == 2){
+                $item = \RainLab\Location\Models\State::find($selected);
+                if($item){
+                    $selected   =   \RainLab\Location\Models\State::find($selected)->country_id;
+                }
+            }
+            if($type == 3){
+                $item = \Spot\Shipment\Models\City::find($selected);
+                if($item){
+                    $selected   =   \Spot\Shipment\Models\City::find($selected)->state->country_id;
+                }
+            }
+            if($type == 4){
+                $item = \Spot\Shipment\Models\Area::find($selected);
+                if($item){
+                    $selected   =   \Spot\Shipment\Models\Area::find($selected)->city->state->country_id;
+                }
+            }
+
+            $countries          =   \RainLab\Location\Models\Country::where('is_enabled', 1)->get();
+            foreach($countries as $country){
+                $select .= '<option value="'.$country->id.'" '.(($selected == $country->id) ? 'selected' : '').'>'.$country->name.'</option>';
+            }
+            echo $select;
+        }
+        public function states($selected,$type = null,$select = null)
+        {
+            $country_id         =   '';
+            if($type == 1){
+                $country_id     =   $selected;
+                $selected       =   '';
+            }
+            if($type == 2){
+                $country     =   \RainLab\Location\Models\State::find($selected);
+                if($country){
+                    $selected       =   $country->id;
+                    $country_id     =   $country->country_id;
+                }
+            }
+            if($type == 3){
+                $city           =   \Spot\Shipment\Models\City::find($selected);
+                if($city){
+                    $state     =   $city->state;
+                    if($state){
+                        $selected       =   $state->id;
+                        $country_id     =   $state->country_id;
+                    }
+                }
+            }
+            if($type == 4){
+                $area     =   \Spot\Shipment\Models\Area::find($selected);
+                if($area){
+                    $city           =   $area->city;
+                    if($city){
+                        $state     =   $city->state;
+                        if($state){
+                            $selected       =   $state->id;
+                            $country_id     =   $state->country_id;
+                        }
+                    }
+                }
+            }
+
+            $states         =   \RainLab\Location\Models\State::where('country_id', $country_id)->get();
+            foreach($states as $state){
+                $select .= '<option value="'.$state->id.'" '.(($selected == $state->id) ? 'selected' : '').'>'.$state->name.'</option>';
+            }
+            echo $select;
+        }
+        public function cities($selected,$type = null,$select = null)
+        {
+            $state_id       =   '';
+            if($type == 2){
+                $state_id       =   \RainLab\Location\Models\State::find($selected);
+                $selected       =   '';
+                $state_id       =   $state_id->id;
+            }
+            if($type == 3){
+                $state_id       =   \Spot\Shipment\Models\City::find($selected);
+                $selected       =   $state_id->id;
+                $state_id       =   $state_id->state_id;
+            }
+            if($type == 4){
+                $state_id       =   \Spot\Shipment\Models\Area::find($selected)->city;
+                $selected       =   $state_id->id;
+                $state_id       =   $state_id->state_id;
+            }
+
+            $cities         =   \Spot\Shipment\Models\City::where('state_id', $state_id)->get();
+            foreach($cities as $city){
+                $select .= '<option value="'.$city->id.'" '.(($selected == $city->id) ? 'selected' : '').'>'.$city->name.'</option>';
+            }
+            echo $select;
+        }
+        public function areas($selected,$type = null,$select = null)
+        {
+            $city_id      =   '';
+            if($type == 3){
+                $city_id       =   \Spot\Shipment\Models\City::find($selected);
+                $city_id       =   $city_id->id;
+                $selected      =   '';
+            }
+            if($type == 4){
+                $city_id        =   \Spot\Shipment\Models\Area::find($selected);
+                $selected       =   $city_id->id;
+                $city_id        =   $city_id->city_id;
+            }
+
+            $areas         =   \Spot\Shipment\Models\Area::where('city_id', $city_id)->get();
+            foreach($areas as $area){
+                $select .= '<option value="'.$area->id.'" '.(($selected == $area->id) ? 'selected' : '').'>'.$area->name.'</option>';
+            }
+            echo $select;
+        }
+    };
+
+
+    $this['getList'] = new class {
+        public function states($selected,$country_id,$select = null)
+        {
+            $states         =   \RainLab\Location\Models\State::where('country_id', $country_id)->get();
+            foreach($states as $state){
+                $select .= '<option value="'.$state->id.'" '.(($selected == $state->id) ? 'selected' : '').'>'.$state->name.'</option>';
+            }
+            echo $select;
+        }
+        public function cities($selected,$state_id,$select = null)
+        {
+            $cities         =   \Spot\Shipment\Models\City::where('state_id', $state_id)->get();
+            foreach($cities as $city){
+                $select .= '<option value="'.$city->id.'" '.(($selected == $city->id) ? 'selected' : '').'>'.$city->name.'</option>';
+            }
+            echo $select;
+        }
+        public function areas($selected,$city_id,$select = null)
+        {
+            $areas         =   \Spot\Shipment\Models\Area::where('city_id', $city_id)->get();
+            foreach($areas as $area){
+                $select .= '<option value="'.$area->id.'" '.(($selected == $area->id) ? 'selected' : '').'>'.$area->name.'</option>';
+            }
+            echo $select;
+        }
+    };
+
+}
+function onListstates(){
+    if(null !== post('id')){
+        $items          = RainLab\Location\Models\State::where('country_id', post('id'))->get();
+        $html = '<option data-hidden="true"></option>';
+        if($items){
+            foreach($items as $item){
+                $html .= '<option value="'.$item->id.'">'.$item->name.'</option>';
+            }
+
+        }
+        return array('html'=>$html);
+    }
+}
+function onListcities(){
+    if(null !== post('id')){
+        $items          = Spot\Shipment\Models\City::where('state_id', post('id'))->get();
+        $html = '<option data-hidden="true"></option>';
+        if($items){
+            foreach($items as $item){
+                $html .= '<option value="'.$item->id.'">'.$item->name.'</option>';
+            }
+
+        }
+        return array('html'=>$html);
+    }
+}
+function onListareas(){
+    if(null !== post('id')){
+        $items          = Spot\Shipment\Models\Area::where('city_id', post('id'))->get();
+        $html = '<option data-hidden="true"></option>';
+        if($items){
+            foreach($items as $item){
+                $html .= '<option value="'.$item->id.'">'.$item->name.'</option>';
+            }
+
+        }
+        return array('html'=>$html);
+    }
+}
+function onSave()
+{
+
+    if($this['settings']['demo_mode']){
+      throw new ApplicationException('NOT ALLAOWED IN DEMO');
+      return false;
+    }
+
+    $data = post();
+    $item                   = \RainLab\User\Models\User::find(Auth::getUser()->id);
+    $item->name             = htmlspecialchars($data['name']);
+    $item->email            = htmlspecialchars($data['email']);
+    if(isset($data['password']) && $data['password'] != null && !empty($data['password']) && $data['password'] != ''){
+        if(isset($data['password_confirmation']) && $data['password_confirmation'] != null && !empty($data['password_confirmation']) && $data['password_confirmation'] != '' && $data['password_confirmation'] == $data['password']){
+            $password                       = \Hash::make($data['password']);
+            $item->password                 = $password;
+            $item->password_confirmation    = $password;
+        }
+    }
+    $item->mobile           = (($data['mobile'] != '') ? htmlspecialchars($data['mobile']) : null);
+    $item->phone            = (($data['phone'] != '') ? htmlspecialchars($data['phone']) : null);
+    $item->street_addr      = (($data['street_addr'] != '') ? htmlspecialchars($data['street_addr']) : null);
+    $item->city_id          = (($data['city'] != '') ? htmlspecialchars($data['city']) : null);
+    $item->zip              = (($data['zip'] != '') ? htmlspecialchars($data['zip']) : null);
+    $item->state_id         = (($data['state_id'] != '') ? htmlspecialchars($data['state_id']) : null);
+    $item->country_id       = (($data['country_id'] != '') ? htmlspecialchars($data['country_id']) : null);
+    $item->updated_at       = \Carbon\Carbon::now();
+    $item->update();
+
+    if(isset($data['password']) && $data['password'] != null && !empty($data['password']) && $data['password'] != ''){
+        if(isset($data['password_confirmation']) && $data['password_confirmation'] != null && !empty($data['password_confirmation']) && $data['password_confirmation'] != '' && $data['password_confirmation'] == $data['password']){
+            \RainLab\User\Models\User::where('id', $item->id)->update(['password' => \Hash::make($data['password']) ]);
+        }
+    }
+
+
+    \Flash::success($this['theme_lang']['updated_successfully']);
+    return Redirect::to('dashboard/account/edit');
+}
+function onPlaces()
+{
+    $data = post();
+
+    if($this['settings']['demo_mode']){
+      throw new ApplicationException('NOT ALLAOWED IN DEMO');
+      return false;
+    }
+
+    $item                   = \RainLab\User\Models\User::find(Auth::getUser()->id);
+
+    if($item->role_id == 5) {
+
+        $ids = [];
+        if(isset($data['addresses'])){
+            foreach($data['addresses'] as $address){
+                if(isset($address['id'])){
+                    $ids[]  =   $address['id'];
+                    $subitem                    = \Spot\Shipment\Models\Address::find($address['id']);
+                    if(isset($address['name'])){
+                        $subitem->name              = htmlspecialchars($address['name']);
+                    }
+                    $subitem->street            = htmlspecialchars($address['street_address']);
+                    $subitem->county            = htmlspecialchars($address['county']);
+                    $subitem->city              = htmlspecialchars($address['city']);
+                    $subitem->state             = htmlspecialchars($address['state']);
+                    $subitem->zipcode           = htmlspecialchars($address['postal_code']);
+                    $subitem->country           = htmlspecialchars($address['country']);
+                    $subitem->lat               = htmlspecialchars($address['lat']);
+                    $subitem->lng               = htmlspecialchars($address['lng']);
+                    $subitem->url               = htmlspecialchars($address['url']);
+                    if(isset($address['default'])){
+                        $subitem->default           = htmlspecialchars($address['default']);
+                    }
+                    $subitem->updated_at        = \Carbon\Carbon::now();
+                    $subitem->update();
+                }else{
+                    $subitem                    = new \Spot\Shipment\Models\Address;
+                    $subitem->user_id           = $item->id;
+                    if(isset($address['name'])){
+                        $subitem->name              = htmlspecialchars($address['name']);
+                    }
+                    $subitem->street            = htmlspecialchars($address['street_address']);
+                    $subitem->county            = htmlspecialchars($address['county']);
+                    $subitem->city              = htmlspecialchars($address['city']);
+                    $subitem->state             = htmlspecialchars($address['state']);
+                    $subitem->zipcode           = htmlspecialchars($address['postal_code']);
+                    $subitem->country           = htmlspecialchars($address['country']);
+                    $subitem->lat               = htmlspecialchars($address['lat']);
+                    $subitem->lng               = htmlspecialchars($address['lng']);
+                    $subitem->url               = htmlspecialchars($address['url']);
+                    if(isset($address['default'])){
+                        $subitem->default           = htmlspecialchars($address['default']);
+                    }
+                    $subitem->created_at        = \Carbon\Carbon::now();
+                    $subitem->updated_at        = \Carbon\Carbon::now();
+                    $subitem->save();
+
+                    $ids[]  =   $subitem->id;
+                }
+            }
+        }
+        \Spot\Shipment\Models\Address::whereNotIn('id', $ids)->delete();
+
+    }else{
+        $areas              = array();
+        if(isset($data['addresses'])){
+            foreach($data['addresses']  as $address){
+                switch($address['type']){
+                    case 1:
+                        $areas[]        = array(
+                                                'area'  =>  $address['country'],
+                                                'type'  =>  1,
+                                            );
+                    break;
+                    case 2:
+                        $areas[]        = array(
+                                                'area'  =>  $address['state'],
+                                                'type'  =>  2,
+                                            );
+                    break;
+                    case 3:
+                        $areas[]        = array(
+                                                'area'  =>  $address['city'],
+                                                'type'  =>  3,
+                                            );
+                    break;
+                    case 4:
+                        $areas[]        = array(
+                                                'area'  =>  $address['area'],
+                                                'type'  =>  4,
+                                            );
+                    break;
+                }
+            }
+        }
+        $item->places           = $areas;
+        $item->updated_at       = \Carbon\Carbon::now();
+        $item->update();
+    }
+
+    \Flash::success($this['theme_lang']['updated_successfully']);
+    return Redirect::to('dashboard/account/addresses');
+}
+?>
+==
+<!--Begin::App-->
+<div class="kt-grid kt-grid--desktop kt-grid--ver kt-grid--ver-desktop kt-app">
+    {% partial 'profilemenu' %}
+
+    <!--Begin:: App Content-->
+    <div class="kt-grid__item kt-grid__item--fluid kt-app__content">
+        {% if this.param.page is empty %}
+            {% if user.role_id ==  51 %}
+                <div class="row">
+                    <div class="col-xl-12">
+                        <!--begin:: Widgets/Order Statistics-->
+                        <div class="kt-portlet kt-portlet--height-fluid">
+                            <div class="kt-portlet__head">
+                                <div class="kt-portlet__head-label">
+                                    <h3 class="kt-portlet__head-title">{{'Orders Statistics'|__}}</h3>
+                                </div>
+                            </div>
+                            <div class="kt-portlet__body kt-portlet__body--fluid">
+                                <div class="kt-widget12">
+                                    <div class="kt-widget12__content">
+                                        <div class="kt-widget12__item">
+                                            <div class="kt-widget12__info">
+                                                <span class="kt-widget12__desc">Annual Taxes EMS</span>
+                                                <span class="kt-widget12__value">$400,000</span>
+                                            </div>
+
+                                            <div class="kt-widget12__info">
+                                                <span class="kt-widget12__desc">Finance Review Date</span>
+                                                <span class="kt-widget12__value">July 24,2019</span>
+                                            </div>
+                                        </div>
+                                        <div class="kt-widget12__item">
+                                            <div class="kt-widget12__info">
+                                                <span class="kt-widget12__desc">Avarage Revenue</span>
+                                                <span class="kt-widget12__value">$60M</span>
+                                            </div>
+                                            <div class="kt-widget12__info">
+                                                <span class="kt-widget12__desc">Revenue Margin</span>
+                                                <div class="kt-widget12__progress">
+                                                    <div class="progress kt-progress--sm">
+                                                        <div class="progress-bar kt-bg-brand" role="progressbar" style="width: 40%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                                    </div>
+                                                    <span class="kt-widget12__stat">
+                                                        40%
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="kt-widget12__chart" style="height:100px;">
+                                        <canvas id="kt_chart_order_statistics"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!--end:: Widgets/Order Statistics-->
+                    </div>
+                </div>
+            {% endif %}
+            <div class="row">
+                <div class="col-xl-6">
+                    <!--begin:: Widgets/Last Updates-->
+                    <div class="kt-portlet kt-portlet--height-fluid">
+                        <div class="kt-portlet__head">
+                            <div class="kt-portlet__head-label">
+                                <h3 class="kt-portlet__head-title">{{'Latest Updates'|__}}</h3>
+                            </div>
+                        </div>
+                        <div class="kt-portlet__body">
+                            <div class="kt-scroll" data-scroll="true" style="height: 300px">
+                                {% for activity in user.activities.orderBy('id','desc').take(20) %}
+                                    <!--begin::widget 12-->
+                                    <div class="kt-widget4">
+                                        <div class="kt-widget4__item">
+                                            <span class="kt-widget4__icon"><i class="flaticon-pie-chart-1 kt-font-info"></i></span>
+                                            <a href="#" class="kt-widget4__title kt-widget4__title--light">{{activity.description}}</a>
+                                            <span class="kt-widget4__number kt-font-info">#{{activity.order_id}}</span>
+                                        </div>
+                                    </div>
+                                    <!--end::Widget 12-->
+                                {% else %}
+                                    <div class="kt-notification">
+                                        <div class="kt-notification__item">
+                                            <div class="kt-notification__item-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1" class="kt-svg-icon kt-svg-icon--brand">
+                                                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                                        <rect x="0" y="0" width="24" height="24"/>
+                                                        <path d="M5,3 L6,3 C6.55228475,3 7,3.44771525 7,4 L7,20 C7,20.5522847 6.55228475,21 6,21 L5,21 C4.44771525,21 4,20.5522847 4,20 L4,4 C4,3.44771525 4.44771525,3 5,3 Z M10,3 L11,3 C11.5522847,3 12,3.44771525 12,4 L12,20 C12,20.5522847 11.5522847,21 11,21 L10,21 C9.44771525,21 9,20.5522847 9,20 L9,4 C9,3.44771525 9.44771525,3 10,3 Z" fill="#000000"/>
+                                                        <rect fill="#000000" opacity="0.3" transform="translate(17.825568, 11.945519) rotate(-19.000000) translate(-17.825568, -11.945519) " x="16.3255682" y="2.94551858" width="3" height="18" rx="1"/>
+                                                    </g>
+                                                </svg>
+                                            </div>
+                                            <div class="kt-notification__item-details">
+                                                <div class="kt-notification__item-title">
+                                                    {{'No activities found'|__}}.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <!--end:: Widgets/Last Updates-->
+                </div>
+                <div class="col-xl-6">
+                    <!--begin:: Widgets/Last Updates-->
+                    <div class="kt-portlet kt-portlet--height-fluid">
+                        <div class="kt-portlet__head">
+                            <div class="kt-portlet__head-label">
+                                <h3 class="kt-portlet__head-title">{{'Notifications'|__}}</h3>
+                            </div>
+                        </div>
+                        <div class="kt-portlet__body">
+                            <div class="kt-scroll" data-scroll="true" style="height: 300px">
+                                {% for notification in user.notifications.where('read_at', null) %}
+                                    <!--begin::widget 12-->
+                                    <!--begin::widget 12-->
+                                    <div class="kt-notification">
+                                        <a href="{{url('dashboard/notifications')}}/{{notification.id}}" class="kt-notification__item">
+                                            <div class="kt-notification__item-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1" class="kt-svg-icon kt-svg-icon--brand">
+                                                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                                        <rect x="0" y="0" width="24" height="24"/>
+                                                        <path d="M5,3 L6,3 C6.55228475,3 7,3.44771525 7,4 L7,20 C7,20.5522847 6.55228475,21 6,21 L5,21 C4.44771525,21 4,20.5522847 4,20 L4,4 C4,3.44771525 4.44771525,3 5,3 Z M10,3 L11,3 C11.5522847,3 12,3.44771525 12,4 L12,20 C12,20.5522847 11.5522847,21 11,21 L10,21 C9.44771525,21 9,20.5522847 9,20 L9,4 C9,3.44771525 9.44771525,3 10,3 Z" fill="#000000"/>
+                                                        <rect fill="#000000" opacity="0.3" transform="translate(17.825568, 11.945519) rotate(-19.000000) translate(-17.825568, -11.945519) " x="16.3255682" y="2.94551858" width="3" height="18" rx="1"/>
+                                                    </g>
+                                                </svg>
+                                            </div>
+                                            <div class="kt-notification__item-details">
+                                                <div class="kt-notification__item-title">
+                                                    {{notification.body|__}}
+                                                </div>
+                                                <div class="kt-notification__item-time">
+                                                    {% if notification.created_at|time_diff %}
+                                                        {{notification.created_at|time_diff}}
+                                                    {% else %}
+                                                        {{notification.created_at|time_diff}}
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                    <!--end::Widget 12-->
+                                {% else %}
+                                    <div class="kt-notification">
+                                        <div class="kt-notification__item">
+                                            <div class="kt-notification__item-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1" class="kt-svg-icon kt-svg-icon--brand">
+                                                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                                        <rect x="0" y="0" width="24" height="24"/>
+                                                        <path d="M5,3 L6,3 C6.55228475,3 7,3.44771525 7,4 L7,20 C7,20.5522847 6.55228475,21 6,21 L5,21 C4.44771525,21 4,20.5522847 4,20 L4,4 C4,3.44771525 4.44771525,3 5,3 Z M10,3 L11,3 C11.5522847,3 12,3.44771525 12,4 L12,20 C12,20.5522847 11.5522847,21 11,21 L10,21 C9.44771525,21 9,20.5522847 9,20 L9,4 C9,3.44771525 9.44771525,3 10,3 Z" fill="#000000"/>
+                                                        <rect fill="#000000" opacity="0.3" transform="translate(17.825568, 11.945519) rotate(-19.000000) translate(-17.825568, -11.945519) " x="16.3255682" y="2.94551858" width="3" height="18" rx="1"/>
+                                                    </g>
+                                                </svg>
+                                            </div>
+                                            <div class="kt-notification__item-details">
+                                                <div class="kt-notification__item-title">
+                                                    {{'No new notifications found'|__}}.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <!--end:: Widgets/Last Updates-->
+                </div>
+            </div>
+        {% endif %}
+        {% if this.param.page == 'edit' %}
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="kt-portlet">
+                        <div class="kt-portlet__head">
+                            <div class="kt-portlet__head-label">
+                                <h3 class="kt-portlet__head-title">{{'Personal Information'|__}} <small>{{'update your personal informaiton'|__}}</small></h3>
+                            </div>
+                        </div>
+
+                        {{ form_ajax('onSave', { id: 'kt_form', class:'kt-form kt-form--label-right' }) }}
+                            <div class="kt-portlet__body">
+                                <div class="kt-section kt-section--first">
+                                    <div class="kt-section__body">
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">{{'Avatar'|__}}</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                  <div class="kt-avatar kt-avatar--outline" id="kt_user_avatar">
+                                                      {% partial avatar ~ '::image-single' %}
+                                                  </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">{{'Full Name'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                   <input type="text" class="form-control" name="name" value="{{item.name}}" required />
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">{{'Email'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <input type="email" class="form-control" name="email" value="{{item.email}}" required />
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">{{'Password'|__}}</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <input type="password" class="form-control" name="password" />
+                                                <span class="text-muted">{{'Only fill it if you need to change your password'|__}}</span>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">{{'Password Confirmation'|__}}</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <input type="password" class="form-control" name="password_confirmation" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">{{'Mobile Number'|__}}</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <input type="text" class="form-control" name="mobile"  value="{{item.mobile}}"/>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">{{'Phone Number'|__}}</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <input type="text" class="form-control" name="phone"  value="{{item.phone}}"/>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">{{'Country'|__}}</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <select class="form-control" id="country_id" data-live-search="true" name="country_id">
+                                                    <option data-hidden="true"></option>
+                                                    {% for country in countries %}
+                                                        <option value="{{country.id}}" {% if currentLang != 'en' %}data-subtext="{{country.lang(currentLang).name}} "{% endif %} {% if item.country_id == country.id %}selected{% endif %}>{{country.lang('en').name}}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">{{'Postal Code'|__}}</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <input type="text" class="form-control" name="zip"  value="{{item.zip}}"/>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">{{'State / Region'|__}}</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <select class="form-control state_id" id="state_id" title="{{'Please select country first'|__}}" name="state_id" data-live-search="true">
+                                                    <option data-hidden="true"></option>
+                                                    {{getList.states(item.state_id,item.country_id)}}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">{{'City'|__}}</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <select class="form-control city" id="city" title="{{'Please select state first'|__}}" name="city" data-live-search="true">
+                                                    <option data-hidden="true"></option>
+                                                    {{getList.cities(item.city_id,item.state_id)}}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">{{'Street Address'|__}}</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <input type="text" class="form-control" name="street_addr"  value="{{item.street_addr}}"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="kt-portlet__foot">
+                                <div class="kt-form__actions">
+                                    <div class="row">
+                                        <div class="col-lg-3 col-xl-3">
+                                        </div>
+                                        <div class="col-lg-9 col-xl-9">
+                                					<button type="submit" class="btn btn-primary">{{'Save'|__}}</button>
+                                					<span class="kt-margin-left-10">{{'or'|__}} <a href="{{url('dashboard/account')}}" class="kt-link">{{'Cancel'|__}}</a></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {{ form_close() }}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        {% if this.param.page == 'password' %}
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="kt-portlet kt-portlet--height-fluid">
+                        <div class="kt-portlet__head">
+                            <div class="kt-portlet__head-label">
+                                <h3 class="kt-portlet__head-title">{{'Change Password'|__}}<small>{{'change or reset your account password'|__}}</small></h3>
+                            </div>
+                        </div>
+                        <form class="kt-form kt-form--label-right">
+                            <div class="kt-portlet__body">
+                                <div class="kt-section kt-section--first">
+                                    <div class="kt-section__body">
+                                        <div class="alert alert-solid-danger alert-bold fade show kt-margin-t-20 kt-margin-b-40" role="alert">
+                                            <div class="alert-icon"><i class="fa fa-exclamation-triangle"></i></div>
+                                            <div class="alert-text">{{'Configure user passwords to expire periodically. Users will need warning that their passwords are going to expire'|__}}, <br>{{'or they might inadvertently get locked out of the system'|__}}!</div>
+                                            <div class="alert-close">
+                                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                    <span aria-hidden="true"><i class="la la-close"></i></span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <label class="col-xl-3"></label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <h3 class="kt-section__title kt-section__title-sm">{{'Change Or Recover Your Password'|__}}:</h3>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">{{'Current Password'|__}}</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <input type="password" class="form-control" name="old_password" value="" placeholder="{{'Current Password'|__}}">
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">{{'New Password'|__}}</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <input type="password" class="form-control" name=""value="" placeholder="{{'New Password'|__}}">
+                                            </div>
+                                        </div>
+                                        <div class="form-group form-group-last row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">{{'Verify Password'|__}}</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <input type="password" class="form-control" value="" placeholder="{{'Verify Password'|__}}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="kt-portlet__foot">
+                                <div class="kt-form__actions">
+                                    <div class="row">
+                                        <div class="col-lg-3 col-xl-3">
+                                        </div>
+                                        <div class="col-lg-9 col-xl-9">
+                                            <button type="reset" class="btn btn-brand btn-bold">{{'Change Password'|__}}</button>&nbsp;
+                                            <button type="reset" class="btn btn-secondary">{{'Cancel'|__}}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        {% if this.param.page == 'addresses' %}
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="kt-portlet kt-portlet--height-fluid">
+                        <div class="kt-portlet__head">
+                            <div class="kt-portlet__head-label">
+                                {% if user.role_id ==  5 %}
+                                    <h3 class="kt-portlet__head-title">{{'Addresses'|__}}<small>{{'Your addresses that you will ship from or to'|__}}</small></h3>
+                                {% else %}
+                                    <h3 class="kt-portlet__head-title">{{'Covered Areas'|__}}<small>{{'Your covered areas that you can deliver from or to'|__}}</small></h3>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {{ form_ajax('onPlaces', { id: 'kt_form', class:'kt-form kt-form--label-right', novalidate: true }) }}
+                            <div class="kt-portlet__body">
+                                <div class="kt-section kt-section--first">
+                                    <div class="kt-section__body">
+                                        {% if user.role_id ==  5 %}
+                                            <div class="alert alert-solid-info alert-bold fade show kt-margin-t-20 kt-margin-b-40" role="alert">
+                                                <div class="alert-icon"><i class="fa fa-exclamation-triangle"></i></div>
+                                                <div class="alert-text">{{'Please be aware that your addresses pin on google maps is always very urgent for fast and accurate deliver for your shipments'|__}}</div>
+                                                <div class="alert-close">
+                                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                        <span aria-hidden="true"><i class="la la-close"></i></span>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div id="kt_repeater_addresses">
+                                                <div class="form-group form-group-last row">
+                                                    <div data-repeater-list="addresses" class="col-lg-12">
+                                                        <div data-repeater-item class="align-items-center first-child">
+                                                            <div class="location">
+                                                                <div class="row">
+                                                                    <div class="form-group col-lg-5">
+                                                                        <label>{{'Address'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                                                        <input type="text" class="form-control address street_addr" data-location="route" name="street_address" required/>
+                                                                        <input type="hidden" class="form-control lat" data-location="lat" name="lat" />
+                                                                        <input type="hidden" class="form-control lng" data-location="lng" name="lng" />
+                                                                        <input type="hidden" class="form-control url" data-location="url" name="url" />
+                                                                    </div>
+                                                                    <div class="form-group col-lg-4">
+                                                                        <label>{{'Country'|__}}</label>
+                                                                        <select class="form-control country_id repeater_select" data-location="country" data-live-search="true" name="country">
+                                                                            <option data-hidden="true"></option>
+                                                                            {% for country in countries %}
+                                                                                <option value="{{country.id}}" {% if currentLang != 'en' %}data-subtext="{{country.lang(currentLang).name}} "{% endif %}>{{country.lang('en').name}}</option>
+                                                                            {% endfor %}
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="form-group col-lg-3">
+                                                                        <label>{{'Postal Code'|__}}</label>
+                                                                        <input class="form-control postal_code" type="text" data-location="postal_code" name="postal_code" >
+                                                                    </div>
+                                                                </div>
+                                                                <div class="row">
+                                                                    <div class="form-group col-lg-4">
+                                                                        <label>{{'State / Region'|__}}</label>
+                                                                        <select class="form-control state_id repeater_select" data-location="administrative_area_level_1" title="{{'Please select country first'|__}}" name="state" data-live-search="true">
+                                                                            <option data-hidden="true"></option>
+                                                                            {% for state in states %}
+                                                                                <option value="{{state.id}}" {% if currentLang != 'en' %}data-subtext="{{state.lang(currentLang).name}}"{% endif %}>{{state.lang('en').name}}</option>
+                                                                            {% endfor %}
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="form-group col-lg-4">
+                                                                        <label>{{'City'|__}}</label>
+                                                                        <select class="form-control city_id repeater_select" data-location="locality" name="city" title="{{'Please select state first'|__}}" data-live-search="true">
+                                                                            <option data-hidden="true"></option>
+                                                                            {% for city in cities %}
+                                                                                <option value="{{city.id}}">{{city.name}}</option>
+                                                                            {% endfor %}
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="form-group col-lg-4">
+                                                                        <label>{{'County'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                                                        <select class="form-control area_id repeater_select" data-location="sublocality" name="county" title="{{'Please select city first'|__}}" data-live-search="true" required>
+                                                                            <option data-hidden="true"></option>
+                                                                            {% for county in areas %}
+                                                                                <option value="{{county.id}}">{{county.name}}</option>
+                                                                            {% endfor %}
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="row">
+                                                                    <div class="form-group col-lg-12">
+                                                                        <label>{{'Google Map'|__}}</label>
+                                                                        <div class="col-sm-12 map_canvas"></div>
+                                                                        <span class="form-text text-muted">{{'Change the pin to select the right location'|__}}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="form-group row">
+                                                                <div class="col-md-3">
+                                                                    <a href="javascript:;" data-repeater-delete="" class="btn-sm btn btn-label-danger btn-bold kt-margin-t-25 delete_btn">
+                                                                        <i class="la la-trash-o"></i>
+                                                                        {{'Delete'|__}}
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <script>
+                                                            var lat = [];
+                                                            var lng = [];
+                                                        </script>
+                                                        {% for address in user.addresses %}
+                                                            <div data-repeater-item class="align-items-center">
+                                                                <input type="hidden" name="id" value="{{address.id}}" />
+                                                                <div class="location">
+                                                                    <div class="row">
+                                                                        <div class="form-group col-lg-6">
+                                                                            <label>{{'Name'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                                                            <input type="text" class="form-control" name="name" value="{{address.name}}" required/>
+                                                                        </div>
+                                                                        <div class="form-group col-lg-6">
+                                                                            <label>{{'Default Address'|__}}</label>
+                                                                            <div class="kt-radio-inline">
+                                                    							<label class="kt-radio">
+                                                    								<input type="radio" name="default" value="1" {% if address.default == 1 %}checked{% endif %}> {{'Yes'|__}}
+                                                    								<span></span>
+                                                    							</label>
+                                                    							<label class="kt-radio">
+                                                    								<input type="radio" name="default" value="0" {% if address.default == 0 %}checked{% endif %}> {{'No'|__}}
+                                                    								<span></span>
+                                                    							</label>
+                                                    						</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="row">
+                                                                        <div class="form-group col-lg-5">
+                                                                            <label>{{'Address'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                                                            <input type="text" class="form-control address street_addr edit_address_{{address.id}}" data-location="route" name="street_address" value="{{address.street}}" required/>
+                                                                            <input type="hidden" class="form-control lat" data-location="lat" name="lat" value="{{address.lat}}" />
+                                                                            <input type="hidden" class="form-control lng" data-location="lng" name="lng" value="{{address.lng}}" />
+                                                                            <input type="hidden" class="form-control url" data-location="url" name="url" value="{{address.url}}" />
+                                                                        </div>
+                                                                        <div class="form-group col-lg-4">
+                                                                            <label>{{'Country'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                                                            <select class="form-control country_id_repeater" data-location="country" data-live-search="true" name="country" required>
+                                                                                <option data-hidden="true"></option>
+                                                                                {% for country in countries %}
+                                                                                    <option value="{{country.id}}" {% if currentLang != 'en' %}data-subtext="{{country.lang(currentLang).name}} "{% endif %} {% if address.country == country.id %}selected{% endif %}>{{country.lang('en').name}}</option>
+                                                                                {% endfor %}
+                                                                            </select>
+                                                                        </div>
+                                                                        <div class="form-group col-lg-3">
+                                                                            <label>{{'Postal Code'|__}}</label>
+                                                                            <input class="form-control postal_code" type="text" data-location="postal_code" name="postal_code" value="{{address.zipcode}}">
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="row">
+                                                                        <div class="form-group col-lg-4">
+                                                                            <label>{{'State / Region'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                                                            <select class="form-control state_id_repeater" data-location="administrative_area_level_1" title="{{'Please select country first'|__}}" name="state" data-live-search="true" required>
+                                                                                <option data-hidden="true"></option>
+                                                                                {{getList.states(address.state,address.country)}}
+                                                                            </select>
+                                                                        </div>
+                                                                        <div class="form-group col-lg-4">
+                                                                            <label>{{'City'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                                                            <select class="form-control city_id_repeater" data-location="locality" name="city" title="{{'Please select state first'|__}}" data-live-search="true" required>
+                                                                                <option data-hidden="true"></option>
+                                                                                {{getList.cities(address.city,address.state)}}
+                                                                            </select>
+                                                                        </div>
+                                                                        <div class="form-group col-lg-4">
+                                                                            <label>{{'County'|__}}</label>
+                                                                            <select class="form-control area_id_repeater" data-location="sublocality" name="county" title="{{'Please select city first'|__}}" data-live-search="true" >
+                                                                                <option data-hidden="true"></option>
+                                                                                {{getList.areas(address.county,address.city)}}
+                                                                            </select>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="row">
+                                                                        <div class="form-group col-lg-12">
+                                                                            <label>{{'Google Map'|__}}</label>
+                                                                            <div class="col-sm-12 map_canvas map_canvas_{{address.id}}"></div>
+                                                                            <span class="form-text text-muted">{{'Change the pin to select the right location'|__}}</span>
+                                                                        </div>
+                                                                        <script>
+                                                                            lat[{{loop.index}}] = {{address.lat}};
+                                                                            lng[{{loop.index}}] = {{address.lng}};
+                                                                        </script>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="form-group row">
+                                                                    <div class="col-md-3">
+                                                                        <a href="javascript:;" data-repeater-delete="" class="btn-sm btn btn-label-danger btn-bold kt-margin-t-25 delete_btn">
+                                                                            <i class="la la-trash-o"></i>
+                                                                            {{'Delete'|__}}
+                                                                        </a>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                 </div>
+                                                 <div class="form-group form-group-last row">
+                                                     <label class="col-xl-12 col-form-label kt-align-right">
+                                                         <a href="javascript:;" data-repeater-create="" class="btn btn-bold btn-sm btn-label-brand">
+                                                             <i class="la la-plus"></i> {{'Add Another Address'|__}}
+                                                         </a>
+                                                     </label>
+                                                </div>
+                                            </div>
+
+
+                                        {% else %}
+                                            <div class="alert alert-solid-info alert-bold fade show kt-margin-t-20 kt-margin-b-40" role="alert">
+                                                <div class="alert-icon"><i class="fa fa-exclamation-triangle"></i></div>
+                                                <div class="alert-text">{{'Please be aware that you will be assigned to those places orders'|__}}</div>
+                                                <div class="alert-close">
+                                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                        <span aria-hidden="true"><i class="la la-close"></i></span>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+
+                                            <div id="kt_repeater_places">
+                                                <div class="form-group form-group-last row">
+                                                    <div data-repeater-list="addresses" class="col-lg-12">
+                                                        <div data-repeater-item class="align-items-center first-child">
+                                                            <div class="form-group row">
+                                                                <label class="col-xl-3 col-lg-3 col-form-label">{{'Place Type'|__}}</label>
+                                                                <div class="col-lg-9 col-xl-6">
+                                                                    <div class="kt-radio-list">
+                                                                        <label class="kt-radio kt-radio--bold kt-radio--dark">
+                                                                            <input type="radio" name="type" class="place_type" value="1" checked required> {{"Countries"|__}}
+                                                                            <span></span>
+                                                                        </label>
+                                                                        <label class="kt-radio kt-radio--bold kt-radio--dark">
+                                                                            <input type="radio" name="type" class="place_type" value="2" required> {{"States"|__}}
+                                                                            <span></span>
+                                                                        </label>
+                                                                        <label class="kt-radio kt-radio--bold kt-radio--dark">
+                                                                            <input type="radio" name="type" class="place_type" value="3" required> {{"Cities"|__}}
+                                                                            <span></span>
+                                                                        </label>
+                                                                        <label class="kt-radio kt-radio--bold kt-radio--dark">
+                                                                            <input type="radio" name="type" class="place_type" value="4" required> {{"Areas"|__}}
+                                                                            <span></span>
+                                                                        </label>
+                                            						</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row type_1 type_container">
+                                                                <div class="form-group col-lg-12">
+                                                                    <label>{{'Country'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                                                                    <select class="form-control country_from" name="country" data-live-search="true" required>
+                                                                        <option data-hidden="true"></option>
+                                                                        {% for country in countries %}
+                                                                            <option value="{{country.id}}">{{country.name}}</option>
+                                                                        {% endfor %}
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row type_2 type_container kt-hidden">
+                                                                <div class="form-group col-lg-12">
+                                                                    <label>{{'State'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                                                                    <select class="form-control state_from" name="state" data-live-search="true" required title="{{'Please select country first'|__}}">
+                                                                        <option data-hidden="true"></option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row type_3 type_container kt-hidden">
+                                                                <div class="form-group col-lg-12">
+                                                                    <label>{{'City'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                                                                    <select class="form-control city_from" name="city" data-live-search="true" required title="{{'Please select state first'|__}}">
+                                                                        <option data-hidden="true"></option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row type_4 type_container kt-hidden">
+                                                                <div class="form-group col-lg-12">
+                                                                    <label>{{'Area'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                                                                    <select class="form-control area_from" name="area" data-live-search="true" required title="{{'Please select city first'|__}}">
+                                                                        <option data-hidden="true"></option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="form-group row">
+                                                                <div class="col-md-3">
+                                                                    <a href="javascript:;" data-repeater-delete="" class="btn-sm btn btn-label-danger btn-bold kt-margin-t-25 delete_btn">
+                                                                        <i class="la la-trash-o"></i>
+                                                                        {{'Delete'|__}}
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% for address in user.places %}
+                                                            <div data-repeater-item class="align-items-center prev_child">
+                                                                <div class="form-group row">
+                                                                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Place Type'|__}}</label>
+                                                                    <div class="col-lg-9 col-xl-6">
+                                                                        <div class="kt-radio-list">
+                                                                            <label class="kt-radio kt-radio--bold kt-radio--dark">
+                                                                                <input type="radio" name="type" class="place_type" value="1" {% if address.type == 1 %}checked{% endif %} required> {{"Countries"|__}}
+                                                                                <span></span>
+                                                                            </label>
+                                                                            <label class="kt-radio kt-radio--bold kt-radio--dark">
+                                                                                <input type="radio" name="type" class="place_type" value="2" {% if address.type == 2 %}checked{% endif %} required> {{"States"|__}}
+                                                                                <span></span>
+                                                                            </label>
+                                                                            <label class="kt-radio kt-radio--bold kt-radio--dark">
+                                                                                <input type="radio" name="type" class="place_type" value="3" {% if address.type == 3 %}checked{% endif %} required> {{"Cities"|__}}
+                                                                                <span></span>
+                                                                            </label>
+                                                                            <label class="kt-radio kt-radio--bold kt-radio--dark">
+                                                                                <input type="radio" name="type" class="place_type" value="4" {% if address.type == 4 %}checked{% endif %} required> {{"Areas"|__}}
+                                                                                <span></span>
+                                                                            </label>
+                                                						</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="row type_1 type_container">
+                                                                    <div class="form-group col-lg-12">
+                                                                        <label>{{'Country'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                                                                        <select class="form-control country_from" name="country" data-live-search="true" required>
+                                                                            <option data-hidden="true"></option>
+                                                                            {% if address.type == 1 %}
+                                                                                {% for country in countries %}
+                                                                                    <option value="{{country.id}}" {% if address.area == country.id %}selected{% endif %}>{{country.name}}</option>
+                                                                                {% endfor %}
+                                                                            {% else %}
+                                                                                {{getData.countries(address.area,address.type)}}
+                                                                            {% endif %}
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="row type_2 type_container {% if address.type == 1 %}kt-hidden{% endif %}">
+                                                                    <div class="form-group col-lg-12">
+                                                                        <label>{{'State'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                                                                        <select class="form-control state_from" name="state" data-live-search="true" required {% if address.type == 1 %}title="{{'Please select country first'|__}}"{% endif %}>
+                                                                            <option data-hidden="true"></option>
+                                                                            {{getData.states(address.area,address.type)}}
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="row type_3 type_container {% if address.type == 2 or address.type == 1 %}kt-hidden{% endif %}">
+                                                                    <div class="form-group col-lg-12">
+                                                                        <label>{{'City'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                                                                        <select class="form-control city_from" name="city" data-live-search="true" required  {% if address.type == 2 or address.type == 1 %}title="{{'Please select state first'|__}}"{% endif %}>
+                                                                            <option data-hidden="true"></option>
+                                                                            {% if address.type == 2 or address.type == 3 %}
+                                                                                {{getData.cities(address.area,address.type)}}
+                                                                            {% endif %}
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="row type_4 type_container {% if address.type == 3 or address.type == 2 or address.type == 1 %}kt-hidden{% endif %}">
+                                                                    <div class="form-group col-lg-12">
+                                                                        <label>{{'Area'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                                                                        <select class="form-control area_from" name="area" data-live-search="true" required {% if address.type == 3 or address.type == 2 or address.type == 1 %}title="{{'Please select city first'|__}}"{% endif %}>
+                                                                            <option data-hidden="true"></option>
+                                                                            {% if address.type == 3 or address.type == 4 %}
+                                                                                {{getData.areas(address.area,address.type)}}
+                                                                            {% endif %}
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+
+
+                                                                <div class="form-group row">
+                                                                    <div class="col-md-3">
+                                                                        <a href="javascript:;" data-repeater-delete="" class="btn-sm btn btn-label-danger btn-bold kt-margin-t-25 delete_btn">
+                                                                            <i class="la la-trash-o"></i>
+                                                                            {{'Delete'|__}}
+                                                                        </a>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                 </div>
+                                                 <div class="form-group form-group-last row">
+                                                     <label class="col-xl-12 col-lg-12 col-form-label kt-align-right">
+                                                         <a href="javascript:;" data-repeater-create="" class="btn btn-bold btn-sm btn-label-brand">
+                                                             <i class="la la-plus"></i> {{'Add Another Place'|__}}
+                                                         </a>
+                                                     </label>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="kt-portlet__foot">
+                                <div class="kt-form__actions">
+                                    <div class="row">
+                                        <div class="col-lg-3 col-xl-3">
+                                        </div>
+                                        <div class="col-lg-9 col-xl-9">
+                                            <button type="submit" class="btn btn-brand btn-bold">{{'Save'|__}}</button>&nbsp;
+                                            <button type="reset" class="btn btn-secondary">{{'Cancel'|__}}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {{ form_close() }}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        {% if this.param.page == 'settings' %}
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="kt-portlet kt-portlet--height-fluid">
+                        <div class="kt-portlet__head">
+                            <div class="kt-portlet__head-label">
+                                <h3 class="kt-portlet__head-title">{{'Settings'|__}} <small>{{'control when and how often system sends emails to you'|__}}</small></h3>
+                            </div>
+                        </div>
+                        <form class="kt-form kt-form--label-right">
+                            <div class="kt-portlet__body">
+                                <div class="kt-section kt-section--first">
+                                    <div class="kt-section__body">
+                                        <div class="row">
+                                            <label class="col-xl-3"></label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <h3 class="kt-section__title kt-section__title-sm">Setup Email Notification:</h3>
+                                            </div>
+                                        </div>
+                                        <div class="form-group form-group-sm row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">Email Notification</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <span class="kt-switch">
+    											    <label>
+    												    <input type="checkbox" checked="checked" name="email_notification_1">
+    											    	<span></span>
+                                                    </label>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="form-group form-group-last row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">Send Copy To Personal Email</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <span class="kt-switch">
+    												<label>
+    													<input type="checkbox" name="email_notification_2">
+    													<span></span>
+                                                    </label>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="kt-separator kt-separator--border-dashed kt-separator--portlet-fit kt-separator--space-lg"></div>
+
+                                <div class="kt-section kt-section--first">
+                                    <div class="kt-section__body">
+                                        <div class="row">
+                                            <label class="col-xl-3"></label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <h3 class="kt-section__title kt-section__title-sm">Activity Related Emails:</h3>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">When To Email</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <div class="kt-checkbox-list">
+                                                    <label class="kt-checkbox">
+                                                        <input type="checkbox"> You have new notifications.
+                                                        <span></span>
+                                                    </label>
+                                                    <label class="kt-checkbox">
+                                                        <input type="checkbox"> You're sent a direct message
+                                                        <span></span>
+                                                    </label>
+                                                    <label class="kt-checkbox">
+                                                        <input type="checkbox" checked="checked"> Someone adds you as a connection
+                                                        <span></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group form-group-last row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">When To Escalate Emails</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <div class="kt-checkbox-list">
+                                                    <label class="kt-checkbox kt-checkbox--brand">
+                                                        <input type="checkbox"> Upon new order.
+                                                        <span></span>
+                                                    </label>
+                                                    <label class="kt-checkbox kt-checkbox--brand">
+                                                        <input type="checkbox"> New membership approval
+                                                        <span></span>
+                                                    </label>
+                                                    <label class="kt-checkbox kt-checkbox--brand">
+                                                        <input type="checkbox" checked="checked"> Member registration
+                                                        <span></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="kt-separator kt-separator--border-dashed kt-separator--portlet-fit kt-separator--space-lg"></div>
+
+                                <div class="kt-section kt-section--first">
+                                    <div class="kt-section__body">
+                                        <div class="row">
+                                            <label class="col-xl-3"></label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <h3 class="kt-section__title kt-section__title-sm">Updates From Keenthemes:</h3>
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label class="col-xl-3 col-lg-3 col-form-label">Email You With</label>
+                                            <div class="col-lg-9 col-xl-6">
+                                                <div class="kt-checkbox-list">
+                                                    <label class="kt-checkbox">
+                                                        <input type="checkbox"> News about Keenthemes products and feature updates
+                                                        <span></span>
+                                                    </label>
+                                                    <label class="kt-checkbox">
+                                                        <input type="checkbox"> Tips on getting more out of Keen
+                                                        <span></span>
+                                                    </label>
+                                                    <label class="kt-checkbox">
+                                                        <input type="checkbox" checked="checked"> Things you missed since you last logged into Keen
+                                                        <span></span>
+                                                    </label>
+                                                    <label class="kt-checkbox">
+                                                        <input type="checkbox" checked="checked"> News about Metronic on partner products and other services
+                                                        <span></span>
+                                                    </label>
+                                                    <label class="kt-checkbox">
+                                                        <input type="checkbox" checked="checked"> Tips on Metronic business products
+                                                        <span></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="kt-portlet__foot">
+                                <div class="kt-form__actions">
+                                    <div class="row">
+                                        <div class="col-lg-3 col-xl-3">
+                                        </div>
+                                        <div class="col-lg-9 col-xl-9">
+                                            <button type="reset" class="btn btn-brand btn-bold">Change Password</button>&nbsp;
+                                            <button type="reset" class="btn btn-secondary">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    <!--End:: App Content-->
+</div>
+<!--End::App-->
+
+
+{% put styles %}
+    <style>
+        .map_canvas {
+          height: 350px;
+        }
+    </style>
+{% endput %}
+{% put scripts %}
+<script src="{{ 'assets/admin/vendors/custom/geocomplete/jquery.geocomplete.js'|theme }}" type="text/javascript"></script>
+<script src="//maps.googleapis.com/maps/api/js?libraries=places&key={{settings.google.map.key}}"></script>
+<script>
+"use strict";
+// Class definition
+var KTUserProfile = function () {
+	// Base elements
+	var avatar;
+	var offcanvas;
+
+	// Private functions
+	var initAside = function () {
+		// Mobile offcanvas for mobile mode
+		offcanvas = new KTOffcanvas('kt_user_profile_aside', {
+            overlay: true,
+            baseClass: 'kt-app__aside',
+            closeBy: 'kt_user_profile_aside_close',
+            toggleBy: 'kt_subheader_mobile_toggle'
+        });
+        $('#kt_subheader_mobile_toggle').show();
+	}
+
+	var initUserForm = function() {
+		avatar = new KTAvatar('kt_user_avatar');
+	}
+
+	return {
+		// public functions
+		init: function() {
+			initAside();
+			initUserForm();
+		}
+	};
+}();
+
+KTUtil.ready(function() {
+	KTUserProfile.init();
+
+    {% if this.param.page == 'edit' %}
+        $('body').on('changed.bs.select', '.country_id', function(e, clickedIndex, newValue, oldValue){
+            var selected = $(e.currentTarget).val();
+            if(selected != ''){
+                $.request('onListstates', {
+                    data: {id: selected},
+                    success: function(data) {
+                        $('.state_id').selectpicker("destroy");
+                        $('.state_id').attr('title', '{{"Nothing Selected"|__}}');
+                        $('.state_id').html(data.html);
+                        $('.state_id').selectpicker("refresh");
+                    }
+                });
+            }
+        });
+        $('body').on('changed.bs.select', '.state_id', function(e, clickedIndex, newValue, oldValue){
+            var selected = $(e.currentTarget).val();
+            if(selected != ''){
+                $.request('onListcities', {
+                    data: {id: selected},
+                    success: function(data) {
+                        $('.city').selectpicker("destroy");
+                        $('.city').attr('title', '{{"Nothing Selected"|__}}');
+                        $('.city').html(data.html);
+                        $('.city').selectpicker("refresh");
+                    }
+                });
+            }
+        });
+    {% endif %}
+
+    //if this.param.page == 'addresses' and user.role_id ==  5
+    {% if this.param.page == 'addresses' %}
+        {% if user.role_id ==  5 %}
+
+            $('body').on('changed.bs.select', '.country_id_repeater', function(e, clickedIndex, newValue, oldValue){
+                var selected = $(e.currentTarget).val();
+                var repeater_item = $(this);
+                if(selected != ''){
+                    $.request('onListstates', {
+                        data: {id: selected},
+                        success: function(data) {
+                            repeater_item.parent().parent().parent().parent().find('.state_id_repeater').selectpicker("destroy");
+                            repeater_item.parent().parent().parent().parent().find('.state_id_repeater').attr('title', '{{"Nothing Selected"|__}}');
+                            repeater_item.parent().parent().parent().parent().find('.state_id_repeater').html(data.html);
+                            repeater_item.parent().parent().parent().parent().find('.state_id_repeater').selectpicker("refresh");
+                        }
+                    });
+                }
+            });
+            $('body').on('changed.bs.select', '.state_id_repeater', function(e, clickedIndex, newValue, oldValue){
+                var selected = $(e.currentTarget).val();
+                var repeater_item = $(this);
+                if(selected != ''){
+                    $.request('onListcities', {
+                        data: {id: selected},
+                        success: function(data) {
+                            repeater_item.parent().parent().parent().parent().find('.city_id_repeater').selectpicker("destroy");
+                            repeater_item.parent().parent().parent().parent().find('.city_id_repeater').attr('title', '{{"Nothing Selected"|__}}');
+                            repeater_item.parent().parent().parent().parent().find('.city_id_repeater').html(data.html);
+                            repeater_item.parent().parent().parent().parent().find('.city_id_repeater').selectpicker("refresh");
+                        }
+                    });
+                }
+            });
+            $('body').on('changed.bs.select', '.city_id_repeater', function(e, clickedIndex, newValue, oldValue){
+                var selected = $(e.currentTarget).val();
+                var repeater_item = $(this);
+                if(selected != ''){
+                    $.request('onListareas', {
+                        data: {id: selected},
+                        success: function(data) {
+                            repeater_item.parent().parent().parent().parent().find('.area_id_repeater').selectpicker("destroy");
+                            repeater_item.parent().parent().parent().parent().find('.area_id_repeater').attr('title', '{{"Nothing Selected"|__}}');
+                            repeater_item.parent().parent().parent().parent().find('.area_id_repeater').html(data.html);
+                            repeater_item.parent().parent().parent().parent().find('.area_id_repeater').selectpicker("refresh");
+                        }
+                    });
+                }
+            });
+
+            {% for address in user.addresses %}
+                var map_canvas  = $('.map_canvas_{{address.id}}');
+                var map_data    = $(this).parent().find(".location");
+                $('.edit_address_{{address.id}}').geocomplete({
+                    map: map_canvas,
+                    location: [{{address.lat}},{{address.lng}}],
+                    mapOptions: {
+                        zoom: 18
+                    },
+                    markerOptions: {
+                        draggable: true
+                    },
+                    details: map_data,
+                    detailsAttribute: "data-location"
+                });
+                 $(this).parent().find(".edit_address_{{address.id}}").bind("geocode:dragged", function(event, latLng){
+                     $(this).parent().find("input.lat").val(latLng.lat());
+                     $(this).parent().find("input.lng").val(latLng.lng());
+                });
+            {% endfor %}
+
+
+            $("#kt_repeater_addresses").repeater({
+                initEmpty: false,
+                show: function() {
+                    var repeater_item = $(this);
+                    repeater_item.find('select').selectpicker('refresh');
+                    repeater_item.on('changed.bs.select', '.country_id', function(e, clickedIndex, newValue, oldValue){
+                        var selected = $(e.currentTarget).val();
+                        if(selected != ''){
+                            $.request('onListstates', {
+                                data: {id: selected},
+                                success: function(data) {
+                                    repeater_item.find('.state_id').selectpicker("destroy");
+                                    repeater_item.find('.state_id').attr('title', '{{"Nothing Selected"|__}}');
+                                    repeater_item.find('.state_id').html(data.html);
+                                    repeater_item.find('.state_id').selectpicker("refresh");
+                                }
+                            });
+                        }
+                    });
+                    repeater_item.on('changed.bs.select', '.state_id', function(e, clickedIndex, newValue, oldValue){
+                        var selected = $(e.currentTarget).val();
+                        if(selected != ''){
+                            $.request('onListcities', {
+                                data: {id: selected},
+                                success: function(data) {
+                                    repeater_item.find('.city_id').selectpicker("destroy");
+                                    repeater_item.find('.city_id').attr('title', '{{"Nothing Selected"|__}}');
+                                    repeater_item.find('.city_id').html(data.html);
+                                    repeater_item.find('.city_id').selectpicker("refresh");
+                                }
+                            });
+                        }
+                    });
+                    repeater_item.on('changed.bs.select', '.city_id', function(e, clickedIndex, newValue, oldValue){
+                        var selected = $(e.currentTarget).val();
+                        if(selected != ''){
+                            $.request('onListareas', {
+                                data: {id: selected},
+                                success: function(data) {
+                                    repeater_item.find('.area_id').selectpicker("destroy");
+                                    repeater_item.find('.area_id').attr('title', '{{"Nothing Selected"|__}}');
+                                    repeater_item.find('.area_id').html(data.html);
+                                    repeater_item.find('.area_id').selectpicker("refresh");
+                                }
+                            });
+                        }
+                    });
+                    var map_canvas  = repeater_item.find(".map_canvas");
+                    var map_data    = repeater_item.find(".location");
+                    repeater_item.find(".address").geocomplete({
+                        map: map_canvas,
+                        mapOptions: {
+                            zoom: 18
+                        },
+                        markerOptions: {
+                            draggable: true
+                        },
+                        details: map_data,
+                        detailsAttribute: "data-location",
+                        autoselect: true,
+                    });
+                    repeater_item.bind("geocode:dragged", function(event, latLng){
+                        repeater_item.find("input[data-location=lat]").val(latLng.lat());
+                        repeater_item.find("input[data-location=lng]").val(latLng.lng());
+                    });
+                    repeater_item.slideDown();
+                },
+                hide: function(e) {
+                    $(this).slideUp(e);
+                }
+            });
+            $('.first-child').remove();
+        {% else %}
+            $("#kt_repeater_places").repeater({
+                initEmpty: false,
+                show: function() {
+                    var repeater_item = $(this);
+                    repeater_item.find('select').next('.dropdown-toggle').remove();
+                    repeater_item.find('select').selectpicker('refresh');
+
+                    repeater_item.on('change', '.place_type', function(){
+                        repeater_item.find('.type_container').addClass('kt-hidden');
+                        for (var i = $(this).val(); i >= 1; i--) {
+                            repeater_item.find('.type_'+i).removeClass('kt-hidden');
+                        }
+                    });
+
+                    repeater_item.on('changed.bs.select', '.country_from', function(e, clickedIndex, newValue, oldValue){
+                        var selected = $(e.currentTarget).val();
+                        if(selected != ''){
+                            $.request('onListstates', {
+                                data: {id: selected},
+                                success: function(data) {
+                                    repeater_item.find('select.state_from').selectpicker("destroy");
+                                    repeater_item.find('select.state_from').attr('title', '{{"Nothing Selected"|__}}');
+                                    repeater_item.find('select.state_from').html(data.html);
+                                    repeater_item.find('select.state_from').selectpicker("refresh");
+                                }
+                            });
+                        }
+                    });
+                    repeater_item.on('changed.bs.select', '.country_to', function(e, clickedIndex, newValue, oldValue){
+                        var selected = $(e.currentTarget).val();
+                        var parent = $(e.currentTarget).parent().parent().parent().parent();
+                        if(selected != ''){
+                            $.request('onListstates', {
+                                data: {id: selected},
+                                success: function(data) {
+                                    repeater_item.find('select.state_to').selectpicker("destroy");
+                                    repeater_item.find('select.state_to').attr('title', '{{"Nothing Selected"|__}}');
+                                    repeater_item.find('select.state_to').html(data.html);
+                                    repeater_item.find('select.state_to').selectpicker("refresh");
+                                }
+                            });
+                        }
+                    });
+                    repeater_item.on('changed.bs.select', '.state_from', function(e, clickedIndex, newValue, oldValue){
+                        var selected = $(e.currentTarget).val();
+                        if(selected != ''){
+                            $.request('onListcities', {
+                                data: {id: selected},
+                                success: function(data) {
+                                    repeater_item.find('select.city_from').selectpicker("destroy");
+                                    repeater_item.find('select.city_from').attr('title', '{{"Nothing Selected"|__}}');
+                                    repeater_item.find('select.city_from').html(data.html);
+                                    repeater_item.find('select.city_from').selectpicker("refresh");
+                                }
+                            });
+                        }
+                    });
+                    repeater_item.on('changed.bs.select', '.state_to', function(e, clickedIndex, newValue, oldValue){
+                        var selected = $(e.currentTarget).val();
+                        if(selected != ''){
+                            $.request('onListcities', {
+                                data: {id: selected},
+                                success: function(data) {
+                                    repeater_item.find('select.city_to').selectpicker("destroy");
+                                    repeater_item.find('select.city_to').attr('title', '{{"Nothing Selected"|__}}');
+                                    repeater_item.find('select.city_to').html(data.html);
+                                    repeater_item.find('select.city_to').selectpicker("refresh");
+                                }
+                            });
+                        }
+                    });
+                    repeater_item.on('changed.bs.select', '.city_from', function(e, clickedIndex, newValue, oldValue){
+                        var selected = $(e.currentTarget).val();
+                        if(selected != ''){
+                            $.request('onListareas', {
+                                data: {id: selected},
+                                success: function(data) {
+                                    repeater_item.find('select.area_from').selectpicker("destroy");
+                                    repeater_item.find('select.area_from').attr('title', '{{"Nothing Selected"|__}}');
+                                    repeater_item.find('select.area_from').html(data.html);
+                                    repeater_item.find('select.area_from').selectpicker("refresh");
+                                }
+                            });
+                        }
+                    });
+                    repeater_item.on('changed.bs.select', '.city_to', function(e, clickedIndex, newValue, oldValue){
+                        var selected = $(e.currentTarget).val();
+                        if(selected != ''){
+                            $.request('onListareas', {
+                                data: {id: selected},
+                                success: function(data) {
+                                    repeater_item.find('select.area_to').selectpicker("destroy");
+                                    repeater_item.find('select.area_to').attr('title', '{{"Nothing Selected"|__}}');
+                                    repeater_item.find('select.area_to').html(data.html);
+                                    repeater_item.find('select.area_to').selectpicker("refresh");
+                                }
+                            });
+                        }
+                    });
+                    repeater_item.slideDown();
+                },
+                hide: function(e) {
+                    $(this).slideUp(e);
+                }
+            });
+            $('.first-child').remove();
+
+
+            $('.prev_child').on('change', '.place_type', function(){
+                var parent = $(this).parent().parent().parent().parent().parent();
+                parent.find('.type_container').addClass('kt-hidden');
+                for (var i = $(this).val(); i >= 1; i--) {
+                    parent.find('.type_'+i).removeClass('kt-hidden');
+                }
+            });
+
+            $('.prev_child').on('changed.bs.select', '.country_from', function(e, clickedIndex, newValue, oldValue){
+                var selected = $(e.currentTarget).val();
+                var parent = $(e.currentTarget).parent().parent().parent().parent();
+                if(selected != ''){
+                    $.request('onListstates', {
+                        data: {id: selected},
+                        success: function(data) {
+                            parent.find('select.state_from').selectpicker("destroy");
+                            parent.find('select.state_from').attr('title', '{{"Nothing Selected"|__}}');
+                            parent.find('select.state_from').html(data.html);
+                            parent.find('select.state_from').selectpicker("refresh");
+                        }
+                    });
+                }
+            });
+            $('.prev_child').on('changed.bs.select', '.state_from', function(e, clickedIndex, newValue, oldValue){
+                var selected = $(e.currentTarget).val();
+                var parent = $(e.currentTarget).parent().parent().parent().parent();
+                if(selected != ''){
+                    $.request('onListcities', {
+                        data: {id: selected},
+                        success: function(data) {
+                            parent.find('select.city_from').selectpicker("destroy");
+                            parent.find('select.city_from').attr('title', '{{"Nothing Selected"|__}}');
+                            parent.find('select.city_from').html(data.html);
+                            parent.find('select.city_from').selectpicker("refresh");
+                        }
+                    });
+                }
+            });
+            $('.prev_child').on('changed.bs.select', '.city_from', function(e, clickedIndex, newValue, oldValue){
+                var selected = $(e.currentTarget).val();
+                var parent = $(e.currentTarget).parent().parent().parent().parent();
+                if(selected != ''){
+                    $.request('onListareas', {
+                        data: {id: selected},
+                        success: function(data) {
+                            parent.find('select.area_from').selectpicker("destroy");
+                            parent.find('select.area_from').attr('title', '{{"Nothing Selected"|__}}');
+                            parent.find('select.area_from').html(data.html);
+                            parent.find('select.area_from').selectpicker("refresh");
+                        }
+                    });
+                }
+            });
+        {% endif %}
+    {% endif %}
+});
+</script>
+{% endput %}

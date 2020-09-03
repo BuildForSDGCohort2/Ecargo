@@ -1,0 +1,2076 @@
+title = "Container View"
+
+url = "/dashboard/containers/:id/view"
+
+layout = "admin"
+
+is_hidden = 0
+
+role = 0
+
+permission = 0
+
+anonymous_only = 0
+
+logged_only = 1
+
+child_of = "dashboard/containers"
+
+hide_crumb = 0
+
+remove_crumb_trail = 0
+
+crumb_disabled = 0
+
+==
+
+
+
+
+
+<?php
+
+use \Spot\Shipment\Models\Settings;
+
+function onStart(){
+
+    if(!Auth::getUser()->hasUserPermission(["container"],'r')) {
+
+        \Flash::error($this['theme_lang']['not_allowed']);
+        return Redirect::to('dashboard/containers/');
+    }
+
+    $this['customer']       =   \RainLab\User\Models\User::whereNotIn('role_id',[1,5])->select('id','name')->get();
+    $this['countries']      =   \RainLab\Location\Models\Country::select('id','name')->where('is_enabled', 1)->get();
+    $this['cities']         =   \Spot\Shipment\Models\City::select('id','name')->get();
+    $this['couriers']       =   \Spot\Shipment\Models\Courier::select('id','name')->get();    
+    $this['destinations']   =   \Spot\Container\Models\Destination::select('id','name')->get(); 
+    $this['loactions']      =   \Spot\Container\Models\Location::select('id','name')->get(); 
+    $this['reasons']        =   \Spot\Container\Models\Reasonarrival::select('id','name')->get(); 
+    $this['statuses']       =   \Spot\Container\Models\Status::select('id','name')->get();
+    $this['sizes']          =   \Spot\Container\Models\Size::select('id','name')->get();
+    $this['languages']      =   \RainLab\Translate\Models\Locale::select('id', 'name','code')->get();
+
+    $this['container']      =   $container  =    \Spot\Container\Models\OrderContainer::find($this->param('id'));
+
+    switch (Auth::getUser()->role_id) {
+
+        case 5:
+
+            if($container->customer_id != Auth::getUser()->id){
+                \Flash::error($this['theme_lang']['not_allowed']);
+                return Redirect::to('dashboard/containers/');
+
+            }
+
+            break;
+    }
+
+    if(!$container){
+
+        \Flash::error($this['theme_lang']['404']);
+
+        return Redirect::to('dashboard/containers');
+
+    }
+
+    $progress           = 0;
+
+    $progress_status    = 'warning';
+
+
+    if(isset($container->loading_date)  && $container->loading_date != 'null' && $container->loading_date != '' ){
+        
+        $loadingdate       = \Carbon\Carbon::parse($container->loading_date);
+    }else{
+        $loadingdate       =  \Carbon\Carbon::parse($container->eta_port);
+        //$shipdate        = \Carbon\Carbon::parse($container->eta_port);
+       // $loadingdate     = (($container->loading_date)? $shipdate->addHours($order->deliverytime->count) :null);
+    }
+
+    $this['loadingdate'] = $loadingdate;
+    $today              = \Carbon\Carbon::now();
+    $time_diff          = $today->diffInDays($loadingdate, false);
+
+    switch($container->requested){
+        case 0:
+            $progress           = 10;
+            break;
+        case 1:
+            $progress           = 0;
+            break;
+        case 2:
+            $progress           = 30;
+            break;    
+        case 3:
+            $progress           = 60;
+            break;
+        case 4:
+            $progress           = 100;
+            break;
+        default:
+            $progress           = 0;
+    }
+
+    if($progress == 100){
+
+        $progress_status    = 'success';
+
+    }else{
+        if($time_diff < 0){
+            if($container->requested == 1 ){
+                $progress_status    = 'danger';
+            }
+        }
+    }
+
+    $this['progress']               =   $progress;
+    $this['progress_status']        =   $progress_status;  
+}
+
+function onEnd(){
+    //$this->page->title = $this['theme_lang']['shipment_view'].' #'.$this['container']->id;
+    $this->page->title = 'View Container #'.$this['container']->id;
+}
+
+function onDelete()
+
+{
+    if(!Auth::getUser()->hasUserPermission(["container"],'d')) {
+        return Response::json(['error' => $this['theme_lang']['not_allowed']], 401);
+    }
+
+    $item = \Spot\Container\Models\OrderContainer::where('id',$this->param('id'))->first();
+
+    $item->details->delete();
+
+    $item->delete();
+
+    return Redirect::to($this->page->child_of);
+}
+
+function onAccept()
+{
+    $data = post();
+
+    if(!Auth::getUser()->hasUserPermission(["container"],'u')) {
+        return Response::json(['error' => $this['theme_lang']['not_allowed']], 401);
+    }
+
+    $status                 = \Spot\Container\Models\Status::where('equal', 2)->first();
+    $item                   = \Spot\Container\Models\OrderContainer::find($this->param('id'));
+
+    if($status){
+        $item->status              = $status->id;
+        $item->requested           = $status->equal;
+    }
+
+    $item->updated_at       = \Carbon\Carbon::now();
+    $item->update();
+
+    $event_data =   array(
+
+        'sender'            =>  Auth::getUser(),
+        'shipping_sender'   =>  $item->customer_id,
+        'shipping_receiver' =>  null,
+        'item'              =>  $item,
+        'type'              =>  'registered_container',
+        'thumb'             =>  'icon',
+        'icon'              =>  'flaticon-gift',
+        'subject'           =>  'Registered container',
+        'message'           =>  'Registered container',
+        'url'               =>  url('dashboard/containers/'.$item->id.'/view'),
+        'badge'             =>  'success',
+    );
+
+    \Event::fire('spot.event', [$this['pusher'],$this['settings'],$event_data]);
+
+    $activity                   = new \Spot\Shipment\Models\Activity;
+    $activity->user_id          = Auth::getUser()->id;
+    $activity->order_id         = $item->id;
+    $activity->description      = 'accepted';
+    $activity->created_at       = \Carbon\Carbon::now();
+    $activity->updated_at       = \Carbon\Carbon::now();
+    $activity->save();
+
+    \Flash::success($this['theme_lang']['updated_successfully']);
+    return Redirect::to('dashboard/containers/'.$item->id.'/view');
+}
+
+function onLoaded()
+{
+    $data = post();
+
+    if(!Auth::getUser()->hasUserPermission(["container"],'u')) {
+        return Response::json(['error' => $this['theme_lang']['not_allowed']], 401);
+    }
+
+    $status                 = \Spot\Container\Models\Status::where('equal', 3)->first();
+    $item                   = \Spot\Container\Models\OrderContainer::find($this->param('id'));
+
+    if($status){
+        $item->status              = $status->id;
+        $item->requested           = $status->equal;
+    }
+
+    $item->updated_at       = \Carbon\Carbon::now();
+    $item->update();
+
+    $event_data =   array(
+
+        'sender'            =>  Auth::getUser(),
+        'shipping_sender'   =>  $item->customer_id,
+        'shipping_receiver' =>  null,
+        'item'              =>  $item,
+        'type'              =>  'loaded_container',
+        'thumb'             =>  'icon',
+        'icon'              =>  'flaticon-gift',
+        'subject'           =>  'Loaded container',
+        'message'           =>  'Loaded container',
+        'url'               =>  url('dashboard/containers/'.$item->id.'/view'),
+        'badge'             =>  'success',
+    );
+
+    \Event::fire('spot.event', [$this['pusher'],$this['settings'],$event_data]);
+
+    $activity                   = new \Spot\Shipment\Models\Activity;
+    $activity->user_id          = Auth::getUser()->id;
+    $activity->order_id         = $item->id;
+    $activity->description      = 'loaded';
+    $activity->created_at       = \Carbon\Carbon::now();
+    $activity->updated_at       = \Carbon\Carbon::now();
+    $activity->save();
+
+    \Flash::success($this['theme_lang']['updated_successfully']);
+    return Redirect::to('dashboard/containers/'.$item->id.'/view');
+}
+
+function onReleased()
+{
+    $data = post();
+
+    if(!Auth::getUser()->hasUserPermission(["container"],'u')) {
+        return Response::json(['error' => $this['theme_lang']['not_allowed']], 401);
+    }
+
+    $status                 = \Spot\Container\Models\Status::where('equal', 4)->first();
+    $item                   = \Spot\Container\Models\OrderContainer::find($this->param('id'));
+
+    if($status){
+        $item->status              = $status->id;
+        $item->requested           = $status->equal;
+    }
+
+    $item->updated_at       = \Carbon\Carbon::now();
+    $item->update();
+
+    $event_data =   array(
+
+        'sender'            =>  Auth::getUser(),
+        'shipping_sender'   =>  $item->customer_id,
+        'shipping_receiver' =>  null,
+        'item'              =>  $item,
+        'type'              =>  'released_container',
+        'thumb'             =>  'icon',
+        'icon'              =>  'flaticon-gift',
+        'subject'           =>  'Released container',
+        'message'           =>  'Released container',
+        'url'               =>  url('dashboard/containers/'.$item->id.'/view'),
+        'badge'             =>  'success',
+    );
+
+    \Event::fire('spot.event', [$this['pusher'],$this['settings'],$event_data]);
+
+    $activity                   = new \Spot\Shipment\Models\Activity;
+    $activity->user_id          = Auth::getUser()->id;
+    $activity->order_id         = $item->id;
+    $activity->description      = 'Released';
+    $activity->created_at       = \Carbon\Carbon::now();
+    $activity->updated_at       = \Carbon\Carbon::now();
+    $activity->save();
+
+    \Flash::success($this['theme_lang']['updated_successfully']);
+    return Redirect::to('dashboard/containers/'.$item->id.'/view');
+}
+
+function onRefuse()
+{
+    $data = post();
+
+    if(!Auth::getUser()->hasUserPermission(["container"],'u')) {
+        return Response::json(['error' => $this['theme_lang']['not_allowed']], 401);
+    }
+
+    $status                 = \Spot\Container\Models\Status::where('equal', 1)->first();
+    $item                   = \Spot\Container\Models\OrderContainer::find($this->param('id'));
+    if($status){
+        $item->status              = $status->id;
+        $item->requested           = $status->equal;
+    }
+    $item->updated_at       = \Carbon\Carbon::now();
+    $item->update();
+
+    $event_data =   array(
+
+        'sender'            =>  Auth::getUser(),
+        'shipping_sender'   =>  $item->customer_id,
+        'shipping_receiver'     =>  null,
+        'item'              =>  $item,
+        'type'              =>  'blocked_shipment',
+        'thumb'             =>  'icon',
+        'icon'              =>  'flaticon-gift',
+        'subject'           =>  'Blocked container',
+        'message'           =>  'Blocked container',
+        'url'               =>  url('dashboard/containers/'.$item->id.'/view'),
+        'badge'             =>  'success',
+
+    );
+
+    \Event::fire('spot.event', [$this['pusher'],$this['settings'],$event_data]);
+
+    $activity                   = new \Spot\Shipment\Models\Activity;
+    $activity->user_id          = Auth::getUser()->id;
+    $activity->order_id         = $item->id;
+    $activity->description      = 'refused';
+    if(isset($data['message']) && $data['message'] != ''){
+        $activity->other            = htmlspecialchars($data['message']);
+    }
+
+    $activity->created_at       = \Carbon\Carbon::now();
+    $activity->updated_at       = \Carbon\Carbon::now();
+    $activity->save();
+
+    \Flash::success($this['theme_lang']['updated_successfully']);
+    return Redirect::to('dashboard/containers/'.$item->id.'/view');
+}
+/*
+function onAssign()
+{
+    $data = post();
+
+    if(!Auth::getUser()->hasUserPermission(["order"],'u')) {
+        return Response::json(['error' => $this['theme_lang']['not_allowed']], 401);
+    }
+
+    $item                       = \Spot\Container\Models\OrderContainer::find($this->param('id'));
+    $item->assigned_id          = htmlspecialchars($data['assigned_id']);
+    $item->updated_at           = \Carbon\Carbon::now();
+    $item->update();
+
+    $event_data =   array(
+
+        'sender'                =>  Auth::getUser(),
+        'shipping_sender'       =>  $item->sender_id,
+        'shipping_receiver'     =>  (($item->receiver_id) ? $item->receiver_id : null),
+        'shipping_responsible'  =>  $data['assigned_id'],
+        'item'                  =>  $item,
+        'type'                  =>  'assign_shipment',
+        'thumb'                 =>  'icon',
+        'icon'                  =>  'flaticon-gift',
+        'subject'               =>  $this['theme_lang']['assign_shipment'],
+        'message'               =>  $this['theme_lang']['assign_shipment'],
+        'url'                   =>  url('dashboard/shipments/'.$item->id.'/view'),
+        'badge'                 =>  'success',
+    );
+
+    \Event::fire('spot.event', [$this['pusher'],$this['settings'],$event_data]);
+
+    $activity                   = new \Spot\Shipment\Models\Activity;
+    $activity->user_id          = Auth::getUser()->id;
+    $activity->order_id         = $item->id;
+    $activity->description      = 'assigned';
+    $activity->created_at       = \Carbon\Carbon::now();
+    $activity->updated_at       = \Carbon\Carbon::now();
+    $activity->save();
+
+    \Flash::success($this['theme_lang']['updated_successfully']);
+    return Redirect::to('dashboard/shipments/'.$item->id.'/view');
+}
+
+
+function onNote()
+{
+    $data = post();
+
+    $note                               = new \Spot\Shipment\Models\Notes;
+    $note->user_id                      = Auth::getUser()->id;
+    $note->item_id                      = $this->param('id');
+    $note->item_type                    = 1;
+    $note->content                      = $data['note'];
+    $note->created_at                   = \Carbon\Carbon::now();
+    $note->updated_at                   = \Carbon\Carbon::now();
+    $note->save();
+
+    $item                   = \Spot\Container\Models\OrderContainer::find($this->param('id'));
+    $event_data =   array(
+
+        'sender'                =>  Auth::getUser(),
+        'shipping_sender'       =>  $item->sender_id,
+        'shipping_receiver'     =>  (($item->receiver_id) ? $item->receiver_id : null),
+        'shipping_responsible'  =>  $item->assigned_id,
+        'item'                  =>  $item,
+        'type'                  =>  'new_note',
+        'thumb'                 =>  'icon',
+        'icon'                  =>  'flaticon-gift',
+        'subject'               =>  $this['theme_lang']['new_note'],
+        'message'               =>  $this['theme_lang']['new_note'],
+        'url'                   =>  url('dashboard/containers/'.$item->id.'/view'),
+        'badge'                 =>  'success',
+    );
+
+    \Event::fire('spot.event', [$this['pusher'],$this['settings'],$event_data]);
+
+    $activity                   = new \Spot\Shipment\Models\Activity;
+    $activity->user_id          = Auth::getUser()->id;
+    $activity->order_id         = $item->id;
+    $activity->description      = 'new_note';
+    $activity->other            = $data['note'];
+    $activity->created_at       = \Carbon\Carbon::now();
+    $activity->updated_at       = \Carbon\Carbon::now();
+    $activity->save();
+
+    return array('type' => 'success', 'message' => $this['theme_lang']['created_successfully'], '#notes' => $this->renderPartial('notes',['item'=> $item]));
+}
+
+*/
+?>
+
+==
+
+
+
+<div class="kt-portlet ">
+
+    <div class="kt-portlet__body">
+
+        <div class="kt-widget kt-widget--user-profile-3">
+
+            <div class="kt-widget__top">
+
+                <div class="kt-widget__content">
+
+                    <div class="kt-widget__head">
+
+                        <a href="javascript:;" class="kt-widget__username">
+
+                            {{settings.tracking.prefix_order}}{{container.number}}
+
+                        </a>
+
+                        <div class="kt-widget__action">
+
+                            <a href="javascript:;" class="btn btn-label-brand btn-bold btn-sm dropdown-toggle" data-toggle="dropdown">
+
+                                {{'Order Actions'|__}}
+
+                            </a>
+
+                            <div class="dropdown-menu dropdown-menu-right dropdown-menu-fit dropdown-menu-md">
+                                <!--begin::Nav-->
+                                <ul class="kt-nav">
+                                    {% if user.role_id == 5 and container.customer_id == user.id  %}
+                                        {% if container.requested == 0 %}   
+                                            {% if user.hasUserPermission('container', 'u') %}
+                                                <li class="kt-nav__item">
+                                                    <a href="{{'dashboard/container-edit'|page({ id: container.id })}}" class="kt-nav__link">
+                                                        <i class="kt-nav__link-icon flaticon-edit-1"></i>
+                                                        <span class="kt-nav__link-text">{{'Edit'|__}}</span>
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                        {% endif %}
+
+                                        {% if container.requested == 0 and container.requested == 1  %}
+                                            {% if user.hasUserPermission('container', 'd') %}
+                                                <li class="kt-nav__item">
+                                                    <a href="javascript:;" id="delete" class="kt-nav__link">
+                                                        <i class="kt-nav__link-icon flaticon-cancel"></i>
+                                                        <span class="kt-nav__link-text">{{'Delete'|__}}</span>
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                        {% endif %}
+
+                                        {% if container.requested != 0 and container.requested != 1  %}
+                                            <li class="kt-nav__item">
+                                                <a href="{{'dashboard/container-print'|page({ id: container.id, type: 'container' })}}" target="_blank" class="kt-nav__link">
+                                                    <i class="kt-nav__link-icon flaticon2-print"></i>
+                                                    <span class="kt-nav__link-text">{{'Print Container'|__}}</span>
+                                                </a>
+                                            </li>
+                                            <li class="kt-nav__item">
+                                                <a href="{{'dashboard/container-print'|page({ id: container.id, type: 'label' })}}" target="_blank" class="kt-nav__link">
+                                                    <i class="kt-nav__link-icon flaticon2-print"></i>
+                                                    <span class="kt-nav__link-text">{{'Print Label'|__}}</span>
+                                                </a>
+                                            </li>                                            
+                                        {% endif %}
+                                    {% else %}
+                                        {% if user.hasUserPermission('container', 'u') %}
+                                            <li class="kt-nav__item">
+                                                <a href="{{'dashboard/container-edit'|page({ id: container.id })}}" class="kt-nav__link">
+                                                    <i class="kt-nav__link-icon flaticon-edit-1"></i>
+                                                    <span class="kt-nav__link-text">{{'Edit'|__}}</span>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                        {% if user.hasUserPermission('container', 'd') %}
+                                            <li class="kt-nav__item">
+                                                <a href="javascript:;" id="delete" class="kt-nav__link">
+                                                    <i class="kt-nav__link-icon flaticon-cancel"></i>
+                                                    <span class="kt-nav__link-text">{{'Delete'|__}}</span>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    {% endif %}
+                                    
+                                    {% if user.role_id != 5 %}
+                                        {% if container.requested == 0 %}
+                                            <li class="kt-nav__item">
+                                                <a href="javascript:;" id="accept" class="kt-nav__link">
+                                                    <i class="kt-nav__link-icon flaticon2-check-mark"></i>
+                                                    <span class="kt-nav__link-text">{{'Accept'|__}}</span>
+                                                </a>
+                                            </li>
+                                            <li class="kt-nav__item">
+                                                <a href="javascript:;" data-toggle="modal" data-target="#refuse" class="kt-nav__link">
+                                                    <i class="kt-nav__link-icon flaticon-signs-2"></i>
+                                                    <span class="kt-nav__link-text">{{'Refuse'|__}}</span>
+                                                </a>
+                                            </li>
+                                        {% elseif container.requested == 2 %}
+                                            <li class="kt-nav__item">
+                                                <a href="javascript:;" id="load" class="kt-nav__link">
+                                                    <i class="kt-nav__link-icon flaticon2-check-mark"></i>
+                                                    <span class="kt-nav__link-text">{{'Loaded'|__}}</span>
+                                                </a>
+                                            </li>
+                                        {% elseif container.requested == 3 %}   
+                                            <li class="kt-nav__item">
+                                                <a href="javascript:;" id="release" class="kt-nav__link">
+                                                    <i class="kt-nav__link-icon flaticon2-check-mark"></i>
+                                                    <span class="kt-nav__link-text">{{'Releaed'|__}}</span>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    {% endif %}
+
+                                    
+                                    {% if user.role_id != 5 %}                                        
+                                        {% if  container.requested != 0 %}
+                                            <li class="kt-nav__item">
+                                                <a href="{{'dashboard/container-print'|page({ id: container.id, type: 'container' })}}" target="_blank" class="kt-nav__link">
+                                                    <i class="kt-nav__link-icon flaticon2-print"></i>
+                                                    <span class="kt-nav__link-text">{{'Print Container'|__}}</span>
+                                                </a>
+                                            </li>
+                                            <li class="kt-nav__item">
+                                                <a href="{{'dashboard/container-print'|page({ id: container.id, type: 'label' })}}" target="_blank" class="kt-nav__link">
+                                                    <i class="kt-nav__link-icon flaticon2-print"></i>
+                                                    <span class="kt-nav__link-text">{{'Print Label'|__}}</span>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    {% endif %}
+                                </ul>
+                                <!--end::Nav-->
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="kt-widget__subhead">
+                        {{ barcodeHTML({data: container.barcode, type: 'CODABAR'}) }}
+                    </div>
+
+                    
+                     <div class="kt-widget__info">
+
+                        <div class="kt-widget__stats d-flex align-items-center flex-fill">
+                            <div class="kt-widget__item">
+                                <span class="kt-widget__date">
+                                    {{'Created Date'|__}}
+                                </span>
+                                <div class="kt-widget__label">
+                                    <span class="btn btn-label-brand btn-sm btn-bold btn-upper">{{container.created_at|date(settings.dateformat)}} {{container.created_at|date('h:i a')}}</span>
+                                </div>
+                            </div>
+
+                            <div class="kt-widget__item">
+                                    <span class="kt-widget__date">
+                                        {{'Loaded Date'|__}}
+                                    </span>
+                                    <div class="kt-widget__label">
+                                        <span class="btn btn-label-{{progress_status}} btn-sm btn-bold btn-upper">{{loadingdate|date(settings.dateformat)}}</span>
+                                    </div>
+
+                            </div>
+
+                            <div class="kt-widget__item flex-fill">
+                                <span class="kt-widget__subtitel">{{'Progress'|__}}</span>
+                                <div class="kt-widget__progress d-flex  align-items-center">
+                                    <div class="progress" style="height: 5px;width: 100%;">
+                                        <div class="progress-bar kt-bg-{{progress_status}}" role="progressbar" style="width: {{progress}}%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                    <span class="kt-widget__stat">
+                                        {{progress}}%
+                                    </span>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--end:: Portlet-->
+
+<div class="row">
+
+    <div class="col-xl-6">
+        <!--begin:: Widgets/Order Statistics-->
+        <div class="kt-portlet kt-portlet--height-fluid">
+
+            <div class="kt-portlet__head">
+                <div class="kt-portlet__head-label">
+                    <h3 class="kt-portlet__head-title">
+                        {{'Container Details'|__}}
+                    </h3>
+                </div>
+            </div>
+
+            <div class="kt-portlet__body kt-portlet__body--fluid">
+                <div class="kt-widget12">
+                    <div class="kt-widget12__content">
+
+                        <div class="kt-widget12__item">
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'Container Number'|__}}</span>
+                                <span class="kt-widget12__value">
+                                    {{container.number}}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="kt-widget12__item">
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'BOL'|__}}</span>
+                                <span class="kt-widget12__value">
+                                    {{container.bol}}
+                                </span>
+
+                            </div>
+                        </div>
+
+                        <div class="kt-widget12__item">
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'Number of boxes'|__}}</span>
+                                <span class="kt-widget12__value">
+                                    {{container.details.num_box}}
+                                </span>
+                            </div>
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'Number of pallets'|__}}</span>
+                                <span class="kt-widget12__value">
+                                    {{container.details.num_pallets}}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="kt-widget12__item">
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'Weight'|__}}</span>
+                                <span class="kt-widget12__value">
+                                    {{container.details.weight}} Kg
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="kt-widget12__item">
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'Customer'|__}}</span>
+                                <span class="kt-widget12__value">
+                                    {{container.customer.name}}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="kt-widget12__item">
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'Status'|__}}</span>
+                                <span class="kt-widget12__value">
+                                    <span class="btn btn-label-{{container.status.color}} btn-sm btn-bold btn-upper">{{container.status.name}}</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="kt-widget12__item">
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'Location Type'|__}}</span>
+                                <span class="kt-widget12__value">
+                                    {{container.location.name}}
+                                </span>
+                            </div>
+
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'Transport Company'|__}}</span>
+                                <span class="kt-widget12__value">
+                                    {{container.courier.name}}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="kt-widget12__item">
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'Destination'|__}}</span>
+                                <span class="kt-widget12__value">
+                                    {{container.destination_container.name}}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--end:: Widgets/Order Statistics-->
+
+    </div>
+    
+     <div class="col-xl-6">
+
+        <!--begin:: Widgets/Order Statistics-->
+
+        <div class="kt-portlet kt-portlet--height-fluid">
+
+            <div class="kt-portlet__head">
+
+                <div class="kt-portlet__head-label">
+
+                    <h3 class="kt-portlet__head-title">
+
+                        {{'Container Info'|__}}
+
+                    </h3>
+
+                </div>
+
+            </div>
+
+            <div class="kt-portlet__body kt-portlet__body--fluid">
+
+                <div class="kt-widget12">
+
+                    <div class="kt-widget12__content">
+
+                       
+
+                        <div class="kt-widget12__item">
+
+                            <div class="kt-widget12__info">
+
+                                <span class="kt-widget12__desc">{{'T1'|__}}</span>
+
+                                <span class="kt-widget12__value">{{container.t1}}</span>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div class="kt-widget12__item">
+
+                            <div class="kt-widget12__info">
+
+                                <span class="kt-widget12__desc">{{'DP'|__}}</span>
+
+                                <span class="kt-widget12__value">{{container.dp}}</span>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div class="kt-widget12__item">
+
+                            <div class="kt-widget12__info">
+
+                                <span class="kt-widget12__desc">{{'Inspect Port'|__}}</span>
+
+                                {% if container.inspected_port == 1%}
+
+                                <span class="kt-widget12__value">{{'Yes'|__}}</span>
+
+                                {% else %}
+
+                                <span class="kt-widget12__value">{{'No'|__}}</span>
+
+                                {% endif%}
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div class="kt-widget12__item">
+
+                            <div class="kt-widget12__info">
+
+                                <span class="kt-widget12__desc">{{'ETA Port'|__}}</span>
+
+                                <span class="kt-widget12__value">{{container.eta_port}}</span>
+
+                            </div>
+
+                            <div class="kt-widget12__info">
+
+                                <span class="kt-widget12__desc">{{'ETA LGG'|__}}</span>
+
+                                <span class="kt-widget12__value">{{container.eta_lgg}}</span>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div class="kt-widget12__item">
+
+                            <div class="kt-widget12__info">
+
+                                <span class="kt-widget12__desc">{{'Container Size'|__}}</span>
+
+                                <span class="kt-widget12__value">{{container.details.thesize.name}} ft</span>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div class="kt-widget12__item">
+
+                            <div class="kt-widget12__info">
+
+                                <span class="kt-widget12__desc">{{'Reason for arrival'|__}}</span>
+
+                                <span class="kt-widget12__value">{{container.reason.name}}</span>
+
+                            </div>
+
+                            <div class="kt-widget12__info">
+
+                                <span class="kt-widget12__desc">{{'Cc'|__}}</span>
+
+                                {% if container.cc == 1%}
+
+                                <span class="kt-widget12__value">{{'Yes'|__}}</span>
+
+                                {% else %}
+
+                                <span class="kt-widget12__value">{{'No'|__}}</span>
+
+                                {% endif%}
+
+                            </div>
+
+                        </div>
+
+                        
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!--end:: Widgets/Order Statistics-->
+
+    </div>
+
+    <div class="col-xl-6">
+        <!--begin:: Widgets/Order Statistics-->
+        <div class="kt-portlet kt-portlet--height-fluid">
+            <div class="kt-portlet__head">
+                <div class="kt-portlet__head-label">
+                    <h3 class="kt-portlet__head-title">
+                        {{'Payment Details'|__}}
+                    </h3>
+                </div>
+            </div>
+            <div class="kt-portlet__body kt-portlet__body--fluid">
+                <div class="kt-widget12">
+                    <div class="kt-widget12__content">
+                        {% if container.custom_clearance != 0 or container.fiscal_representaion != 0 %}
+                            <div class="kt-widget12__item">
+                                {% if container.custom_clearance != 0 %}
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Custom Clearance'|__}}</span>
+                                    <span class="kt-widget12__value">{{container.custom_clearance|currency}}</span>
+                                </div>
+                                {% endif %}
+                                {% if container.fiscal_representaion != 0 %}
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Fisacl Representaion'|__}}</span>
+                                    <span class="kt-widget12__value">{{container.fiscal_representaion|currency}}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        {% if container.payment_term != 0 or container.price_kg != 0 %}
+                            <div class="kt-widget12__item">
+                                {% if container.payment_term != 0 %}
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Invoice Payment Term'|__}}</span>
+                                    <span class="kt-widget12__value">{{container.payment_term|currency}}</span>
+                                </div>
+                                {% endif %}
+                                {% if container.price_kg != 0 %}
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Handling Price per Kg '|__}}</span>
+                                    <span class="kt-widget12__value">{{container.price_kg|currency}}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        {% if container.storage_fee == 1 %}
+                            <div class="kt-widget12__item">
+                                {% if container.cost_24 != 0 %}
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Storage Costs after 24 Hours'|__}}</span>
+                                    <span class="kt-widget12__value">{{container.cost_24|currency}}</span>
+                                </div>
+                                {% endif %}
+                                {% if container.cost_48 != 0 %}
+                                <div class="kt-widget12__info">
+                                    <span class="kt-widget12__desc">{{'Storage Costs after 48 Hours '|__}}</span>
+                                    <span class="kt-widget12__value">{{container.cost_48|currency}}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                       
+                        <div class="kt-widget12__item">
+                            {% set sub_total = container.price_kg * container.details.weight %}
+                            {% set store_fee = container.payment_term * container.cost_24%}
+                            {% set total = container.custom_clearance+container.fiscal_representation + sub_total + store_fee %}
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'Total'|__}}</span>
+                                <span class="kt-widget12__value">
+                                        {{sub_total|currency}}
+                                </span>
+                            </div>
+                            <div class="kt-widget12__info">
+                                <span class="kt-widget12__desc">{{'Total'|__}}</span>
+                                <span class="kt-widget12__value">
+                                        {{total|currency}}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--end:: Widgets/Order Statistics-->
+    </div>
+    
+
+</div>
+
+
+
+<div class="modal fade" id="refuse" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered" role="document">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title" >{{'Refuse'|__}}</h5>
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+
+                </button>
+
+            </div>
+
+
+
+            {{ form_ajax('onRefuse', { success: 'created successfully!', flash: true, class: 'kt_form' }) }}
+
+            <div class="modal-body">
+
+                <div class="row">
+
+                    <div class="form-group col-lg-12">
+
+                        <label>{{'Reason'|__}}</label>
+
+                        <textarea class="form-control" name="message"></textarea>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{{'Close'|__}}</button>
+
+                <button type="submit" class="btn btn-primary">{{'Refuse'|__}}</button>
+
+            </div>
+
+            {{ form_close() }}
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+{% put styles %}
+
+    <style>
+
+        .table-bordered tr td:first-child {
+
+            width: 200px;
+
+            font-weight: bold;
+
+        }
+
+        .map_canvas {
+
+          height: 350px;
+
+        }
+
+        .filter-option-inner br {
+
+            display: none;
+
+        }
+
+        .select2 {
+
+            width: 100% !important;
+
+        }
+
+        .select2-selection {
+
+            min-height: 36px !important;
+
+        }
+
+        .pac-container {
+
+            z-index: 9999;
+
+        }
+
+        @media (max-width: 576px) {
+
+            .kt-widget.kt-widget--user-profile-3 .kt-widget__top .kt-widget__content .kt-widget__info .kt-widget__stats .kt-widget__item {
+
+                width: 100%;
+
+                margin: auto 0 !important;
+
+            }
+
+        }
+
+        .notes_scroll,.notes_scroll .btn {
+
+            cursor: pointer;
+
+        }
+
+    </style>
+
+{% endput %}
+
+{% put scripts %}
+
+<script src="{{ 'assets/admin/vendors/custom/geocomplete/jquery.geocomplete.js'|theme }}" type="text/javascript"></script>
+
+<script src="https://maps.googleapis.com/maps/api/js?libraries=places&key={{settings.google.map.key}}"></script>
+
+<script src="./admin/vendors/custom/gmaps/gmaps.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+
+"use strict";
+
+
+
+var KTDashboard = function () {
+
+
+
+    // Order Statistics.
+
+    // Based on Chartjs plugin - http://www.chartjs.org/
+
+    var orderStatistics = function() {
+
+        var container = KTUtil.getByID('kt_chart_order_statistics');
+
+
+
+        if (!container) {
+
+            return;
+
+        }
+
+
+
+        var MONTHS = ['1 Jan', '2 Jan', '3 Jan', '4 Jan', '5 Jan', '6 Jan', '7 Jan'];
+
+
+
+        var color = Chart.helpers.color;
+
+        var barChartData = {
+
+            labels: ['1 Jan', '2 Jan', '3 Jan', '4 Jan', '5 Jan', '6 Jan', '7 Jan'],
+
+            datasets : [
+
+                {
+
+                    fill: true,
+
+                    //borderWidth: 0,
+
+                    backgroundColor: color(KTApp.getStateColor('brand')).alpha(0.6).rgbString(),
+
+                    borderColor : color(KTApp.getStateColor('brand')).alpha(0).rgbString(),
+
+
+
+                    pointHoverRadius: 4,
+
+                    pointHoverBorderWidth: 12,
+
+                    pointBackgroundColor: Chart.helpers.color('#000000').alpha(0).rgbString(),
+
+                    pointBorderColor: Chart.helpers.color('#000000').alpha(0).rgbString(),
+
+                    pointHoverBackgroundColor: KTApp.getStateColor('brand'),
+
+                    pointHoverBorderColor: Chart.helpers.color('#000000').alpha(0.1).rgbString(),
+
+
+
+                    data: [20, 30, 20, 40, 30, 60, 30]
+
+                },
+
+                {
+
+                    fill: true,
+
+                    //borderWidth: 0,
+
+                    backgroundColor : color(KTApp.getStateColor('brand')).alpha(0.2).rgbString(),
+
+                    borderColor : color(KTApp.getStateColor('brand')).alpha(0).rgbString(),
+
+
+
+                    pointHoverRadius: 4,
+
+                    pointHoverBorderWidth: 12,
+
+                    pointBackgroundColor: Chart.helpers.color('#000000').alpha(0).rgbString(),
+
+                    pointBorderColor: Chart.helpers.color('#000000').alpha(0).rgbString(),
+
+                    pointHoverBackgroundColor: KTApp.getStateColor('brand'),
+
+                    pointHoverBorderColor: Chart.helpers.color('#000000').alpha(0.1).rgbString(),
+
+
+
+                    data: [15, 40, 15, 30, 40, 30, 50]
+
+                }
+
+            ]
+
+        };
+
+
+
+        var ctx = container.getContext('2d');
+
+        var chart = new Chart(ctx, {
+
+            type: 'line',
+
+            data: barChartData,
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                legend: false,
+
+                scales: {
+
+                    xAxes: [{
+
+                        categoryPercentage: 0.35,
+
+                        barPercentage: 0.70,
+
+                        display: true,
+
+                        scaleLabel: {
+
+                            display: false,
+
+                            labelString: 'Month'
+
+                        },
+
+                        gridLines: false,
+
+                        ticks: {
+
+                            display: true,
+
+                            beginAtZero: true,
+
+                            fontColor: KTApp.getBaseColor('shape', 3),
+
+                            fontSize: 13,
+
+                            padding: 10
+
+                        }
+
+                    }],
+
+                    yAxes: [{
+
+                        categoryPercentage: 0.35,
+
+                        barPercentage: 0.70,
+
+                        display: true,
+
+                        scaleLabel: {
+
+                            display: false,
+
+                            labelString: 'Value'
+
+                        },
+
+                        gridLines: {
+
+                            color: KTApp.getBaseColor('shape', 2),
+
+                            drawBorder: false,
+
+                            offsetGridLines: false,
+
+                            drawTicks: false,
+
+                            borderDash: [3, 4],
+
+                            zeroLineWidth: 1,
+
+                            zeroLineColor: KTApp.getBaseColor('shape', 2),
+
+                            zeroLineBorderDash: [3, 4]
+
+                        },
+
+                        ticks: {
+
+                            max: 70,
+
+                            stepSize: 10,
+
+                            display: true,
+
+                            beginAtZero: true,
+
+                            fontColor: KTApp.getBaseColor('shape', 3),
+
+                            fontSize: 13,
+
+                            padding: 10
+
+                        }
+
+                    }]
+
+                },
+
+                title: {
+
+                    display: false
+
+                },
+
+                hover: {
+
+                    mode: 'index'
+
+                },
+
+                tooltips: {
+
+                    enabled: true,
+
+                    intersect: false,
+
+                    mode: 'nearest',
+
+                    bodySpacing: 5,
+
+                    yPadding: 10,
+
+                    xPadding: 10,
+
+                    caretPadding: 0,
+
+                    displayColors: false,
+
+                    backgroundColor: KTApp.getStateColor('brand'),
+
+                    titleFontColor: '#ffffff',
+
+                    cornerRadius: 4,
+
+                    footerSpacing: 0,
+
+                    titleSpacing: 0
+
+                },
+
+                layout: {
+
+                    padding: {
+
+                        left: 0,
+
+                        right: 0,
+
+                        top: 5,
+
+                        bottom: 5
+
+                    }
+
+                }
+
+            }
+
+        });
+
+    };
+
+
+
+    return {
+
+        // public functions
+
+        init: function () {
+
+            orderStatistics();
+
+            //latestTrendsMap();
+
+        },
+
+    };
+
+}();
+
+
+
+KTUtil.ready(function () {
+
+    KTDashboard.init();
+
+
+
+    $('.notes_scroll').on('click', function(e){
+
+        $([document.documentElement, document.body]).animate({
+
+            scrollTop: $("#notes_continer").offset().top-60
+
+        }, 2000);
+
+    });
+
+    
+
+    $('#refuse').on('click', '.btn-primary', function(e){
+
+        var parent = $('#refuse');
+
+        var validation = 1;
+
+        parent.find('input,select').each(function(){
+
+            if($(this).is(':hidden')){
+
+                return;
+
+            }
+
+            if($(this).valid() == false){
+
+                validation = 0;
+
+            }
+
+        });
+
+        if(validation){
+
+            $('#refuse').modal('toggle');
+
+            KTApp.blockPage({
+
+                overlayColor: '#000000',
+
+                type: 'v2',
+
+                state: 'success',
+
+                message: '{{"Please wait"|__}}...'
+
+            });
+
+        }
+
+    });
+
+    
+
+    $('#deliveried').on('click', function(e){
+
+        e.preventDefault();
+
+        KTApp.blockPage({
+
+            overlayColor: '#000000',
+
+            type: 'v2',
+
+            state: 'success',
+
+            message: '{{"Please wait"|__}}...'
+
+        });
+
+        $.request('onDelivery', {
+
+            success: function(data) {
+
+                KTApp.unblockPage();
+
+                window.location.href = "{{url('dashboard/containers')}}/{{this.param.id}}/view";
+
+            }
+
+        });
+
+    });
+
+    
+
+    $('#received').on('click', '.btn-primary', function(e){
+
+        var parent = $('#received');
+
+        var validation = 1;
+
+        $.validator.setDefaults({
+
+            ignore: ":hidden",
+
+       });
+
+        parent.find('input,select').each(function(){
+
+            if($(this).is(':hidden')){
+
+                return;
+
+            }
+
+            if($(this).valid() == false){
+
+                validation = 0;
+
+            }
+
+        });
+
+        if(validation){
+
+            $('#received').modal('toggle');
+
+            KTApp.blockPage({
+
+                overlayColor: '#000000',
+
+                type: 'v2',
+
+                state: 'success',
+
+                message: '{{"Please wait"|__}}...'
+
+            });
+
+        }
+
+    });
+
+
+
+
+
+    $('#received').find('input,select').each(function(){
+
+        $(this).on('change', function(){
+
+            $('#received .btn-info').removeClass('kt-hidden');
+
+            $('#received .btn-primary').addClass('kt-hidden');
+
+        });
+
+    });
+
+
+
+    $('#received .btn-info').removeClass('kt-hidden');
+
+    $('#received .btn-primary').addClass('kt-hidden');
+
+
+
+
+
+    $('#received').on('click', '.save', function(e){
+
+        var parent = $('#received');
+
+        var validation = 1;
+
+        $.validator.setDefaults({
+
+            ignore: ":hidden",
+
+       });
+
+        parent.find('input,select').each(function(){
+
+            if($(this).is(':hidden')){
+
+                return;
+
+            }
+
+            if($(this).valid() == false){
+
+                validation = 0;
+
+            }
+
+        });
+
+        if(validation){
+
+
+
+            var receiver_address_id = $('#received #receiver_address_id').val();
+
+            var package_fee = $('#received #package_fee').val();
+
+            var return_courier_fee = $('#received #return_courier_fee').val();
+
+            var return_defray = $('#received .return_defray:checked').val();
+
+            var return_package_fee = $('#received .return_package_fee:checked').val();
+
+
+
+             $.request('onConfirmfees', {
+
+                  data: {return_courier_fee: return_courier_fee, package_fee: package_fee, receiver_address_id: receiver_address_id, return_defray: return_defray, return_package_fee: return_package_fee},
+
+                  success: function(response, status, xhr, $form) {
+
+
+
+                      swal.fire({
+
+                          buttonsStyling: false,
+
+
+
+                          html: "<strong>{{'The total cost of courier fees is'|__}}:</strong> "+response.delivery_cost+"<br /><strong>{{'The total requested from sender is'|__}}:</strong> "+response.sender_fees+"<br /><strong>{{'The total requested from receiver is'|__}}:</strong> "+response.receiver_fees,
+
+                          type: "warning",
+
+
+
+                          confirmButtonText: "{{'Yes, confirm!'|__}}",
+
+                          confirmButtonClass: "btn btn-sm btn-bold btn-success",
+
+
+
+                          showCancelButton: true,
+
+                          cancelButtonText: '{{"No, change something"|__}}',
+
+                          cancelButtonClass: "btn btn-sm btn-bold btn-danger"
+
+                      }).then(function (result) {
+
+                          if (result.value) {
+
+                              $('#received .btn-info').addClass('kt-hidden');
+
+                              $('#received .btn-primary').removeClass('kt-hidden');
+
+                          }
+
+                      });
+
+                  }
+
+             });
+
+        }
+
+    });
+
+    
+
+    $('#accept').on('click', function(e){
+
+        e.preventDefault();
+
+        KTApp.blockPage({
+
+            overlayColor: '#000000',
+
+            type: 'v2',
+
+            state: 'success',
+
+            message: '{{"Please wait"|__}}...'
+
+        });
+
+
+
+        $.request('onAccept', {
+
+            success: function(data) {
+
+                KTApp.unblockPage();
+
+                window.location.href = "{{url('dashboard/containers')}}/{{this.param.id}}/view";
+
+            }
+
+        });
+
+    });
+
+    $('#load').on('click', function(e){
+
+        e.preventDefault();
+
+        KTApp.blockPage({
+
+            overlayColor: '#000000',
+
+            type: 'v2',
+
+            state: 'success',
+
+            message: '{{"Please wait"|__}}...'
+
+        });
+
+
+
+        $.request('onLoaded', {
+
+            success: function(data) {
+
+                KTApp.unblockPage();
+
+                window.location.href = "{{url('dashboard/containers')}}/{{this.param.id}}/view";
+
+            }
+
+        });
+
+    });
+
+    $('#release').on('click', function(e){
+
+        e.preventDefault();
+
+        KTApp.blockPage({
+
+            overlayColor: '#000000',
+
+            type: 'v2',
+
+            state: 'success',
+
+            message: '{{"Please wait"|__}}...'
+
+        });
+
+
+
+        $.request('onReleased', {
+
+            success: function(data) {
+
+                KTApp.unblockPage();
+
+                window.location.href = "{{url('dashboard/containers')}}/{{this.param.id}}/view";
+
+            }
+
+        });
+
+    });
+
+
+    function formatRepo(repo) {
+
+        if (repo.loading) return repo.text;
+
+        var markup = "<div class='select2-result-repository clearfix'>" +
+
+                        "<div class='select2-result-repository__meta'>" +
+
+                        "<div class='select2-result-repository__title'>" + repo.text + "</div>";
+
+                        if (repo.mobile) {
+
+                            markup += "<div class='select2-result-repository__description'>" + repo.mobile + "</div>";
+
+                        }
+
+                    markup += "</div></div>";
+
+        return markup;
+
+    }
+
+
+
+    function formatRepoSelection(repo) {
+
+        return repo.text || repo.id;
+
+    }
+
+
+
+
+
+
+
+
+
+    $('body').on('changed.bs.select', '.country_id', function(e, clickedIndex, newValue, oldValue){
+
+        var selected = $(e.currentTarget).val();
+
+        var parent = $(e.currentTarget).parent().parent().parent().parent();
+
+        if(selected != ''){
+
+            $.request('onListstates', {
+
+                 data: {id: selected},
+
+                 success: function(response, status, xhr, $form) {
+
+                      parent.find('select.state_id').selectpicker({title: '{{'Select'|__}}'}).selectpicker('refresh');
+
+                      parent.find('select.state_id').html(response.html).selectpicker('refresh');
+
+                 }
+
+            });
+
+       }
+
+    });
+
+    $('body').on('changed.bs.select', '.state_id', function(e, clickedIndex, newValue, oldValue){
+
+        var selected = $(e.currentTarget).val();
+
+        var parent = $(e.currentTarget).parent().parent().parent().parent();
+
+        if(selected != ''){
+
+            $.request('onListcities', {
+
+                 data: {id: selected},
+
+                 success: function(response, status, xhr, $form) {
+
+                      parent.find('select.city_id').selectpicker({title: '{{'Select'|__}}'}).selectpicker('refresh');
+
+                      parent.find('select.city_id').html(response.html).selectpicker('refresh');
+
+                 }
+
+            });
+
+       }
+
+    });
+
+    $('body').on('changed.bs.select', '.city_id', function(e, clickedIndex, newValue, oldValue){
+
+        var selected = $(e.currentTarget).val();
+
+        var parent = $(e.currentTarget).parent().parent().parent().parent();
+
+        if(selected != ''){
+
+            $.request('onListareas', {
+
+                 data: {id: selected},
+
+                 success: function(response, status, xhr, $form) {
+
+                      parent.find('select.area_id').selectpicker({title: '{{'Select'|__}}'}).selectpicker('refresh');
+
+                      parent.find('select.area_id').html(response.html).selectpicker('refresh');
+
+                 }
+
+            });
+
+       }
+
+    });
+
+
+
+    $('body').on('change', '#receiver_address_id', function(e, clickedIndex, newValue, oldValue){
+
+        var selected = $(e.currentTarget).val();
+
+         var type = $('.type:checked').val();
+
+         var sender_address_id = $('#sender_address_id').val();
+
+         var packaging_id = $('#packaging_id').val();
+
+         var return_defray = $('.return_defray:checked').val();
+
+         var return_package_fee = $('.return_package_fee:checked').val();
+
+         if(selected != '' && selected != 'new'){
+
+             $.request('onChangefees', {
+
+                  data: {sender_address_id: sender_address_id, type: type, packaging_id:packaging_id, receiver_address_id: selected, return_defray: return_defray, return_package_fee: return_package_fee},
+
+                  success: function(response, status, xhr, $form) {
+
+                       $('#delivery_cost').val(response.delivery_cost);
+
+                       $('#return_courier_fee').val(response.return_courier_fee);
+
+                  }
+
+             });
+
+        }
+
+    });
+
+
+
+
+
+    
+
+    $('.bootstrap-touchspin-vertical-btn').TouchSpin({
+
+        buttondown_class: 'btn btn-secondary',
+
+        buttonup_class: 'btn btn-secondary',
+
+        verticalbuttons: true,
+
+        verticalup: '<i class="la la-plus"></i>',
+
+        verticaldown: '<i class="la la-minus"></i>'
+
+    });
+
+   
+
+ 
+
+
+
+    $('#delete').on('click', function(e){
+
+        e.preventDefault();
+
+
+
+        swal.fire({
+
+            buttonsStyling: false,
+
+
+
+            text: "{{'Are you sure to delete'|__}}",
+
+            type: "error",
+
+
+
+            confirmButtonText: "{{'Yes, delete!'|__}}",
+
+            confirmButtonClass: "btn btn-sm btn-bold btn-danger",
+
+
+
+            showCancelButton: true,
+
+            cancelButtonText: '{{"No, cancel"|__}}',
+
+            cancelButtonClass: "btn btn-sm btn-bold btn-brand"
+
+        }).then(function (result) {
+
+            if (result.value) {
+
+                KTApp.blockPage({
+
+                    overlayColor: '#000000',
+
+                    type: 'v2',
+
+                    state: 'success',
+
+                    message: '{{"Please wait"|__}}...'
+
+                });
+
+                $.request('onDelete', {
+
+                    success: function(data) {
+
+                        KTApp.unblockPage();
+
+                        swal.fire({
+
+                            title: '{{"Deleted!"|__}}',
+
+                            text: '{{"Your selected records have been deleted! :("|__}}',
+
+                            type: 'success',
+
+                            buttonsStyling: false,
+
+                            confirmButtonText: '{{"OK"|__}}',
+
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+
+                        });
+
+                        window.location.href = "{{url('dashboard/containers')}}";
+
+                    }
+
+                });
+
+                // result.dismiss can be 'cancel', 'overlay',
+
+                // 'close', and 'timer'
+
+            } else if (result.dismiss === 'cancel') {
+
+                swal.fire({
+
+                    title: '{{"Cancelled"|__}}',
+
+                    text: '{{"You selected records have not been deleted! :)"|__}}',
+
+                    type: 'error',
+
+                    buttonsStyling: false,
+
+                    confirmButtonText: '{{"OK"|__}}',
+
+                    confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+
+                });
+
+            }
+
+        });
+
+    });
+
+    if($('.kt-widget__action ul.kt-nav li').length == 0){
+
+        $('.kt-widget__action').hide();
+
+    }
+
+});
+
+</script>
+
+{% endput %}
+

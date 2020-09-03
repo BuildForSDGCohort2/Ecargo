@@ -1,0 +1,557 @@
+title = "Update Employee"
+url = "/dashboard/settings/employees/:id/edit"
+layout = "admin"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/settings"
+child_of_page = "employees"
+settings_breadcrumb = "employees"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+function onStart() {
+    if(!Auth::getUser()->hasUserPermission(["employees"],'u')) {
+        \Flash::error($this['theme_lang']['not_allowed']);
+        return Redirect::to('dashboard/settings/'.$this->page->child_of_page);
+    }
+    $this['item']           =   \RainLab\User\Models\User::find($this->param('id'));
+    $this['permissions']    =   \Spot\UserPermissions\Models\Permission::get();
+    $this['countries']      =   \RainLab\Location\Models\Country::where('is_enabled', 1)->get();
+    $this['groups']         =   \RainLab\User\Models\UserGroup::get();
+    $this['roles']          =   \Vdomah\Roles\Models\Role::where('id', '!=', 5)->get();
+    $this['offices']        =   \Spot\Shipment\Models\Office::get();
+
+
+    $this['getStates'] = new class {
+        public function data($selected,$country_id,$select = null)
+        {
+            $states         =   \RainLab\Location\Models\State::where('country_id', $country_id)->get();
+            foreach($states as $state){
+                $select .= '<option value="'.$state->id.'" '.(($selected == $state->id) ? 'selected' : '').'>'.$state->name.'</option>';
+            }
+            echo $select;
+        }
+    };
+    $this['getCities'] = new class {
+        public function data($selected,$state_id,$select = null)
+        {
+            $states         =   \Spot\Shipment\Models\City::where('state_id', $state_id)->get();
+            foreach($states as $state){
+                $select .= '<option value="'.$state->id.'" '.(($selected == $state->id) ? 'selected' : '').'>'.$state->name.'</option>';
+            }
+            echo $select;
+        }
+    };
+}
+function onListstates(){
+    if(null !== post('id')){
+        $items          = RainLab\Location\Models\State::where('country_id', post('id'))->get();
+        $html = '<option data-hidden="true"></option>';
+        if($items){
+            foreach($items as $item){
+                $html .= '<option value="'.$item->id.'">'.$item->name.'</option>';
+            }
+
+        }
+        return array('html'=>$html);
+    }
+}
+function onListcities(){
+    $data = post();
+
+    $items = \Spot\Shipment\Models\City::where('state_id', $data['id'])->get();
+    $html = '<option data-hidden="true"></option>';
+    if($items){
+        foreach($items as $item){
+            $html .= '<option value="'.$item->id.'">'.$item->name.'</option>';
+        }
+    }
+    return array("html" => $html);
+}
+function onSave()
+{
+
+    if($this['settings']['demo_mode']){
+      throw new ApplicationException('NOT ALLAOWED IN DEMO');
+      return false;
+    }
+    if(!Auth::getUser()->hasUserPermission(["employees"],'u')) {
+        throw new ApplicationException($this['theme_lang']['not_allowed']);
+    }
+    $data = post();
+    $item                   = \RainLab\User\Models\User::find($this->param('id'));
+    $item->name             = htmlspecialchars($data['name']);
+    $item->email            = htmlspecialchars($data['email']);
+    $item->username         = htmlspecialchars($data['username']);
+    if(isset($data['password']) && $data['password'] != null && !empty($data['password']) && $data['password'] != ''){
+        if(isset($data['password_confirmation']) && $data['password_confirmation'] != null && !empty($data['password_confirmation']) && $data['password_confirmation'] != '' && $data['password_confirmation'] == $data['password']){
+            $password                       = \Hash::make($data['password']);
+            $item->password                 = $password;
+            $item->password_confirmation    = $password;
+        }
+    }
+    $item->is_superuser     = (isset($data['is_superuser'])? $data['is_superuser'] : 0);
+    $item->driver           = (isset($data['driver'])? $data['driver'] : 0);
+    $item->mobile           = htmlspecialchars($data['mobile']);
+    $item->phone            = htmlspecialchars($data['phone']);
+    $item->street_addr      = htmlspecialchars($data['street_addr']);
+    if(isset($data['city']) && $data['city'] != ''){
+        $item->city_id          = htmlspecialchars($data['city']);
+    }
+    $item->zip              = htmlspecialchars($data['zip']);
+    if(isset($data['state_id']) && $data['state_id'] != ''){
+        $item->state_id         = htmlspecialchars($data['state_id']);
+    }
+    if(isset($data['country_id']) && $data['country_id'] != ''){
+        $item->country_id       = htmlspecialchars($data['country_id']);
+    }
+    if(isset($data['office_id']) && $data['office_id'] != ''){
+        $item->office       = htmlspecialchars($data['office_id']);
+    }else{
+        $item->office       = null;
+    }
+    $item->role_id          = htmlspecialchars($data['role_id']);
+    $item->updated_at       = \Carbon\Carbon::now();
+    $item->update();
+
+    if(isset($data['password']) && $data['password'] != null && !empty($data['password']) && $data['password'] != ''){
+        if(isset($data['password_confirmation']) && $data['password_confirmation'] != null && !empty($data['password_confirmation']) && $data['password_confirmation'] != '' && $data['password_confirmation'] == $data['password']){
+            \RainLab\User\Models\User::where('id', $item->id)->update(['password' => \Hash::make($data['password']) ]);
+        }
+    }
+
+
+    \Db::table('users_groups')
+    ->where('user_id', $item->id)->delete();
+
+    if(isset($data['groups'])){
+        foreach($data['groups'] as $group_id){
+            $item->groups()->save(\RainLab\User\Models\UserGroup::where('id', $group_id)->first());
+        }
+    }
+
+    \Db::table('spot_userpermissions_user_permission')
+    ->where('user_id', $item->id)->update(['permission_state' => null, 'updated_at' => \Carbon\Carbon::now()]);
+
+    $permissions = [];
+    if(isset($data['permissions'])){
+        foreach($data['permissions'] as $permission => $val){
+            if(in_array('c', $val) || in_array('u', $val) || in_array('d', $val))
+            {
+                if(!in_array('r', $val)){
+                    array_push($val,"r");
+                }
+            }
+            $value = '';
+            if(in_array('c', $val)){
+                $value .= 'c';
+            }
+            if(in_array('r', $val)){
+                $value .= 'r';
+            }
+            if(in_array('u', $val)){
+                $value .= 'u';
+            }
+            if(in_array('d', $val)){
+                $value .= 'd';
+            }
+            $permissions[$permission] = $value;
+        }
+        foreach($permissions as $permission => $val){
+            \Db::table('spot_userpermissions_user_permission')
+            ->where('user_id', $item->id)
+            ->where('permission_id', $permission)
+            ->update(['permission_state' => $val, 'updated_at' => \Carbon\Carbon::now()]);
+        }
+    }
+
+    \System\Helpers\Cache::clear();
+    \Flash::success($this['theme_lang']['updated_successfully']);
+    return Redirect::to('dashboard/settings/'.$this->page->child_of_page);
+}
+?>
+==
+<div class="kt-grid kt-grid--desktop kt-grid--ver-desktop  kt-inbox" id="kt_inbox">
+
+    <!-- begin:: Aside -->
+    {% partial 'settingsmenu' %}
+    <!-- end:: Aside -->
+    <!--Begin:: Inbox List-->
+    <div class="kt-grid__item kt-grid__item--fluid    kt-portlet    kt-inbox__list kt-inbox__list--shown" id="kt_inbox_list">
+        <div class="kt-portlet__head">
+    		<div class="kt-portlet__head-label">
+    			<h3 class="kt-portlet__head-title">
+    				{{this.page.title|__}}
+    			</h3>
+    		</div>
+        </div>
+        {{ form_ajax('onSave', { id: 'kt_form', flash: true, class:'kt_form' }) }}
+            <div class="kt-portlet__body kt-portlet__body--fit-x kt-padding-r-20 kt-padding-l-20">
+                <div class="form-group form-group-last kt-hide">
+                    <div class="alert alert-danger kt_form_msg" role="alert">
+                        <div class="alert-icon"><i class="flaticon-warning"></i></div>
+                        <div class="alert-text">
+                            {{'Oh snap! Change a few things up and try submitting again'|__}}.
+                        </div>
+                        <div class="alert-close">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true"><i class="la la-close"></i></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Full Name'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    <div class="col-lg-9 col-xl-6">
+          					       <input type="text" class="form-control" name="name" value="{{item.name}}" required />
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Email'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    <div class="col-lg-9 col-xl-6">
+    					<input type="email" class="form-control" name="email" value="{{item.email}}" required />
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Username'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    <div class="col-lg-9 col-xl-6">
+    					<input type="text" class="form-control" name="username" value="{{item.username}}" required />
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Password'|__}}</label>
+                    <div class="col-lg-9 col-xl-6">
+    					<input type="password" class="form-control" name="password" />
+                        <span class="text-muted">{{'Only fill it if you need to change your password'|__}}</span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Password Confirmation'|__}}</label>
+                    <div class="col-lg-9 col-xl-6">
+    					<input type="password" class="form-control" name="password_confirmation" />
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Mobile Number'|__}}</label>
+                    <div class="col-lg-9 col-xl-6">
+    					<input type="text" class="form-control" name="mobile"  value="{{item.mobile}}"/>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Phone Number'|__}}</label>
+                    <div class="col-lg-9 col-xl-6">
+    					<input type="text" class="form-control" name="phone"  value="{{item.phone}}"/>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Country'|__}}</label>
+                    <div class="col-lg-9 col-xl-6">
+                        <select class="form-control" name="country_id" id="country_id" data-live-search="true">
+                            <option data-hidden="true"></option>
+                            {% for country in countries %}
+                                <option value="{{country.id}}" {% if item.country_id == country.id %}selected{% endif %}>{{ country.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'State'|__}}</label>
+                    <div class="col-lg-9 col-xl-6">
+                        <select class="form-control" name="state_id" id="state_id" data-live-search="true" {% if item.country_id is null %} title="{{'Please select country first'|__}}" {% endif %}>
+                            <option data-hidden="true"></option>
+                            {{getStates.data(item.state_id,item.country_id)}}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Postal Code'|__}}</label>
+                    <div class="col-lg-9 col-xl-6">
+    					<input type="text" class="form-control" name="zip"  value="{{item.zip}}"/>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'City'|__}}</label>
+                    <div class="col-lg-9 col-xl-6">
+                        <select class="form-control" name="city" id="city_id" data-live-search="true" {% if item.state_id is null %} title="{{'Please select state first'|__}}" {% endif %}>
+                            <option data-hidden="true"></option>
+                            {{getCities.data(item.city_id,item.state_id)}}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Street Address'|__}}</label>
+                    <div class="col-lg-9 col-xl-6">
+    					<input type="text" class="form-control" name="street_addr"  value="{{item.street_addr}}"/>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Role'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    <div class="col-lg-9 col-xl-6">
+                        <select class="form-control" name="role_id" id="role_id" data-live-search="true" required>
+                            <option data-hidden="true"></option>
+                            {% for role in roles %}
+                                <option value="{{role.id}}" {% if item.role_id == role.id %}selected{% endif %}>{{ role.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row employee_selected {% if item.role_id != 4 %}kt-hidden{% endif %} ">
+                    <label class="col-xl-3 col-lg-3 col-form-label"></label>
+                    <div class="col-lg-9 col-xl-6">
+                        <div class="kt-checkbox-single">
+                            <label class="kt-checkbox">
+                                <input type="checkbox" name="is_superuser" {% if item.is_superuser %}checked{% endif %} value="1"> {{'Is Supervisor?'|__}}
+                                <span></span>
+                            </label>
+                        </div>
+                        <span class="text-muted">{{'Check if you need this user see every data in the modules that he has permission on'|__}}</span>
+                    </div>
+                </div>
+                <div class="form-group  row employee_selected {% if item.role_id != 4 %}kt-hidden{% endif %}">
+                    <label class="col-xl-3 col-lg-3 col-form-label"></label>
+                    <div class="col-lg-9 col-xl-6">
+                        <div class="kt-checkbox-single">
+                            <label class="kt-checkbox">
+                                <input type="checkbox" name="driver" {% if item.driver %}checked{% endif %} value="1"> {{'Is a Driver?'|__}}
+                                <span></span>
+                            </label>
+                        </div>
+                        <span class="text-muted">{{'Check if you need this user to be assigned to a car, you can assign it later from cars definition page'|__}}</span>
+                    </div>
+                </div>
+                <div class="form-group row employee_selected {% if item.role_id != 4 %}kt-hidden{% endif %}">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Branch'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    <div class="col-lg-9 col-xl-6">
+                        <select class="form-control" name="office_id" data-live-search="true" required>
+                            <option data-hidden="true"></option>
+                            {% for office in offices %}
+                                <option value="{{office.id}}"  {% if item.office %}selected{% endif %}>{{ office.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row employee_selected not_employee_selected {% if item.role_id != 4 or item.role_id != 3 %}kt-hidden{% endif %}">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Departments'|__}}</label>
+                    <div class="col-lg-9 col-xl-6">
+                        <select class="form-control" name="groups[]" multiple data-live-search="true">
+                            <option data-hidden="true"></option>
+                            {% for group in groups %}
+                                <option value="{{group.id}}" {% if group.id in item.groups.pluck('id') %}selected{% endif %}>{{ group.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-12 col-form-label">{{'Permissions'|__}}</label>
+                    <div class="col-lg-12 table-responsive">
+                        <table class="table">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th class="text-center"></th>
+                                    <th class="text-center">
+                                        <label class="kt-font-bold">{{'Create'|__}}<span></span></label>
+                                        <label class="kt-checkbox kt-checkbox--state-success"><input type="checkbox" class="check_all check_all_c" value="c">{{'Select All'|__}}<span></span></label>
+                                    </th>
+                                    <th class="text-center">
+                                        <label class="kt-font-bold">{{'Read'|__}}<span></span></label>
+                                        <label class="kt-checkbox kt-checkbox--state-success"><input type="checkbox" class="check_all check_all_r" value="r">{{'Select All'|__}}<span></span></label>
+                                    </th>
+                                    <th class="text-center">
+                                        <label class="kt-font-bold">{{'Edit'|__}}<span></span></label>
+                                        <label class="kt-checkbox kt-checkbox--state-success"><input type="checkbox" class="check_all check_all_u" value="u">{{'Select All'|__}}<span></span></label>
+                                    </th>
+                                    <th class="text-center">
+                                        <label class="kt-font-bold">{{'Delete'|__}}<span></span></label>
+                                        <label class="kt-checkbox kt-checkbox--state-success"><input type="checkbox" class="check_all check_all_d" value="d">{{'Select All'|__}}<span></span></label>
+                                    </th>
+                                    <th class="text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for permission in permissions %}
+
+                                    {% set state = '' %}
+                                    {% for user_permissions in item.user_permissions %}
+                                        {% if user_permissions.pivot.permission_id == permission.id %}
+                                            {% set state = user_permissions.pivot.permission_state %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    <tr class="{{permission.id}}">
+                                        <td class="form-group">
+                                            <label class="control-label" for="permission_{{permission.id}}">
+                                                <b>{{permission.name|__}}</b> <br />
+                                                {{permission.description|__}}
+                                            </label>
+                                        </td>
+
+
+                                        {% if 'c' in permission.type %}
+                                            <td>
+                                                <div class="icheck text-center">
+                                                    <label class="kt-checkbox kt-checkbox--solid kt-checkbox--state-success"><input type="checkbox" class="check_c" value="c" name="permissions[{{permission.id}}][]"  id="permission_{{permission.id}}_c"  {%if 'c' in state %}checked{% endif %}>{{'Create'|__}}<span></span></label>
+                                                </div>
+                                            </td>
+                                        {% endif %}
+                                        {% if 'r' in permission.type %}
+                                            <td>
+                                                <div class="icheck text-center">
+                                                    <label class="kt-checkbox kt-checkbox--solid kt-checkbox--state-success"><input type="checkbox" class="check_r" value="r" name="permissions[{{permission.id}}][]"  id="permission_{{permission.id}}_r"   {%if 'r' in state %}checked{% endif %}>{{'Read'|__}}<span></span></label>
+                                                </div>
+                                            </td>
+                                        {% endif %}
+                                        {% if 'u' in permission.type %}
+                                            <td>
+                                                <div class="icheck text-center">
+                                                    <label class="kt-checkbox kt-checkbox--solid kt-checkbox--state-success"><input type="checkbox" class="check_u" value="u" name="permissions[{{permission.id}}][]"  id="permission_{{permission.id}}_u"   {%if 'u' in state %}checked{% endif %}>{{'Update'|__}}<span></span></label>
+                                                </div>
+                                            </td>
+                                        {% endif %}
+                                        {% if 'd' in permission.type %}
+                                            <td>
+                                                <div class="icheck text-center">
+                                                    <label class="kt-checkbox kt-checkbox--solid kt-checkbox--state-success"><input type="checkbox" class="check_d" value="d" name="permissions[{{permission.id}}][]"  id="permission_{{permission.id}}_d"   {%if 'd' in state %}checked{% endif %}>{{'Delete'|__}}<span></span></label>
+                                                </div>
+                                            </td>
+                                        {% endif %}
+                                        <td class="text-center">
+                                            <label class="kt-checkbox kt-checkbox--state-success"><input type="checkbox" class="check_row" value="crud">{{'All'|__}}<span></span></label>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+    		<div class="kt-portlet__foot">
+    			<div class="row">
+    				<div class="col-lg-8">
+                    </div>
+    				<div class="col-lg-4">
+    					<button type="submit" class="btn btn-primary">{{'Save'|__}}</button>
+    					<span class="kt-margin-left-10">{{'or'|__}} <a href="{{url('dashboard/settings')}}/{{this.page.child_of_page}}" class="kt-link">{{'Cancel'|__}}</a></span>
+    				</div>
+    			</div>
+    		</div>
+    	{{ form_close() }}
+    </div>
+</div>
+
+{% put scripts %}
+<script type="text/javascript">
+    $( ".kt_form" ).validate({
+        ignore: ":hidden",
+        // define validation rules
+        /*
+        rules: {
+            digits: {
+                required: true,
+                digits: true,
+                creditcard: true,
+                phoneUS: true,
+                required: true,
+                minlength: 10,
+                maxlength: 100
+            },
+        },
+        */
+
+        //display error alert on form submit
+        invalidHandler: function(event, validator) {
+            var alert = $('.kt_form_msg');
+            alert.removeClass('kt--hide').show();
+            KTUtil.scrollTop();
+        },
+
+        submitHandler: function (form) {
+            form[0].submit(); // submit the form
+        }
+    });
+
+    $('input.check_row').on('change', function(event) {
+        if ($(this).is(':checked')) {
+            $(this).parent().parent().parent().find('input').prop('checked', true);
+        } else {
+            $(this).parent().parent().parent().find('input').prop('checked', false);
+        }
+    });
+
+    $('input.check_c').on('change', function(event){
+        if($('input.check_c').filter(':checked').length == $('input.check_c').length) {
+            $('input.check_all_c').prop('checked', 'checked');
+        } else {
+            $('input.check_all_c').removeProp('checked');
+        }
+    });
+    $('input.check_r').on('change', function(event){
+        if($('input.check_r').filter(':checked').length == $('input.check_r').length) {
+            $('input.check_all_r').prop('checked', 'checked');
+        } else {
+            $('input.check_all_r').removeProp('checked');
+        }
+    });
+    $('input.check_u').on('change', function(event){
+        if($('input.check_u').filter(':checked').length == $('input.check_u').length) {
+            $('input.check_all_u').prop('checked', 'checked');
+        } else {
+            $('input.check_all_u').removeProp('checked');
+        }
+    });
+    $('input.check_d').on('change', function(event){
+        if($('input.check_d').filter(':checked').length == $('input.check_d').length) {
+            $('input.check_all_d').prop('checked', 'checked');
+        } else {
+            $('input.check_all_d').removeProp('checked');
+        }
+    });
+
+    $('body').on('changed.bs.select', '#country_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected != ''){
+            $.request('onListstates', {
+                data: {id: selected},
+                success: function(data) {
+                    $('#state_id').selectpicker("destroy");
+                    $('#state_id').attr('title', '{{"Nothing Selected"|__}}');
+                    $('#state_id').html(data.html);
+                    $('#state_id').selectpicker("refresh");
+                }
+            });
+        }
+    });
+    $('body').on('changed.bs.select', '#state_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected != ''){
+            $.request('onListcities', {
+                data: {id: selected},
+                success: function(data) {
+                    $('#city_id').selectpicker("destroy");
+                    $('#city_id').attr('title', '{{"Nothing Selected"|__}}');
+                    $('#city_id').html(data.html);
+                    $('#city_id').selectpicker("refresh");
+                }
+            });
+        }
+    });
+    $('body').on('changed.bs.select', '#role_id', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected != ''){
+            if(selected == 4){
+                $('.employee_selected').removeClass('kt-hidden');
+            }else if(selected == 3){
+                $('.employee_selected').addClass('kt-hidden');
+                $('.not_employee_selected').removeClass('kt-hidden');
+            }else{
+                $('.employee_selected').addClass('kt-hidden');
+            }
+        }
+    });
+</script>
+{% endput %}

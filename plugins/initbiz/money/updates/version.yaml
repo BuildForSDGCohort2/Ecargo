@@ -1,0 +1,17 @@
+1.0.1:
+    - 'Initialize plugin.'
+    - update_responsive_currency_currencies_table.php
+1.0.2:
+    - 'MoneyFields behavior fixed'
+1.0.3:
+    - 'Small extending fix for better DX'
+1.0.4:
+    - 'Minor bug fixes'
+1.0.5:
+    - 'Yet another small fix'
+1.0.6:
+    - 'Updating partials with moneyFields works'
+1.0.7:
+    - 'Added money column type'
+1.0.8:
+    - 'Minor bug fixes, a few features added'

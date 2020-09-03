@@ -1,0 +1,144 @@
+title = "Create New Language"
+url = "/dashboard/sample/create"
+layout = "admin"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/settings"
+settings_breadcrumb = "languages"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+function onStart() {
+    if(!Auth::getUser()->hasUserPermission(["languages"],'c')) {
+        \Flash::error($this['theme_lang']['not_allowed']);
+        return Redirect::to('dashboard/settings');
+    }
+}
+function onSave()
+{
+    if(!Auth::getUser()->hasUserPermission(["languages"],'c')) {
+        throw new ApplicationException($this['theme_lang']['not_allowed']);
+    }
+    $data = post();
+    $item              = new \Spot\User\Models\Tool;
+    $item->name        = htmlspecialchars($data['name'][$this['theme_lang']uages['default']]);
+    if(isset($data['price'])){
+        $item->price       = htmlspecialchars($data['price']);
+    }
+    $item->user_id        = Auth::getUser()->relation->related_id;
+    $item->save();
+
+    foreach($this['theme_lang']uages['enabled'] as $lang){
+        if(isset($data['name'][$lang])){
+            $item->lang($lang)->name             = htmlspecialchars($data['name'][$lang]);
+            $item->update();
+        }
+    }
+
+    \Flash::success($this['theme_lang']['created_successfully']);
+    return Redirect::to('dashboard/tools/'.$item->id.'/edit');
+}
+?>
+==
+<div class="kt-portlet kt-portlet--tabs">
+    {{ form_ajax('onSave', { success: 'created successfully!', flash: true, class: 'kt_form' }) }}
+        <div class="kt-portlet__body">
+            <div class="form-group form-group-last kt-hide">
+				<div class="alert alert-danger kt_form_msg" role="alert">
+					<div class="alert-icon"><i class="flaticon-warning"></i></div>
+				  	<div class="alert-text">
+                        {{'Oh snap! Change a few things up and try submitting again'|__}}.
+					</div>
+					<div class="alert-close">
+						<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					    	<span aria-hidden="true"><i class="la la-close"></i></span>
+					  	</button>
+					</div>
+				</div>
+			</div>
+            <div class="form-group row">
+                <label class="col-xl-3 col-lg-3 col-form-label">{{'Name'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                <div class="col-lg-9 col-xl-6">
+					<input type="text" class="form-control" name="name" required />
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-xl-3 col-lg-3 col-form-label">{{'Code'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                <div class="col-lg-9 col-xl-6">
+					<input type="text" class="form-control" name="code" required />
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-xl-3 col-lg-3 col-form-label"></label>
+                <div class="col-lg-9 col-xl-6">
+                    <div class="kt-checkbox-single">
+                        <label class="kt-checkbox">
+                            <input type="checkbox" name="enable"> {{'Enabled'|__}}: {{'Disabled languages will not be available in the front-end'|__}}
+                            <span></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-xl-3 col-lg-3 col-form-label"></label>
+                <div class="col-lg-9 col-xl-6">
+                    <div class="kt-checkbox-single">
+                        <label class="kt-checkbox">
+                            <input type="checkbox" name="default"> {{'Default'|__}}: {{'The default language represents the content before translation'|__}}
+                            <span></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+		<div class="kt-portlet__foot">
+			<div class="row">
+				<div class="col-lg-8">
+                </div>
+				<div class="col-lg-4">
+					<button type="submit" class="btn btn-primary">{{'Save'|__}}</button>
+					<span class="kt-margin-left-10">{{'or'|__}} <a href="{{this.page.child_of|page}}" class="kt-link">{{'Cancel'|__}}</a></span>
+				</div>
+			</div>
+		</div>
+	{{ form_close() }}
+</div>
+
+{% put scripts %}
+<script type="text/javascript">
+    $( ".kt_form" ).validate({
+        // define validation rules
+        /*
+        rules: {
+            digits: {
+                required: true,
+                digits: true,
+                creditcard: true,
+                phoneUS: true,
+                required: true,
+                minlength: 10,
+                maxlength: 100
+            },
+        },
+        */
+
+        //display error alert on form submit
+        invalidHandler: function(event, validator) {
+            var alert = $('.kt_form_msg');
+            alert.removeClass('kt--hide').show();
+            KTUtil.scrollTop();
+        },
+
+        submitHandler: function (form) {
+            form[0].submit(); // submit the form
+        }
+    });
+</script>
+{% endput %}

@@ -1,0 +1,13 @@
+columns:
+    id:
+        label: ID
+        type: number
+        searchable: true
+        sortable: true
+    license_palate:
+        label: 'License palate'
+        type: text
+        searchable: true
+    size:
+        label: Size
+        type: text

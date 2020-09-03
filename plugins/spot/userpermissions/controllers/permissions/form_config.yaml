@@ -1,0 +1,22 @@
+# ===================================
+#  Form Behavior Config
+# ===================================
+
+name: spot.userpermissions::lang.permissions.menu_label
+form: $/spot/userpermissions/models/permission/fields.yaml
+modelClass: Spot\UserPermissions\Models\Permission
+
+create:
+    title: spot.userpermissions::lang.permissions.create_permission
+    redirect: spot/userpermissions/permissions/update/:id
+    redirectClose: spot/userpermissions/permissions
+
+update:
+    title: spot.userpermissions::lang.permissions.update_permission
+    redirect: spot/userpermissions/permissions/update/:id
+    redirectClose: spot/userpermissions/permissions
+
+preview:
+    title: spot.userpermissions::lang.permissions.view_permission
+
+defaultRedirect: spot/userpermissions/permissions

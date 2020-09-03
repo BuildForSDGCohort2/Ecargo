@@ -1,0 +1,92 @@
+fields:
+    number:
+        label: Number
+        span: auto
+        required: 1
+        type: text
+    bol:
+        label: BOL
+        span: auto
+        required: 1
+        type: text
+    customer_id:
+        label: Customer
+        showSearch: true
+        span: auto
+        required: 1
+        type: dropdown
+    destination:
+        label: Destination
+        span: auto
+        required: 1
+        type: text
+    location_type:
+        label: 'Location Type'
+        showSearch: true
+        span: auto
+        type: dropdown
+    reason_for_arrive:
+        label: 'Reason for arrival'
+        showSearch: true
+        span: auto
+        type: dropdown
+    dropdown1:
+        label: Dropdown
+        showSearch: true
+        span: auto
+        type: dropdown
+    company_id:
+        label: 'Transport Company'
+        options:
+            1: 'Vaneychen ups Belgium'
+            2: TDS
+            3: Essers
+            4: Other
+        span: auto
+        type: radio
+    other:
+        label: Other
+        span: full
+        hidden: 1
+        trigger:
+            action: show
+            field: customer_id
+            condition: 'value[4]'
+        type: text
+    t1:
+        label: T1
+        span: auto
+        type: text
+    dp:
+        label: DP
+        span: auto
+        type: text
+    inspected_port:
+        label: 'Inspection Port'
+        options:
+            1: 'Yes'
+            2: 'No'
+        span: auto
+        type: radio
+    cc:
+        label: Cc
+        options:
+            1: 'Yes'
+            2: 'No'
+        span: auto
+        type: radio
+    eta_port:
+        label: 'ETA Port'
+        mode: date
+        span: auto
+        type: datepicker
+    eta_lgg:
+        label: 'ETA LGG'
+        mode: date
+        span: auto
+        type: datepicker
+    status:
+        label: Status
+        span: full
+        showSearch: true
+        type: dropdown

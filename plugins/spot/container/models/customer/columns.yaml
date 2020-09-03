@@ -1,0 +1,18 @@
+columns:
+    id:
+        label: ID
+        type: number
+        searchable: true
+        invisible: false
+        sortable: true
+    display_name:
+        label: 'Display Name'
+        type: text
+        searchable: true
+        invisible: false
+        sortable: true
+    email:
+        label: Email
+        type: text
+        searchable: false
+        invisible: false

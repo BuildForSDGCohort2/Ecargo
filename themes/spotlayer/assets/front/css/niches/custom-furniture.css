@@ -1,0 +1,70 @@
+@media screen and (min-width: 992px) {
+	.main-nav > ul > li > a:before { background-color: #FFCC33;}
+}
+.logo-container .logo-infocard .left-side {background-color: #E2B52C;}
+.logo-container .logo-infocard .right-side {background-color: #FFCC33;}
+.kl-cta-ribbon .trisvg {fill: #FFCC33;}
+.hg_badge_sale,
+.hg_badge_sale:after {background: #FFCC33;}
+.tcolor {color: #FFCC33 !important;}
+.btn-lined.lined-custom {color: #FFCC33; border-color: #FFCC33;}
+.btn-lined.lined-custom:hover {border-color: #d4a61d; color: #d4a61d;}
+.spp-carousel.sppCrs--c .hgSlickNav {top: 0;}
+.chaser .main-menu li.active>a { background: #FFCC33 !important;}
+.fake-loading:after {border-top-color: #FFCC33; border-right-color: #FFCC33;}
+.breadcrumbs li:after, 
+.breadcrumbs2 li:after {border-left-color: #FFCC33;}
+.logo-container .logo-infocard,
+.kl-cta-ribbon,
+.how_to_shop .number,
+.newsletter-signup input[type=submit],
+.imgboxes_style4 .imgboxes-title:after,
+.zn_badge_sale,
+.zn_badge_sale:after { background-color: #FFCC33;}
+.kl-cta-ribbon .trisvg path { fill: #FFCC33;}
+.product-list-item .kw-actions a:hover,
+.m_title { color: #FFCC33;}
+.product-list-item:hover .kw-details-title, 
+.kl-store-page ul.products li.product .product-list-item:hover .kw-details-title { color: #000;}
+.btn-fullcolor, 
+.btn-fullcolor:focus { background-color: #FFCC33;}
+.btn-fullcolor:hover { background-color: #000;}
+.site-header .kl-cart-button .fas:after,
+.cart-container .buttons .button.wc-forward { background-color: #FFCC33;}
+.cart-container .buttons .button.wc-forward:hover { background-color: #000;}
+.cart-container .cart_list .product-title:hover {color: #FFCC33;}
+.btn-flat, 
+.kl-store-page a.button, 
+.kl-store-page button.button, 
+.kl-store-page button.button.alt, 
+.kl-store-page input.button, 
+.kl-store-page input#button, 
+.kl-store-page #review_form #submit {background-color: #FFCC33;}
+
+.css3panel-inner { -webkit-transform: skewX(-7deg); -ms-transform: skewX(-7deg); transform: skewX(-7deg);}
+.css3panel-mainimage-wrapper { margin-left: -82px; margin-right: -82px;}
+.css3panel-caption { bottom: 250px;}
+.captiontitle--wbg:before, .captiontitle--dbg:before { right: -43px;}
+
+.p-top-12 { padding-top: 12% !important;}
+.p-left-20 { padding-left: 20% !important;}
+
+.col-full {background: #fff; margin-left: -30px; padding-bottom: 30px; padding-left: 40px; padding-right: 40px; padding-top: 30px; height: 370px; overflow: hidden; overflow-y: visible;}
+@media (min-width: 968px) and (max-width: 1200px) {
+	.col-full {padding-bottom: 66px;}
+}
+
+@media (max-width: 967px) {
+	.col-full { margin-left: 0; padding-left: 30px; padding-right: 30px; padding-bottom: 30px; height: 300px;}
+	.furniture-section .tbk__title { font-size: 18px;}
+}
+
+@media (max-width: 767px) {
+	.p-left-20 {padding-left: 0% !important;}
+}
+
+
+.btn-fullcolor.furniture { background-color:#FFCC33; }
+.btn-fullcolor.furniture:hover { background-color: #E2B52C;}
+.furniture-media .tbk__title { color: #fff; font-size: 32px; line-height: 34px;}
+.furniture-media .tbk__subtitle { color: #fff; text-align: center; font-size: 22px; margin-bottom: 30px;}

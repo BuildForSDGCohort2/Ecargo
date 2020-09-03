@@ -1,0 +1,629 @@
+title = "Treasury View"
+url = "/dashboard/treasury/:id/view"
+layout = "admin"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/settings"
+child_of_page = "treasury"
+settings_breadcrumb = "definitions"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+function onStart(){
+
+    $this['item']           =   \Spot\Shipment\Models\Treasury::find($this->param('id'));
+
+}
+?>
+==
+<!--Begin::App-->
+<div class="kt-grid kt-grid--desktop kt-grid--ver kt-grid--ver-desktop kt-app">
+
+    <!--Begin:: App Content-->
+    <div class="kt-grid__item kt-grid__item--fluid kt-app__content kt-margin-l-0">
+        <div class="row">
+            <div class="col-xl-12">
+                <!--begin:: Widgets/Order Statistics-->
+                <div class="kt-portlet kt-portlet--height-fluid">
+                    <div class="kt-portlet__body kt-portlet__body--fluid">
+                        <div class="kt-widget12">
+                            <div class="kt-widget12__content">
+                                <div class="kt-widget12__item">
+                                    <div class="kt-widget12__info">
+                                        <span class="kt-widget12__desc">{{'Name'|__}}</span>
+                                        <span class="kt-widget12__value">{{item.name}}</span>
+                                    </div>
+                                    {% if item.office %}
+                                        <div class="kt-widget12__info">
+                                            <span class="kt-widget12__desc">{{'Office'|__}}</span>
+                                            <span class="kt-widget12__value">{{item.office.name}}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="kt-widget12__item">
+                                    <div class="kt-widget12__info">
+                                        <span class="kt-widget12__desc">{{'Default'|__}}</span>
+                                        <span class="kt-widget12__value">{% if item.default %}{{'Yes'|__}}{% else %}{{'No'|__}}{% endif %}</span>
+                                    </div>
+                                    <div class="kt-widget12__info">
+                                        <span class="kt-widget12__desc">{{'Balance'|__}}</span>
+                                        <span class="kt-widget12__value">{{item.balance|currency}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--end:: Widgets/Order Statistics-->
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xl-12">
+                <!--begin:: Widgets/Last Updates-->
+                <div class="kt-portlet kt-portlet--height-fluid">
+                    <div class="kt-portlet__head">
+                        <div class="kt-portlet__head-label">
+                            <h3 class="kt-portlet__head-title">{{'Transactions'|__}}</h3>
+                        </div>
+                    </div>
+                    <div class="kt-portlet__body">
+                        <div class="kt-datatable"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!--End:: App Content-->
+</div>
+<!--End::App-->
+{% put scripts %}
+<script>
+"use strict";
+var KTAppUserListDatatable = function () {
+    // variables
+    var datatable;
+
+    // init
+    var init = function (type) {
+
+        datatable = $('.kt-datatable').KTDatatable({
+            translate: {
+                records: {
+                    processing: '{{"Please wait"|__}}...',
+                    noRecords: '{{"No records found"|__}}'
+                },
+                toolbar: {
+                    pagination: {
+                        items: {
+                            default: {
+                                first: '{{"First"|__}}',
+                                prev: '{{"Previous"|__}}',
+                                next: '{{"Next"|__}}',
+                                last: '{{"Last"|__}}',
+                                more: '{{"More pages"|__}}',
+                                input: '{{"Page number"|__}}',
+                                select: '{{"Select page size"|__}}'
+                            },
+
+                            info: "{{"Displaying"|__}} {{ '{{' }}start{{ '}}' }} - {{ '{{' }}end{{ '}}' }} {{"of"|__}} {{total}} {{"records"|__}}"
+                        }
+                    }
+                }
+            },
+
+            // layout definition
+            layout: {
+                scroll: true, // enable/disable datatable scroll both horizontal and vertical when needed.
+                footer: false, // display/hide footer
+            },
+
+            // column sorting
+            sortable: true,
+
+            pagination: true,
+
+            search: {
+                input: $('#generalSearch'),
+                delay: 400,
+            },
+            data: {
+                type: 'remote',
+                source: {
+                    read: {
+                        url: '{{url("api/treasurytransactions")}}',
+                        params: {
+                          id: {{this.param.id}}
+                        }
+                    },
+                },
+                pageSize: 10, // display 20 records per page
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true,
+            },
+            // columns definition
+            columns: [
+                {
+                    field: "id",
+                    title: "{{'ID'|__}}",
+                    sortable: false,
+                    width: 50,
+    				template: function(data, i) {
+    					var output = '\
+                            <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                                <div class="kt-user-card-v2__details">\
+                                     <a href="{{url("dashboard/transactions")}}/' + data.id+ '/view" class="kt-user-card-v2__name">' + data.id+ '</a>\
+                                 </div>\
+                            </div>';
+    					return output;
+    				},
+                },
+                {
+                    field: "movement",
+                    title: "{{'Movement Type'|__}}",
+                    sortable: false,
+                    width: 250,
+                    template: function(row) {
+                        //1 = withdrawl | 2 = deposit | 3 = Deduction from the wallet | 4 = add to wallet | 5 =  Deduction of commission balance | 6 = Add to the commission balance | 7 = Deduction from the balance of packages | 8 = Add  to the balance of packages
+                        var status = {
+                            1: {
+                                'title': '{{"Withdrawl"|__}}',
+                                'class': 'info'
+                            },
+                            2: {
+                                'title': '{{"Deposit"|__}}',
+                                'class': 'info'
+                            },
+                            3: {
+                                'title': '{{"Deduction from the wallet"|__}}',
+                                'class': 'info'
+                            },
+                            4: {
+                                'title': '{{"Add to wallet"|__}}',
+                                'class': 'info'
+                            },
+                            5: {
+                                'title': '{{"Deduction of commission balance"|__}}',
+                                'class': 'info'
+                            },
+                            6: {
+                                'title': '{{"Add to the commission balance"|__}}',
+                                'class': 'info'
+                            },
+                            7: {
+                                'title': '{{"Deduction from the balance of packages"|__}}',
+                                'class': 'info'
+                            },
+                            8: {
+                                'title': '{{"Add  to the balance of packages"|__}}',
+                                'class': 'info'
+                            },
+                        };
+                        return '<span class="kt-badge kt-badge--' + status[row.movement].class + ' kt-badge--dot"></span>&nbsp;<a href="{{url("dashboard/transactions")}}/' + row.id+ '/view" class="kt-font-bold kt-font-' + status[row.movement].class + '">' + status[row.movement].title + '</a>';
+                    }
+                },
+                {
+                    field: "for_id",
+                    title: "{{'For'|__}}",
+                    sortable: false,
+                    width: 100,
+                    template: function(data, i) {
+                        if(data.type == 1){
+                            if(data.payment_with){
+                                var output = '\
+                                    <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                                        <div class="kt-user-card-v2__details">\
+                                            <a href="javascript:;" class="kt-user-card-v2__name">' + data.gotit+ '</a>\
+                                            <span class="kt-user-card-v2__email">{{"Employee"|__}}</span>\
+                                        </div>\
+                                    </div>';
+                                return output;
+                            }else{
+                                var output = '\
+                                    <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                                        <div class="kt-user-card-v2__details">\
+                                            <a href="javascript:;" class="kt-user-card-v2__name">' + data.for + '</a>\
+                                            <span class="kt-user-card-v2__email">{{"Client"|__}}</span>\
+                                        </div>\
+                                    </div>';
+                                return output;
+                            }
+                        }else if(data.type == 3){
+                            var output = '\
+                                <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                                    <div class="kt-user-card-v2__details">\
+                                        <a href="javascript:;" class="kt-user-card-v2__name">' + data.for + '</a>\
+                                        <span class="kt-user-card-v2__email">{{"Treasury"|__}}</span>\
+                                    </div>\
+                                </div>';
+                        }else{
+                            var output = '-';
+                        }
+                        return output;
+                    }
+                },
+                {
+                    field: "date",
+                    title: "{{'Date'|__}}",
+                    sortable: false,
+                    width: 100,
+                },
+                {
+                    field: "amount",
+                    title: "{{'Amount'|__}}",
+                    sortable: false,
+                    width: 100,
+                },
+                {
+                    field: "created_at",
+                    title: "{{'Created On'|__}}",
+                    sortable: false,
+                    width: 100,
+    				template: function(data, i) {
+    					var output = '\
+                            <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                                <div class="kt-user-card-v2__details">\
+                                    <a href="javascript:;" class="kt-user-card-v2__name">' + data.created_at_date + '</a>\
+                                    <span class="kt-user-card-v2__email">' + data.created_at_time + '</span>\
+                                </div>\
+                            </div>';
+    					return output;
+    				}
+                },
+                {
+                    field: "payment_with",
+                    title: "{{'Received by'|__}}",
+                    sortable: false,
+                    width: 100,
+    				template: function(data, i) {
+                        if(data.item_id){
+        					var output = '\
+                                <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                                    <div class="kt-user-card-v2__details">\
+                                         <a href="{{url("dashboard/employees")}}/' + data.payment_with+ '/transactions" class="kt-user-card-v2__name">' + data.payment_with_employee+ '</a>\
+                                     </div>\
+                                </div>';
+        					return output;
+                        }else{
+        					return '-';
+                        }
+    				},
+                },
+                {
+                    field: "description",
+                    title: "{{'Description'|__}}",
+                    sortable: false,
+                    width: 150,
+    				template: function(data, i) {
+                        if(data.description){
+        					return data.description;
+                        }else{
+        					return '-';
+                        }
+    				}
+                },
+                {
+                    field: "item_id",
+                    title: "{{'Shipment'|__}}",
+                    sortable: false,
+                    width: 50,
+    				template: function(data, i) {
+                        if(data.item_id){
+        					var output = '\
+                                <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                                    <div class="kt-user-card-v2__details">\
+                                         <a href="{{url("dashboard/shipments")}}/' + data.item_id+ '/view" class="kt-user-card-v2__name">#' + data.item_id+ '</a>\
+                                     </div>\
+                                </div>';
+        					return output;
+                        }else{
+        					return '-';
+                        }
+    				}
+                },
+            ]
+        });
+    };
+
+    // search
+    var search = function () {
+        $('#filter_form select,#filter_form input').each(function(){
+            $(this).on('change', function () {
+                datatable.search($(this).val().toLowerCase(), $(this).attr('name'));
+            });
+        });
+        $('#reset').on('click', function () {
+            datatable.destroy();
+            $('#generalSearch').val('');
+            $('#filter_form select,#filter_form input').each(function(){
+                $(this).val('');
+            });
+            $('#filter_form select').each(function(){
+                $(this).selectpicker("refresh");
+            });
+            init();
+        });
+    };
+
+    // selection
+    var selection = function () {
+        // init form controls
+        //$('#kt_form_status, #kt_form_type').selectpicker();
+
+        // event handler on check and uncheck on records
+        datatable.on('kt-datatable--on-check kt-datatable--on-uncheck kt-datatable--on-layout-updated', function (e) {
+            var checkedNodes = datatable.rows('.kt-datatable__row--active').nodes(); // get selected records
+            var count = checkedNodes.length; // selected records count
+
+            $('#kt_subheader_group_selected_rows').html(count);
+
+            if (count > 0) {
+                $('#kt_subheader_search').addClass('kt-hidden');
+                $('#kt_subheader_group_actions').removeClass('kt-hidden');
+            } else {
+                $('#kt_subheader_search').removeClass('kt-hidden');
+                $('#kt_subheader_group_actions').addClass('kt-hidden');
+            }
+        });
+    }
+
+    // selected records status update
+    var selectedStatusUpdate = function () {
+        $('#kt_subheader_group_actions_status_change').on('click', "[data-toggle='status-change']", function () {
+            var status = $(this).find(".kt-nav__link-text").html();
+
+            // fetch selected IDs
+            var ids = datatable.rows('.kt-datatable__row--active').nodes().find('.kt-checkbox--single > [type="checkbox"]').map(function (i, chk) {
+                return $(chk).val();
+            });
+
+            if (ids.length > 0) {
+                // learn more: //sweetalert2.github.io/
+                swal.fire({
+                    buttonsStyling: false,
+
+                    html: "{{"Are you sure to update"|__}} " + ids.length + " {{"selected records status to"|__}} " + status + " ?",
+                    type: "info",
+
+                    confirmButtonText: "{{"Yes, update"|__}}!",
+                    confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+
+                    showCancelButton: true,
+                    cancelButtonText: "{{"No, cancel"|__}}",
+                    cancelButtonClass: "btn btn-sm btn-bold btn-default"
+                }).then(function (result) {
+                    if (result.value) {
+                        swal.fire({
+                            title: '{{"Deleted"|__}}!',
+                            text: '{{"Your selected records statuses have been updated"|__}}!',
+                            type: 'success',
+                            buttonsStyling: false,
+                            confirmButtonText: "{{"OK"|__}}",
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        })
+                        // result.dismiss can be 'cancel', 'overlay',
+                        // 'close', and 'timer'
+                    } else if (result.dismiss === 'cancel') {
+                        swal.fire({
+                            title: '{{"Cancelled"|__}}',
+                            text: '{{"You selected records statuses have not been updated"|__}}!',
+                            type: 'error',
+                            buttonsStyling: false,
+                            confirmButtonText: "{{"OK"|__}}",
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    // selected records delete
+    var selectedDelete = function () {
+        $('#kt_subheader_group_actions_delete_all').on('click', function () {
+            // fetch selected IDs
+            var selected = [];
+            var type    = $('.delete_record').attr('data-type');
+            var ids = datatable.rows('.kt-datatable__row--active').nodes().find('.kt-checkbox--single > [type="checkbox"]').map(function (i, chk) {
+                selected[$(chk).val()] = $(chk).val();
+                return $(chk).val();
+            });
+
+            if (ids.length > 0) {
+                // learn more: //sweetalert2.github.io/
+                swal.fire({
+                    buttonsStyling: false,
+
+                    text: "{{'Are you sure to delete'|__}} " + ids.length + " {{'selected records ?'|__}}",
+                    type: "error",
+
+                    confirmButtonText: "{{'Yes, delete!'|__}}",
+                    confirmButtonClass: "btn btn-sm btn-bold btn-danger",
+
+                    showCancelButton: true,
+                    cancelButtonText: '{{"No, cancel"|__}}',
+                    cancelButtonClass: "btn btn-sm btn-bold btn-brand"
+                }).then(function (result) {
+                    if (result.value) {
+                        $.request('onDelete', {
+                            data: {id: selected,type: type},
+                            success: function(data) {
+                                swal.fire({
+                                    title: '{{"Deleted!"|__}}',
+                                    text: '{{"Your selected records have been deleted! :("|__}}',
+                                    type: 'success',
+                                    buttonsStyling: false,
+                                    confirmButtonText: '{{"OK"|__}}',
+                                    confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                                });
+                                datatable.reload();
+                            }
+                        });
+                        // result.dismiss can be 'cancel', 'overlay',
+                        // 'close', and 'timer'
+                    } else if (result.dismiss === 'cancel') {
+                        swal.fire({
+                            title: '{{"Cancelled"|__}}',
+                            text: '{{"You selected records have not been deleted! :)"|__}}',
+                            type: 'error',
+                            buttonsStyling: false,
+                            confirmButtonText: '{{"OK"|__}}',
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        });
+                    }
+                });
+            }
+        });
+
+
+        $('body').on('click','.delete_record',function(){
+            var id      = $(this).attr('rel');
+            var type    = $(this).attr('data-type');
+            swal.fire({
+                buttonsStyling: false,
+
+                text: "{{'Are you sure to delete this item ?'|__}}",
+                type: "danger",
+
+                confirmButtonText: "{{'Yes, delete!'|__}}",
+                confirmButtonClass: "btn btn-sm btn-bold btn-danger",
+
+                showCancelButton: true,
+                cancelButtonText: '{{"No, cancel"|__}}',
+                cancelButtonClass: "btn btn-sm btn-bold btn-brand"
+            }).then(function (result) {
+                if (result.value) {
+                    $.request('onDelete', {
+                        data: {id: id, type: type},
+                        success: function(data) {
+
+                            swal.fire({
+                                title: '{{"Deleted!"|__}}',
+                                text: '{{"Your selected record has been deleted! :("|__}}',
+                                type: 'success',
+                                buttonsStyling: false,
+                                confirmButtonText: '{{"OK"|__}}',
+                                confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                            });
+                            datatable.reload();
+                        }
+                    });
+                    // result.dismiss can be 'cancel', 'overlay',
+                    // 'close', and 'timer'
+                } else if (result.dismiss === 'cancel') {
+                    swal.fire({
+                        title: '{{"Cancelled"|__}}',
+                        text: '{{"You selected record has not been deleted! :)"|__}}',
+                        type: 'error',
+                        buttonsStyling: false,
+                        confirmButtonText: '{{"OK"|__}}',
+                        confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                    });
+                }
+            });
+        });
+
+
+        $('body').on('click', '#createManifest', function (e) {
+            e.preventDefault();
+
+            // fetch selected IDs
+            var selected = [];
+            var ids = datatable.rows('.kt-datatable__row--active').nodes().find('.kt-checkbox--single > [type="checkbox"]').map(function (i, chk) {
+                selected[$(chk).val()] = $(chk).val();
+                return $(chk).val();
+            });
+            if (ids.length > 0) {
+                // learn more: //sweetalert2.github.io/
+                swal.fire({
+                    buttonsStyling: false,
+
+                    text: "{{'Are you sure you want to create new manifest with'|__}} " + ids.length + " {{'selected records ?'|__}}",
+                    type: "error",
+
+                    confirmButtonText: "{{'Yes!'|__}}",
+                    confirmButtonClass: "btn btn-sm btn-bold btn-danger",
+
+                    showCancelButton: true,
+                    cancelButtonText: '{{"No, cancel"|__}}',
+                    cancelButtonClass: "btn btn-sm btn-bold btn-brand"
+                }).then(function (result) {
+                    if (result.value) {
+                        $('#manifest_id').val(selected);
+                        $('#manifest_modal').modal('toggle');
+                    } else if (result.dismiss === 'cancel') {
+                        swal.fire({
+                            title: '{{"Cancelled"|__}}',
+                            text: '{{"Your manifest not created! :)"|__}}',
+                            type: 'error',
+                            buttonsStyling: false,
+                            confirmButtonText: '{{"OK"|__}}',
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        });
+                    }
+                });
+            }
+        });
+
+        $('body').on('click', '#PrintEmployeeOrders', function (e) {
+            e.preventDefault();
+            $('#chooseEmployee').modal('toggle');
+        });
+
+    }
+
+    var updateTotal = function () {
+        datatable.on('kt-datatable--on-layout-updated', function () {
+            $('#kt_subheader_total').html(datatable.getTotalRows() + ' {{"Total"|__}}');
+        });
+    };
+
+    var reload = function () {
+        datatable.reload();
+    };
+
+    var destroy = function () {
+        datatable.destroy();
+        $('#generalSearch').val('');
+        $('#filter_form select,#filter_form input').each(function(){
+            $(this).val('');
+        });
+        $('#filter_form select').each(function(){
+            $(this).selectpicker("refresh");
+        });
+    };
+
+    return {
+        // public functions
+        init: function () {
+            init();
+            search();
+            selection();
+            selectedStatusUpdate();
+            selectedDelete();
+            updateTotal();
+        },
+
+        reload: function(){
+            reload();
+        },
+
+        destroy: function(){
+            destroy();
+        }
+    };
+}();
+
+KTUtil.ready(function () {
+    KTAppUserListDatatable.init();
+});
+</script>
+{% endput %}

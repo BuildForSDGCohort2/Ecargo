@@ -1,0 +1,735 @@
+title = "Dashboard"
+daterange = 1
+url = "/dashboard"
+layout = "admin"
+description = "Overview on your system"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "mey_no_parent"
+hide_crumb = 1
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+    function onStart(){
+        $value                      =   50;
+        if($this->user->mobile){
+            $value                  +=  10;
+        }
+        if($this->user->street_addr){
+            $value                  +=  5;
+        }
+        if($this->user->city_id){
+            $value                  +=  5;
+        }
+        if($this->user->state_id){
+            $value                  +=  5;
+        }
+        if($this->user->country_id){
+            $value                  +=  5;
+        }
+        if($this->user->places){
+            $value                  +=  20;
+        }
+
+        if($value <= 60){
+            $status                 =   'danger';
+        }elseif($value <= 100){
+            $status                 =   'warning';
+        }elseif($value == 100){
+            $status                 =   'success';
+        }
+        $this['progress_value']     =   $value;
+        $this['progress_status']    =   $status;
+
+        $records                    =   \Spot\Shipment\Models\Order::orderBy('id', 'desc');
+
+        switch (Auth::getUser()->role_id) {
+            case 6:
+                $records    =   $records->whereIn('office_id', Auth::getUser()->manage->pluck('id')->toArray());
+                break;
+            case 5:
+                $records    =   $records->where(function($q){
+                    $q->where('sender_id', Auth::getUser()->id);
+                    $q->orWhere('receiver_id', Auth::getUser()->id);
+                });
+                break;
+            case 4:
+                if(Auth::getUser()->is_superuser){
+                    $records    =   $records->where(function($q){
+                        $q->where('office_id', Auth::getUser()->office);
+                        $q->orWhere(function($q){
+                            //Get all employees
+                            $q->where('assigned_id', Auth::getUser()->id);
+                        });
+                        $q->orWhere(function($q){
+                            $q->whereHas('manifest', function($q){
+                                $q->where(function($q) {
+                                    $q->where('driver_id', Auth::getUser()->id);
+                                });
+                                $q->orWhere(function($q){
+                                    $q->where('employee_id', Auth::getUser()->id);
+                                });
+                            });
+                        });
+                    });
+                }else{
+                    $records    =   $records->where(function($q){
+                        $q->where(function($q){
+                            //Get all employees
+                            $q->where('assigned_id', Auth::getUser()->id);
+                        });
+                        $q->orWhere(function($q){
+                            $q->whereHas('manifest', function($q){
+                                $q->where(function($q) {
+                                    $q->where('driver_id', Auth::getUser()->id);
+                                });
+                                $q->orWhere(function($q){
+                                    $q->where('employee_id', Auth::getUser()->id);
+                                });
+                            });
+                        });
+                    });
+                }
+                break;
+            case 3:
+                $employees  =   \RainLab\User\Models\User::whereHas('groups',function($q){$q->whereIn('user_group_id', Auth::getUser()->groups->pluck('id')->toArray());})->pluck('id')->toArray();
+                $records    =   $records->where(function($q) use($employees){
+                    $q->where(function($q) use($employees){
+                        //Get all employees
+                        $q->whereIn('assigned_id', $employees);
+                    });
+                    $q->orWhere(function($q) use($employees){
+                        $q->whereHas('manifest', function($q) use($employees){
+                            $q->where(function($q) use($employees){
+                                $q->whereIn('driver_id', $employees);
+                            });
+                            $q->orWhere(function($q) use($employees){
+                                $q->whereIn('employee_id', $employees);
+                            });
+                        });
+                    });
+                });
+                break;
+        }
+        /*
+        $records    =   \Spot\Shipment\Models\Order::orderBy('id', 'desc');
+
+        switch (Auth::getUser()->role_id) {
+            case 6:
+                $records    =   $records->where(function($q){
+                    $q->where(function($q){
+                        $q->where('type', 2);
+                        $q->whereIn('for_id', Auth::getUser()->manage->pluck('id')->toArray());
+                    });
+                    $q->orWhere(function($q){
+                        $q->whereHas('orders', function($q){
+                            $q->whereIn('office_id', Auth::getUser()->manage->pluck('id')->toArray());
+                        });
+                    });
+                    $q->orWhere(function($q){
+                        $q->whereHas('treasury', function($q){
+                            $q->whereIn('office_id', Auth::getUser()->manage->pluck('id')->toArray());
+                        });
+                    });
+                });
+                break;
+            case 5:
+                $records    =   $records->where(function($q){
+                    $q->whereHas('order', function($q){
+                        $q->where('sender_id', Auth::getUser()->id);
+                        $q->orWhere('receiver_id', Auth::getUser()->id);
+                    });
+                });
+                break;
+            case 4:
+                if(Auth::getUser()->is_superuser){
+                    $records    =   $records->where(function($q){
+                        $q->where(function($q){
+                            $q->where('type', 2);
+                            $q->where('for_id', Auth::getUser()->office);
+                        });
+                        $q->orWhere(function($q){
+                            $q->whereHas('order', function($q){
+                                $q->where('office_id', Auth::getUser()->office);
+                            });
+                        });
+                        $q->orWhere(function($q){
+                            $q->whereHas('treasury', function($q){
+                                $q->where('office_id', Auth::getUser()->office);
+                            });
+                        });
+                    });
+                }else{
+                    $records    =   $records->where(function($q){
+                        $q->where(function($q){
+                            $q->where('type', 1);
+                            $q->where('for_id', Auth::getUser()->id);
+                        });
+                        $q->orWhere(function($q){
+                            $q->whereHas('order', function($q){
+                                $q->where(function($q){
+                                    $q->where('assigned_id', Auth::getUser()->id);
+                                });
+                                $q->orWhere(function($q){
+                                    $q->whereHas('manifest', function($q){
+                                        $q->where(function($q) {
+                                            $q->where('driver_id', Auth::getUser()->id);
+                                        });
+                                        $q->orWhere(function($q){
+                                            $q->where('employee_id', Auth::getUser()->id);
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+                }
+                break;
+            case 3:
+                $employees  =   \RainLab\User\Models\User::whereHas('groups',function($q){$q->whereIn('user_group_id', Auth::getUser()->groups->pluck('id')->toArray());})->pluck('id')->toArray();
+                $records    =   $records->where(function($q) use($employees){
+                    $q->where(function($q) use($employees){
+                        $q->where('type', 1);
+                        $q->whereIn('for_id', $employees);
+                    });
+                    $q->orWhere(function($q) use($employees){
+                        $q->whereHas('order', function($q) use($employees){
+                            $q->where(function($q) use($employees){
+                                $q->whereIn('assigned_id', $employees);
+                            });
+                            $q->orWhere(function($q) use($employees){
+                                $q->whereHas('manifest', function($q) use($employees){
+                                    $q->where(function($q) use($employees){
+                                        $q->whereIn('driver_id', $employees);
+                                    });
+                                    $q->orWhere(function($q) use($employees){
+                                        $q->whereIn('employee_id', $employees);
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+                break;
+        }
+        */
+        //0 = Pending | 1 = Approved | 2 = Refused | 3 = Delivered to driver | 4 = Delivered | 5 = Return request | 6 = Delivery of discards to the driver | 7 = Supply in stock | 8 = Returned | 9 = received
+
+        $new                        =   $records->where('requested',0)->count();
+        $approved                   =   $records->where('requested',1)->count();
+        $stocked                    =   $records->where('requested',7)->count();
+        $delivered                  =   $records->whereIn('requested',[4,5,6,7,8,10,11,12])->count();
+        $saved                      =   $records->where('requested',100)->count();
+
+        $this['new']                =   $new;
+        $this['approved']           =   $approved;
+        $this['stocked']            =   $stocked;
+        $this['delivered']          =   $delivered;
+        $this['saved']              =   $saved;
+    }
+    function onDelete()
+    {
+        $data = post();
+        if(!Auth::getUser()->hasUserPermission(["order"],'d')) {
+            return Response::json(['error' => $this['theme_lang']['not_allowed']], 401);
+        }
+
+        if(null !== post('id')){
+            if(is_array(post('id'))){
+                foreach(post('id') as $id){
+                    $item = \Spot\Shipment\Models\Order::where('id',$id)->first();
+
+                    $activity                   = new \Spot\Shipment\Models\Activity;
+                    $activity->user_id          = Auth::getUser()->id;
+                    $activity->order_id         = $item->id;
+                    $activity->description      = 'deleted';
+                    $activity->created_at       = \Carbon\Carbon::now();
+                    $activity->updated_at       = \Carbon\Carbon::now();
+                    $activity->save();
+
+                    $item->payments->each->delete();
+                    $item->activities->each->delete();
+                    $item->tasks->each->delete();
+                    $item->items->each->delete();
+                    $item->delete();
+                }
+            }else{
+                $item = \Spot\Shipment\Models\Order::where('id',$data['id'])->first();
+
+                $activity                   = new \Spot\Shipment\Models\Activity;
+                $activity->user_id          = Auth::getUser()->id;
+                $activity->order_id         = $item->id;
+                $activity->description      = 'deleted';
+                $activity->created_at       = \Carbon\Carbon::now();
+                $activity->updated_at       = \Carbon\Carbon::now();
+                $activity->save();
+
+                $item->payments->each->delete();
+                $item->activities->each->delete();
+                $item->tasks->each->delete();
+                $item->items->each->delete();
+                $item->delete();
+            }
+            return Redirect::back();
+        }
+    }
+?>
+==
+<!--Begin::Section-->
+<div class="row">
+    <div class="col-xl-12">
+        <!--begin:: Widgets/Applications/User/Profile3-->
+        <div class="kt-portlet kt-portlet--height-fluid">
+            <div class="kt-portlet__body">
+                <div class="kt-widget kt-widget--user-profile-3">
+                    <div class="kt-widget__top">
+                        {% if user.avatar %}
+                            <div class="kt-widget__media">
+                                <img src="{{user.avatar.thumb(100, 100,'crop')}}" alt="image">
+                            </div>
+                       {% else %}
+                            <div class="kt-widget__pic kt-widget__pic--brand kt-font-boldest kt-font-light">
+                                {{user.name|upper|slice(0,2)}}
+                            </div>
+                       {% endif %}
+                        <div class="kt-widget__content">
+                            <div class="kt-widget__head">
+                                <a href="javascript:;" class="kt-widget__username">
+                                    {{user.name|capitalize}}
+                                </a>
+
+                                <div class="kt-widget__action">
+                                    <a href="{{'dashboard/profile'|page}}" class="btn btn-brand btn-sm btn-upper">{{'Edit'|__}}</a>
+                                </div>
+                            </div>
+
+                            <div class="kt-widget__subhead">
+                                {% if user.mobile %}
+                                    <a href="javascript:;"><i class="flaticon-alarm-1"></i>{{user.mobile}}</a>
+                                {% elseif user.email %}
+                                    <a href="javascript:;"><i class="flaticon2-new-email"></i>{{user.email}}</a>
+                                {% else %}
+                                    <a href="javascript:;"><i class="flaticon-user-settings"></i>{{user.username}}</a>
+                                {% endif %}
+                                <a href="javascript:;"><i class="flaticon2-calendar-3"></i>{{user.role.name}} </a>
+                                {% if user.branch %}
+                                    <a href="javascript:;"><i class="flaticon2-placeholder"></i>{{user.branch.name}}</a>
+                                {% endif %}
+                            </div>
+
+                            <div class="kt-widget__info">
+                                <div class="kt-widget__desc">
+                                    {% if user.role_id == 5 %}
+                                        {% if user.addresses is not empty %}
+                                        {% set address = user.addresses.where('default', 1).first %}
+                                        {{address.street}}, {{address.thecity.name}} {{address.zipcode}}
+                                        <br> {{address.thestate.name}}, {{address.thecountry.name}}
+                                        {% endif %}
+                                    {% else %}
+                                        {% if user.street_addr %}
+                                            {{user.street_addr}}, {{user.city.name}} {{user.zip}}
+                                            <br> {{user.state.name}}, {{user.country.name}}
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                                {% if user.role_id != 1 %}
+                                    <div class="kt-widget__progress">
+                                        <div class="kt-widget__text">
+                                            {{'Progress'|__}}
+                                        </div>
+                                        <div class="progress" style="height: 5px;width: 100%;">
+                                            <div class="progress-bar kt-bg-{{progress_status}}" role="progressbar" style="width: {{progress_value}}%;" aria-valuenow="{{progress_value}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <div class="kt-widget__stats">
+                                            {{progress_value}}%
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="kt-widget__bottom">
+                        <a href="{{url('dashboard/shipments/approved')}}" class="kt-widget__item">
+                            <div class="kt-widget__icon">
+                                <i class="flaticon-map-location"></i>
+                            </div>
+                            <div class="kt-widget__details">
+                                <span class="kt-widget__title">{{approved}} {{'shipment'|__}}</span>
+                                <span class="kt-widget__value">{{'Approved List'|__}}</span>
+                            </div>
+                        </a>
+
+                        <a href="{{url('dashboard/shipments/delivered')}}" class="kt-widget__item">
+                            <div class="kt-widget__icon">
+                                <i class="flaticon-truck"></i>
+                            </div>
+                            <div class="kt-widget__details">
+                                <span class="kt-widget__title">{{stocked}} {{'shipment'|__}}</span>
+                                <span class="kt-widget__value">{{'In Stock List'|__}}</span>
+                            </div>
+                        </a>
+
+                        <a href="{{url('dashboard/shipments/delivered')}}" class="kt-widget__item">
+                            <div class="kt-widget__icon">
+                                <i class="flaticon-bag"></i>
+                            </div>
+                            <div class="kt-widget__details">
+                                <span class="kt-widget__title">{{delivered}} {{'shipment'|__}}</span>
+                                <span class="kt-widget__value">{{'Delivered List'|__}}</span>
+                            </div>
+                        </a>
+
+                        <div class="kt-widget__item">
+                            <div class="kt-widget__icon">
+                                <i class="flaticon-file-2"></i>
+                            </div>
+                            <div class="kt-widget__details">
+                                {% if user.role_id == 5 %}
+                                    <span class="kt-widget__title">{{saved}} {{'Saved Shipments'|__}}</span>
+                                    <a href="{{url('dashboard/shipments/saved')}}" class="kt-widget__value kt-font-brand">{{'View'|__}}</a>
+                                {% else %}
+                                    <span class="kt-widget__title">{{new}} {{'New Shipment Request'|__}}</span>
+                                    <a href="{{url('dashboard/shipments/requests')}}" class="kt-widget__value kt-font-brand">{{'View'|__}}</a>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--end:: Widgets/Applications/User/Profile3-->
+    </div>
+</div>
+<!--End::Section-->
+{% if user.role_id == 1 or user.role_id == 6 %}
+    <div class="row">
+        <div class="col-lg-4">
+            <!--begin:: Widgets/Latest Updates-->
+            <div class="kt-portlet kt-portlet--height-fluid " id="summary_container">
+            	<div class="kt-portlet__head">
+            		<div class="kt-portlet__head-label">
+            			<h3 class="kt-portlet__head-title">
+            				{{'Summary'|__}} <small>{{'Statistical summary'|__}}</small>
+            			</h3>
+            		</div>
+            		<!--
+                        <div class="kt-portlet__head-toolbar">
+                			<a href="javascript:;" class="btn btn-label-brand btn-bold btn-sm dropdown-toggle" data-toggle="dropdown">
+                				<i class="kt-nav__link-icon flaticon2-calendar-8"></i>
+                			</a>
+                			<div class="dropdown-menu dropdown-menu-right dropdown-menu-fit dropdown-menu-md">
+                                <ul class="kt-nav">
+                                    <li class="kt-nav__item">
+                                        <a href="javascript:;" class="kt-nav__link">
+                                            <i class="kt-nav__link-icon flaticon2-drop"></i>
+                                            <span class="kt-nav__link-text">{{'Last Month Summary'|__}}</span>
+                                        </a>
+                                    </li>
+                                    <li class="kt-nav__item">
+                                        <a href="javascript:;" class="kt-nav__link">
+                                            <i class="kt-nav__link-icon flaticon2-calendar-8"></i>
+                                            <span class="kt-nav__link-text">{{'Consolidated List'|__}}</span>
+                                        </a>
+                                    </li>
+                                    <li class="kt-nav__item">
+                                        <a href="javascript:;" class="kt-nav__link">
+                                            <i class="kt-nav__link-icon flaticon2-telegram-logo"></i>
+                                            <span class="kt-nav__link-text">{{'Delivered List'|__}}</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                		</div>
+                    -->
+            	</div>
+            	<!--full height portlet body-->
+            	<div class="kt-portlet__body kt-portlet__body--fluid kt-portlet__body--fit">
+            		<div class="kt-widget4 kt-widget4--sticky">
+            			<div class="kt-widget4__items kt-portlet__space-x kt-margin-t-15" id="summary">
+                            {% partial 'summarywidget' %}
+                        </div>
+            		</div>
+            	</div>
+            </div>
+            <!--end:: Widgets/Latest Updates-->
+        </div>
+        <div class="col-lg-8">
+    		<!--begin:: Widgets/Quick Stats-->
+            <div class="row row-full-height" id="charts">
+                {% partial 'chartswidget' %}
+            </div>
+            <!--end:: Widgets/Quick Stats-->
+        </div>
+    </div>
+{% endif %}
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="kt-portlet kt-portlet--height-fluid" id="listing_container">
+        	<div class="kt-portlet__head">
+        		<div class="kt-portlet__head-label">
+        			<h3 class="kt-portlet__head-title">
+        				{{'Latest shipments'|__}}
+        			</h3>
+        		</div>
+        	</div>
+        	<div class="kt-portlet__body">
+				<div class="kt-widget11">
+					<div class="table-responsive" id="listing">
+                        {% partial 'listingwidget' %}
+
+					</div>
+					<div class="kt-widget11__action kt-align-right">
+						<a href="{{url('dashboard/shipments/all')}}" class="btn btn-label-success btn-sm btn-bold">{{'View All Shipments'|__}}</a>
+					</div>
+				</div>
+        	</div>
+        </div>
+    </div>
+</div>
+
+
+{% put scripts %}
+<script>
+"use strict";
+
+// Class definition
+var KTDashboard = function() {
+
+    // Daterangepicker Init
+    var daterangepickerInit = function() {
+        if ($('#kt_dashboard_daterangepicker').length == 0) {
+            return;
+        }
+
+        moment.locale('{{currentLang}}');
+        moment.updateLocale('{{currentLang}}', {
+            months : [
+                "{{'January'|__}}", "{{'February'|__}}", "{{'March'|__}}", "{{'April'|__}}", "{{'May'|__}}", "{{'June'|__}}", "{{'July'|__}}",
+                "{{'August'|__}}", "{{'September'|__}}", "{{'October'|__}}", "{{'November'|__}}", "{{'December'|__}}"
+            ]
+        });
+        var picker = $('#kt_dashboard_daterangepicker');
+        var start = moment().utcOffset(KTAppOptions.timezone_offset).startOf('month');
+        var end = moment().utcOffset(KTAppOptions.timezone_offset).endOf('month');
+
+        function cb(start, end, label) {
+            var title = '';
+            var range = '';
+
+            if ((end - start) < 100 || label == 'Today') {
+                title = '{{"Today"|__}}:';
+                range = start.format(KTAppOptions.daterangeformat);
+            } else if (label == '{{"Yesterday"|__}}') {
+                title = '{{"Yesterday"|__}}:';
+                range = start.format(KTAppOptions.daterangeformat);
+            } else {
+                range = start.format(KTAppOptions.daterangeformat) + ' - ' + end.format(KTAppOptions.daterangeformat);
+            }
+
+            $('#kt_dashboard_daterangepicker_date').html(range);
+            $('#kt_dashboard_daterangepicker_title').html(title);
+
+            //List All Widgets in dashboard
+            KTApp.block('#summary_container', {});
+            KTApp.block('#charts', {});
+            KTApp.block('#listing_container', {});
+            $.request('onRefreshTime', {
+                data: {start: start.format(KTAppOptions.daterangeformat), end: end.format(KTAppOptions.daterangeformat)},
+                update: { summarywidget: '#summary',chartswidget: '#charts', listingwidget: '#listing' },
+                complete: function(e) {
+                    Chart.helpers.each(Chart.instances, function (instance) {
+                         instance.destroy();
+                    });
+
+                    {% if user.role_id == 1 or user.role_id == 6 %}
+                        quickStats();
+                    {% endif %}
+                    listing();
+                    KTApp.unblock('#summary_container');
+                    KTApp.unblock('#listing_container');
+                }
+            });
+        }
+
+        picker.daterangepicker({
+            direction: KTUtil.isRTL(),
+            locale: {
+                "format": KTAppOptions.daterangeformat,
+                "separator": " - ",
+                "applyLabel": "{{'Apply'|__}}",
+                "cancelLabel": "{{'Cancel'|__}}",
+                "fromLabel": "{{'From'|__}}",
+                "toLabel": "{{'To'|__}}",
+                "customRangeLabel": "{{'Custom'|__}}",
+                "daysOfWeek": [
+                    "{{'Su'|__}}",
+                    "{{'Mo'|__}}",
+                    "{{'Tu'|__}}",
+                    "{{'We'|__}}",
+                    "{{'Th'|__}}",
+                    "{{'Fr'|__}}",
+                    "{{'Sa'|__}}"
+                ],
+                "monthNames": [
+                    "{{'January'|__}}",
+                    "{{'February'|__}}",
+                    "{{'March'|__}}",
+                    "{{'April'|__}}",
+                    "{{'May'|__}}",
+                    "{{'June'|__}}",
+                    "{{'July'|__}}",
+                    "{{'August'|__}}",
+                    "{{'September'|__}}",
+                    "{{'October'|__}}",
+                    "{{'November'|__}}",
+                    "{{'December'|__}}"
+                ],
+                "monthsShort": [
+                    "{{'January'|__}}",
+                    "{{'February'|__}}",
+                    "{{'March'|__}}",
+                    "{{'April'|__}}",
+                    "{{'May'|__}}",
+                    "{{'June'|__}}",
+                    "{{'July'|__}}",
+                    "{{'August'|__}}",
+                    "{{'September'|__}}",
+                    "{{'October'|__}}",
+                    "{{'November'|__}}",
+                    "{{'December'|__}}"
+                ],
+                "firstDay": 1
+            },
+            startDate: start,
+            endDate: end,
+            opens: 'left',
+            ranges: {
+                '{{"Today"|__}}': [moment().utcOffset(KTAppOptions.timezone_offset), moment().utcOffset(KTAppOptions.timezone_offset)],
+                '{{"Yesterday"|__}}': [moment().utcOffset(KTAppOptions.timezone_offset).subtract(1, 'days'), moment().utcOffset(KTAppOptions.timezone_offset).subtract(1, 'days')],
+                '{{"Last 7 Days"|__}}': [moment().utcOffset(KTAppOptions.timezone_offset).subtract(6, 'days'), moment().utcOffset(KTAppOptions.timezone_offset)],
+                '{{"Last 30 Days"|__}}': [moment().utcOffset(KTAppOptions.timezone_offset).subtract(29, 'days'), moment().utcOffset(KTAppOptions.timezone_offset)],
+                '{{"This Month"|__}}': [moment().utcOffset(KTAppOptions.timezone_offset).startOf('month'), moment().utcOffset(KTAppOptions.timezone_offset).endOf('month')],
+                '{{"Last Month"|__}}': [moment().utcOffset(KTAppOptions.timezone_offset).subtract(1, 'month').startOf('month'), moment().utcOffset(KTAppOptions.timezone_offset).subtract(1, 'month').endOf('month')]
+            }
+        }, cb);
+
+        cb(start, end, '');
+    }
+
+    return {
+        // Init demos
+        init: function() {
+            daterangepickerInit();
+            var loading = new KTDialog({'type': 'loader', 'placement': 'top center', 'message': KTAppOptions.text.loading});
+            loading.show();
+
+            setTimeout(function() {
+                loading.hide();
+            }, 3000);
+        }
+    };
+}();
+
+function _initSparklineChart(src, data, color, border) {
+    if (src.length == 0) {
+        return;
+    }
+
+    var config = {
+        type: 'line',
+        data: {
+            labels: ["{{'January'|__}}", "{{'February'|__}}", "{{'March'|__}}", "{{'April'|__}}", "{{'May'|__}}", "{{'June'|__}}", "{{'July'|__}}", "{{'August'|__}}", "{{'September'|__}}", "{{'October'|__}}"],
+            datasets: [{
+                label: "",
+                borderColor: color,
+                borderWidth: border,
+
+                pointHoverRadius: 4,
+                pointHoverBorderWidth: 12,
+                pointBackgroundColor: Chart.helpers.color('#000000').alpha(0).rgbString(),
+                pointBorderColor: Chart.helpers.color('#000000').alpha(0).rgbString(),
+                pointHoverBackgroundColor: KTApp.getStateColor('danger'),
+                pointHoverBorderColor: Chart.helpers.color('#000000').alpha(0.1).rgbString(),
+                fill: false,
+                data: data,
+            }]
+        },
+        options: {
+            title: {
+                display: false,
+            },
+            tooltips: {
+                enabled: false,
+                intersect: false,
+                mode: 'nearest',
+                xPadding: 10,
+                yPadding: 10,
+                caretPadding: 10
+            },
+            legend: {
+                display: false,
+                labels: {
+                    usePointStyle: false
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: true,
+            hover: {
+                mode: 'index'
+            },
+            scales: {
+                xAxes: [{
+                    display: false,
+                    gridLines: false,
+                    scaleLabel: {
+                        display: true,
+                        labelString: '{{"Month"|__}}'
+                    }
+                }],
+                yAxes: [{
+                    display: false,
+                    gridLines: false,
+                    scaleLabel: {
+                        display: true,
+                        labelString: '{{"Value"|__}}'
+                    },
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            },
+
+            elements: {
+                point: {
+                    radius: 4,
+                    borderWidth: 12
+                },
+            },
+
+            layout: {
+                padding: {
+                    left: 0,
+                    right: 10,
+                    top: 5,
+                    bottom: 0
+                }
+            }
+        }
+    };
+
+    new Chart(src, config);
+}
+// Class initialization on page load
+jQuery(document).ready(function() {
+    KTDashboard.init();
+});
+</script>
+{% endput %}

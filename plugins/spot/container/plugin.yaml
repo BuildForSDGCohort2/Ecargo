@@ -1,0 +1,15 @@
+plugin:
+    name: 'spot.container::lang.plugin.name'
+    description: 'spot.container::lang.plugin.description'
+    author: Spotlayer
+    icon: oc-icon-cubes
+    homepage: ''
+navigation:
+    main-menu-item:
+        label: Customer
+        url: spot/container/customers
+        icon: icon-bars
+    main-menu-item2:
+        label: Order
+        url: spot/container/orders
+        icon: icon-cart-plus

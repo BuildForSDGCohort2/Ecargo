@@ -1,0 +1,765 @@
+title = "Manifest View"
+url = "/dashboard/shipments/manifest/:id/view"
+layout = "admin"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/shipments"
+menu_breadcrumb = "order"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+function onStart(){
+    if(!Auth::getUser()->hasUserPermission(["order"],'r')) {
+        \Flash::error($this['theme_lang']['not_allowed']);
+    }
+
+    $this['order']      =   $order  =   \Spot\Shipment\Models\Manifest::find($this->param('id'));
+    if(!$order){
+        \Flash::error($this['theme_lang']['404']);
+        return Redirect::to('dashboard/shipments');
+    }
+    $this['edit']       =   true;
+    if($order->has('orders')->whereIn('requested', [3,4,5,6,8,9])){
+        $this['edit']   =   false;
+    }
+}
+function onEnd(){
+    $this->page->title = $this['theme_lang']['manifest_view'].' #'.$this['order']->id;
+}
+function onDelete()
+{
+    if(!Auth::getUser()->hasUserPermission(["order"],'d')) {
+        return Response::json(['error' => $this['theme_lang']['not_allowed']], 401);
+    }
+
+    $item = \Spot\Shipment\Models\Manifest::where('id',$this->param('id'))->delete();
+    return Redirect::to($this->page->child_of);
+}
+?>
+==
+
+<div class="kt-portlet ">
+    <div class="kt-portlet__body">
+        <div class="kt-widget kt-widget--user-profile-3">
+            <div class="kt-widget__top">
+                <div class="kt-widget__content">
+                    <div class="kt-widget__head">
+                        <a href="javascript:;" class="kt-widget__username">
+                            #{{order.id}}
+                        </a>
+                        <div class="kt-widget__action">
+            			<a href="{{'dashboard/manifest-print'|page({ id: order.id })}}" target="_blank" class="btn btn-label-info btn-bold btn-sm" >
+            				<i class="flaticon2-print"></i> {{'Print'|__}}
+            			</a>
+                        {% if edit %}
+                			<a href="{{'dashboard/update-manifest'|page({ id: order.id })}}" class="btn btn-label-success btn-bold btn-sm" >
+                				{{'Edit'|__}}
+                			</a>
+                			<a href="javascript:;" class="btn btn-label-danger btn-bold btn-sm" id="delet" >
+                				{{'Delete'|__}}
+                			</a>
+                        {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="kt-widget__info">
+
+                        <div class="kt-widget__stats d-flex align-items-center flex-fill">
+                            <div class="kt-widget__item">
+                                <span class="kt-widget__date">
+                                    {{'Responsiable'|__}}
+                                </span>
+                                <div class="kt-widget__label">
+                                    {% if order.car_id != null %}
+                                        <span class="btn btn-label-brand btn-sm btn-bold btn-upper">{{order.car.name}}</span>
+                                        <span class="btn btn-label-brand btn-sm btn-bold btn-upper">{{order.driver.name}}</span>
+                                    {% else %}
+                                        <span class="btn btn-label-brand btn-sm btn-bold btn-upper">{{order.employee.name}}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="kt-widget__item">
+                                <span class="kt-widget__date">
+                                    {{'Created Date'|__}}
+                                </span>
+                                <div class="kt-widget__label">
+                                    <span class="btn btn-label-dark btn-sm btn-bold btn-upper">{{order.date|date(settings.dateformat)}}</span>
+                                </div>
+                            </div>
+                            <div class="kt-widget__item">
+                                <span class="kt-widget__date">
+                                    {{'Last Updated Date'|__}}
+                                </span>
+                                <div class="kt-widget__label">
+                                    <span class="btn btn-label-dark btn-sm btn-bold btn-upper">{{order.updated_at|date(settings.dateformat)}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--end:: Portlet-->
+
+
+<div class="row">
+    <div class="col-xl-12">
+        <!--begin:: Widgets/Order Statistics-->
+        <div class="kt-portlet kt-portlet--height-fluid">
+        	<div class="kt-portlet__head">
+        		<div class="kt-portlet__head-label">
+        			<h3 class="kt-portlet__head-title">
+        				{{'Orders'|__}}
+        			</h3>
+        		</div>
+        	</div>
+        	<div class="kt-portlet__body kt-portlet__body--fluid">
+        		<div class="kt-widget12">
+        			<div class="kt-widget12__content">
+                        <div class="kt-datatable"></div>
+                    </div>
+                </div>
+        	</div>
+        </div>
+        <!--end:: Widgets/Order Statistics-->
+    </div>
+</div>
+<div class="row">
+    <div class="col-xl-12">
+        <!--begin:: Widgets/Last Updates-->
+        <div class="kt-portlet kt-portlet--height-fluid">
+            <div class="kt-portlet__head">
+                <div class="kt-portlet__head-label">
+                    <h3 class="kt-portlet__head-title">{{'Latest Updates'|__}}</h3>
+                </div>
+            </div>
+            <div class="kt-portlet__body">
+                <div class="kt-scroll" data-scroll="true" style="height: 300px">
+                    {% for activity in order.activities %}
+                        <!--begin::widget 12-->
+                        <div class="kt-widget4">
+                            <div class="kt-widget4__item">
+                                <span class="kt-widget4__icon"><i class="flaticon-pie-chart-1 kt-font-info"></i></span>
+                                <div class="kt-widget4__info">
+        							<a href="javascript:;" class="kt-widget4__username">
+                                        {% if activity.other %}
+                                            {% set text = 'activity_'~activity.description %}
+                                            {{text|__}}: {{activity.other}}
+                                        {% else %}
+                                            {% set text = 'activity_'~activity.description %}
+            								{{text|__}}
+                                        {% endif %}
+        							</a>
+        							<p class="kt-widget4__text">
+        								{{activity.created_at|date(settings.dateformat)}} {{activity.created_at|date('h:i')}} {{activity.created_at|date('a')|__}}
+        							</p>
+        						</div>
+                                <span class="kt-widget4__number kt-font-info">{{activity.user.name}}</span>
+                            </div>
+                        </div>
+                        <!--end::Widget 12-->
+                    {% else %}
+                        <div class="kt-notification">
+                            <div class="kt-notification__item">
+                                <div class="kt-notification__item-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1" class="kt-svg-icon kt-svg-icon--brand">
+                                        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                            <rect x="0" y="0" width="24" height="24"/>
+                                            <path d="M5,3 L6,3 C6.55228475,3 7,3.44771525 7,4 L7,20 C7,20.5522847 6.55228475,21 6,21 L5,21 C4.44771525,21 4,20.5522847 4,20 L4,4 C4,3.44771525 4.44771525,3 5,3 Z M10,3 L11,3 C11.5522847,3 12,3.44771525 12,4 L12,20 C12,20.5522847 11.5522847,21 11,21 L10,21 C9.44771525,21 9,20.5522847 9,20 L9,4 C9,3.44771525 9.44771525,3 10,3 Z" fill="#000000"/>
+                                            <rect fill="#000000" opacity="0.3" transform="translate(17.825568, 11.945519) rotate(-19.000000) translate(-17.825568, -11.945519) " x="16.3255682" y="2.94551858" width="3" height="18" rx="1"/>
+                                        </g>
+                                    </svg>
+                                </div>
+                                <div class="kt-notification__item-details">
+                                    <div class="kt-notification__item-title">
+                                        {{'No activities found'|__}}.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <!--end:: Widgets/Last Updates-->
+    </div>
+</div>
+
+
+{% put styles %}
+    <style>
+        .table-bordered tr td:first-child {
+            width: 200px;
+            font-weight: bold;
+        }
+        .map_canvas {
+          height: 350px;
+        }
+        .filter-option-inner br {
+            display: none;
+        }
+        .select2 {
+            width: 100% !important;
+        }
+		.select2-selection {
+			min-height: 36px !important;
+		}
+        .pac-container {
+            z-index: 9999;
+        }
+    </style>
+{% endput %}
+{% put scripts %}
+<script src="{{ 'assets/admin/vendors/custom/geocomplete/jquery.geocomplete.js'|theme }}" type="text/javascript"></script>
+<script src="//maps.googleapis.com/maps/api/js?libraries=places&key={{settings.google.map.key}}"></script>
+<script src="./admin/vendors/custom/gmaps/gmaps.js" type="text/javascript"></script>
+<script type="text/javascript">
+
+"use strict";
+var KTAppUserListDatatable = function () {
+    // variables
+    var datatable;
+
+    // init
+    var init = function (type) {
+        var columns = [
+            {
+                field: "created_at",
+                title: "{{'Created On'|__}}",
+                autoHide: true,
+                sortable: false,
+                width: 100,
+				template: function(data, i) {
+					var output = '\
+                        <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                            <div class="kt-user-card-v2__details">\
+                                <a href="{{url('dashboard/shipments')}}/'+data.id+'/view" class="kt-user-card-v2__name">' + data.created_at_date + '</a>\
+                                <span class="kt-user-card-v2__email">' + data.created_at_time + '</span>\
+                            </div>\
+                        </div>';
+					return output;
+				}
+            },
+            {
+                field: "number",
+                title: "{{'id'|__}}",
+                autoHide: false,
+                sortable: false,
+                width: 80,
+                template: function(row) {
+                    return '<a href="{{url('dashboard/shipments')}}/'+row.id+'/view">{{settings.tracking.prefix_order}}'+row.shipping_number+'</a>';
+                }
+            },
+            {
+                field: "payment",
+                title: "{{'Payment'|__}}",
+                autoHide: true,
+                sortable: false,
+                width: 100,
+                template: function(row) {
+
+                    var status = {
+                        1: {
+                            'title': '{{"Postpaid"|__}}',
+                            'class': 'success'
+                        },
+                        2: {
+                            'title': '{{"Prepaid"|__}}',
+                            'class': 'info'
+                        },
+                    };
+                    return '<span class="kt-badge kt-badge--' + status[row.payment].class + ' kt-badge--dot"></span>&nbsp;<span class="kt-font-bold kt-font-' + status[row.payment].class + '">' + status[row.payment].title + '</span>';
+                }
+            },
+            {
+                field: "sender",
+                title: "{{'Sender Details'|__}}",
+                autoHide: true,
+                sortable: false,
+                width: 150,
+				template: function(data, i) {
+					var output = '\
+                        <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                            <div class="kt-user-card-v2__details">\
+                                <a href="{% if user.hasUserPermission('client', 'r') %}{{url('dashboard/clients')}}/'+data.sender.id+'/view{% else %}javascript:;{% endif %}" class="kt-user-card-v2__name">' + data.sender.name + '</a>\
+                                <span class="kt-user-card-v2__email">' + data.shipping_from_area + '</span>\
+                            </div>\
+                        </div>';
+					return output;
+				}
+            },
+            {
+                field: "area",
+                title: "{{'Area'|__}}",
+                autoHide: true,
+                sortable: false,
+                width: 70,
+				template: function(data, i) {
+					var output = '\
+                        <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                            <div class="kt-user-card-v2__details">\
+                                <a href="javascript:;" class="kt-user-card-v2__name" style="font-size:28px;font-weight:bold">' + data.shipping_area + '</a>\
+                            </div>\
+                        </div>';
+					return output;
+				}
+            },
+            {
+                field: "office",
+                title: "{{'Office'|__}}",
+                autoHide: true,
+                sortable: false,
+                width: 100,
+				template: function(data, i) {
+                    return '<a href="javascript:;">'+data.office+'</a>';
+				}
+            },
+            {
+                field: "status",
+                title: "{{'Status'|__}}",
+                autoHide: false,
+                sortable: false,
+                width: 100,
+                template: function(row) {
+                    return '<span class="btn btn-bold btn-sm btn-label-' + row.status.color + '">' + row.status.name + '</span>';
+                }
+            },
+            {
+                field: "shipping",
+                title: "{{'Shipping Details'|__}}",
+                autoHide: false,
+                sortable: false,
+                width: 'auto',
+				template: function(data, i) {
+					var output = '\
+                        <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                            <div class="kt-user-card-v2__details">';
+                                 +'<a href="javascript:;" class="kt-user-card-v2__name">{{"From"|__}}: ' + data.shipping_from+ '</a>';
+                                if(data.shipping_from != null && typeof data.shipping_from !== 'undefined'){
+                                     +'<a href="javascript:;" class="kt-user-card-v2__name">{{"From"|__}}: ' + data.shipping_from+ '</a>';
+                                 }
+                                if(data.shipping_to != null && typeof data.shipping_to.thestate !== 'undefined'){
+                                     +'<a href="javascript:;" class="kt-user-card-v2__name">' + data.shipping_to.thestate.name + '</a>';
+                                 }
+                             +'</div>\
+                        </div>';
+					return output;
+				}
+            },
+        ]
+
+        datatable = $('.kt-datatable').KTDatatable({
+            translate: {
+                records: {
+                    processing: '{{"Please wait"|__}}...',
+                    noRecords: '{{"No records found"|__}}'
+                },
+                toolbar: {
+                    pagination: {
+                        items: {
+                            default: {
+                                first: '{{"First"|__}}',
+                                prev: '{{"Previous"|__}}',
+                                next: '{{"Next"|__}}',
+                                last: '{{"Last"|__}}',
+                                more: '{{"More pages"|__}}',
+                                input: '{{"Page number"|__}}',
+                                select: '{{"Select page size"|__}}'
+                            },
+
+                            info: "{{"Displaying"|__}} {{ '{{' }}start{{ '}}' }} - {{ '{{' }}end{{ '}}' }} {{"of"|__}} {{total}} {{"records"|__}}"
+                        }
+                    }
+                }
+            },
+
+            // layout definition
+            layout: {
+                scroll: true, // enable/disable datatable scroll both horizontal and vertical when needed.
+                footer: false, // display/hide footer
+            },
+
+            // column sorting
+            sortable: true,
+
+            pagination: true,
+
+            search: {
+                input: $('#generalSearch'),
+                delay: 400,
+            },
+            data: {
+                type: 'remote',
+                source: {
+                    read: {
+                        url: '{{url("api/shipments")}}/manifestorders',
+                        params: {
+                          id: {{this.param.id}}
+                        }
+                    },
+                },
+                pageSize: 10, // display 20 records per page
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true,
+            },
+            // columns definition
+            columns: columns
+        });
+    };
+
+    // search
+    var search = function () {
+        $('#filter_form select,#filter_form input').each(function(){
+            $(this).on('change', function () {
+                datatable.search($(this).val().toLowerCase(), $(this).attr('name'));
+            });
+        });
+        $('#reset').on('click', function () {
+            datatable.destroy();
+            $('#generalSearch').val('');
+            $('#filter_form select,#filter_form input').each(function(){
+                $(this).val('');
+            });
+            $('#filter_form select').each(function(){
+                $(this).selectpicker("refresh");
+            });
+            init();
+        });
+    };
+
+    // selection
+    var selection = function () {
+        // init form controls
+        //$('#kt_form_status, #kt_form_type').selectpicker();
+
+        // event handler on check and uncheck on records
+        datatable.on('kt-datatable--on-check kt-datatable--on-uncheck kt-datatable--on-layout-updated', function (e) {
+            var checkedNodes = datatable.rows('.kt-datatable__row--active').nodes(); // get selected records
+            var count = checkedNodes.length; // selected records count
+
+            $('#kt_subheader_group_selected_rows').html(count);
+
+            if (count > 0) {
+                $('#kt_subheader_search').addClass('kt-hidden');
+                $('#kt_subheader_group_actions').removeClass('kt-hidden');
+            } else {
+                $('#kt_subheader_search').removeClass('kt-hidden');
+                $('#kt_subheader_group_actions').addClass('kt-hidden');
+            }
+        });
+    }
+
+    // selected records status update
+    var selectedStatusUpdate = function () {
+        $('#kt_subheader_group_actions_status_change').on('click', "[data-toggle='status-change']", function () {
+            var status = $(this).find(".kt-nav__link-text").html();
+
+            // fetch selected IDs
+            var ids = datatable.rows('.kt-datatable__row--active').nodes().find('.kt-checkbox--single > [type="checkbox"]').map(function (i, chk) {
+                return $(chk).val();
+            });
+
+            if (ids.length > 0) {
+                // learn more: //sweetalert2.github.io/
+                swal.fire({
+                    buttonsStyling: false,
+
+                    html: "{{"Are you sure to update"|__}} " + ids.length + " {{"selected records status to"|__}} " + status + " ?",
+                    type: "info",
+
+                    confirmButtonText: "{{"Yes, update"|__}}!",
+                    confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+
+                    showCancelButton: true,
+                    cancelButtonText: "{{"No, cancel"|__}}",
+                    cancelButtonClass: "btn btn-sm btn-bold btn-default"
+                }).then(function (result) {
+                    if (result.value) {
+                        swal.fire({
+                            title: '{{"Deleted"|__}}!',
+                            text: '{{"Your selected records statuses have been updated"|__}}!',
+                            type: 'success',
+                            buttonsStyling: false,
+                            confirmButtonText: "{{"OK"|__}}",
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        })
+                        // result.dismiss can be 'cancel', 'overlay',
+                        // 'close', and 'timer'
+                    } else if (result.dismiss === 'cancel') {
+                        swal.fire({
+                            title: '{{"Cancelled"|__}}',
+                            text: '{{"You selected records statuses have not been updated"|__}}!',
+                            type: 'error',
+                            buttonsStyling: false,
+                            confirmButtonText: "{{"OK"|__}}",
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    // selected records delete
+    var selectedDelete = function () {
+        $('#kt_subheader_group_actions_delete_all').on('click', function () {
+            // fetch selected IDs
+            var selected = [];
+            var type    = $('.delete_record').attr('data-type');
+            var ids = datatable.rows('.kt-datatable__row--active').nodes().find('.kt-checkbox--single > [type="checkbox"]').map(function (i, chk) {
+                selected[$(chk).val()] = $(chk).val();
+                return $(chk).val();
+            });
+
+            if (ids.length > 0) {
+                // learn more: //sweetalert2.github.io/
+                swal.fire({
+                    buttonsStyling: false,
+
+                    text: "{{'Are you sure to delete'|__}} " + ids.length + " {{'selected records ?'|__}}",
+                    type: "error",
+
+                    confirmButtonText: "{{'Yes, delete!'|__}}",
+                    confirmButtonClass: "btn btn-sm btn-bold btn-danger",
+
+                    showCancelButton: true,
+                    cancelButtonText: '{{"No, cancel"|__}}',
+                    cancelButtonClass: "btn btn-sm btn-bold btn-brand"
+                }).then(function (result) {
+                    if (result.value) {
+                        $.request('onDelete', {
+                            data: {id: selected,type: type},
+                            success: function(data) {
+                                swal.fire({
+                                    title: '{{"Deleted!"|__}}',
+                                    text: '{{"Your selected records have been deleted! :("|__}}',
+                                    type: 'success',
+                                    buttonsStyling: false,
+                                    confirmButtonText: '{{"OK"|__}}',
+                                    confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                                });
+                                datatable.reload();
+                            }
+                        });
+                        // result.dismiss can be 'cancel', 'overlay',
+                        // 'close', and 'timer'
+                    } else if (result.dismiss === 'cancel') {
+                        swal.fire({
+                            title: '{{"Cancelled"|__}}',
+                            text: '{{"You selected records have not been deleted! :)"|__}}',
+                            type: 'error',
+                            buttonsStyling: false,
+                            confirmButtonText: '{{"OK"|__}}',
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        });
+                    }
+                });
+            }
+        });
+
+
+        $('body').on('click','.delete_record',function(){
+            var id      = $(this).attr('rel');
+            var type    = $(this).attr('data-type');
+            swal.fire({
+                buttonsStyling: false,
+
+                text: "{{'Are you sure to delete this item ?'|__}}",
+                type: "danger",
+
+                confirmButtonText: "{{'Yes, delete!'|__}}",
+                confirmButtonClass: "btn btn-sm btn-bold btn-danger",
+
+                showCancelButton: true,
+                cancelButtonText: '{{"No, cancel"|__}}',
+                cancelButtonClass: "btn btn-sm btn-bold btn-brand"
+            }).then(function (result) {
+                if (result.value) {
+                    $.request('onDelete', {
+                        data: {id: id, type: type},
+                        success: function(data) {
+
+                            swal.fire({
+                                title: '{{"Deleted!"|__}}',
+                                text: '{{"Your selected record has been deleted! :("|__}}',
+                                type: 'success',
+                                buttonsStyling: false,
+                                confirmButtonText: '{{"OK"|__}}',
+                                confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                            });
+                            datatable.reload();
+                        }
+                    });
+                    // result.dismiss can be 'cancel', 'overlay',
+                    // 'close', and 'timer'
+                } else if (result.dismiss === 'cancel') {
+                    swal.fire({
+                        title: '{{"Cancelled"|__}}',
+                        text: '{{"You selected record has not been deleted! :)"|__}}',
+                        type: 'error',
+                        buttonsStyling: false,
+                        confirmButtonText: '{{"OK"|__}}',
+                        confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                    });
+                }
+            });
+        });
+
+
+        $('body').on('click', '#createManifest', function (e) {
+            e.preventDefault();
+
+            // fetch selected IDs
+            var selected = [];
+            var ids = datatable.rows('.kt-datatable__row--active').nodes().find('.kt-checkbox--single > [type="checkbox"]').map(function (i, chk) {
+                selected[$(chk).val()] = $(chk).val();
+                return $(chk).val();
+            });
+            if (ids.length > 0) {
+                // learn more: //sweetalert2.github.io/
+                swal.fire({
+                    buttonsStyling: false,
+
+                    text: "{{'Are you sure you want to create new manifest with'|__}} " + ids.length + " {{'selected records ?'|__}}",
+                    type: "error",
+
+                    confirmButtonText: "{{'Yes!'|__}}",
+                    confirmButtonClass: "btn btn-sm btn-bold btn-danger",
+
+                    showCancelButton: true,
+                    cancelButtonText: '{{"No, cancel"|__}}',
+                    cancelButtonClass: "btn btn-sm btn-bold btn-brand"
+                }).then(function (result) {
+                    if (result.value) {
+                        $('#manifest_id').val(selected);
+                        $('#manifest_modal').modal('toggle');
+                    } else if (result.dismiss === 'cancel') {
+                        swal.fire({
+                            title: '{{"Cancelled"|__}}',
+                            text: '{{"Your manifest not created! :)"|__}}',
+                            type: 'error',
+                            buttonsStyling: false,
+                            confirmButtonText: '{{"OK"|__}}',
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        });
+                    }
+                });
+            }
+        });
+
+        $('body').on('click', '#PrintEmployeeOrders', function (e) {
+            e.preventDefault();
+            $('#chooseEmployee').modal('toggle');
+        });
+
+    }
+
+    var updateTotal = function () {
+        datatable.on('kt-datatable--on-layout-updated', function () {
+            $('#kt_subheader_total').html(datatable.getTotalRows() + ' {{"Total"|__}}');
+        });
+    };
+
+    var reload = function () {
+        datatable.reload();
+    };
+
+    var destroy = function () {
+        datatable.destroy();
+        $('#generalSearch').val('');
+        $('#filter_form select,#filter_form input').each(function(){
+            $(this).val('');
+        });
+        $('#filter_form select').each(function(){
+            $(this).selectpicker("refresh");
+        });
+    };
+
+    return {
+        // public functions
+        init: function () {
+            init();
+            search();
+            selection();
+            selectedStatusUpdate();
+            selectedDelete();
+            updateTotal();
+        },
+
+        reload: function(){
+            reload();
+        },
+
+        destroy: function(){
+            destroy();
+        }
+    };
+}();
+
+KTUtil.ready(function () {
+    KTAppUserListDatatable.init();
+
+    $('#delete').on('click', function(e){
+        e.preventDefault();
+
+        swal.fire({
+            buttonsStyling: false,
+
+            text: "{{'Are you sure to delete'|__}}",
+            type: "error",
+
+            confirmButtonText: "{{'Yes, delete!'|__}}",
+            confirmButtonClass: "btn btn-sm btn-bold btn-danger",
+
+            showCancelButton: true,
+            cancelButtonText: '{{"No, cancel"|__}}',
+            cancelButtonClass: "btn btn-sm btn-bold btn-brand"
+        }).then(function (result) {
+            if (result.value) {
+                KTApp.blockPage({
+                    overlayColor: '#000000',
+                    type: 'v2',
+                    state: 'success',
+                    message: '{{"Please wait"|__}}...'
+                });
+                $.request('onDelete', {
+                    success: function(data) {
+                        KTApp.unblockPage();
+                        swal.fire({
+                            title: '{{"Deleted!"|__}}',
+                            text: '{{"Your selected records have been deleted! :("|__}}',
+                            type: 'success',
+                            buttonsStyling: false,
+                            confirmButtonText: '{{"OK"|__}}',
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        });
+                        window.location.href = "{{url('shipments/manifest')}}";
+                    }
+                });
+                // result.dismiss can be 'cancel', 'overlay',
+                // 'close', and 'timer'
+            } else if (result.dismiss === 'cancel') {
+                swal.fire({
+                    title: '{{"Cancelled"|__}}',
+                    text: '{{"You selected records have not been deleted! :)"|__}}',
+                    type: 'error',
+                    buttonsStyling: false,
+                    confirmButtonText: '{{"OK"|__}}',
+                    confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                });
+            }
+        });
+    });
+});
+</script>
+{% endput %}

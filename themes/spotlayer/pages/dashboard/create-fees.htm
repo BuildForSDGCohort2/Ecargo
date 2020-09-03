@@ -1,0 +1,444 @@
+title = "Create New Fees"
+url = "/dashboard/settings/fees/create"
+layout = "admin"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/settings"
+child_of_page = "fees"
+settings_breadcrumb = "fees"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+function onStart() {
+    if(!Auth::getUser()->hasUserPermission(["fees"],'c')) {
+        \Flash::error($this['theme_lang']['not_allowed']);
+        return Redirect::to('dashboard/settings/'.$this->page->child_of_page);
+    }
+    $this['countries']      =   \RainLab\Location\Models\Country::where('is_enabled', 1)->get();
+    $this['fees']           =   \Spot\Shipment\Models\Settings::get('fees', true);
+    $this['packaging']      =   \Spot\Shipment\Models\Packaging::get();
+}
+function onListstates(){
+    if(null !== post('id')){
+        $items          = RainLab\Location\Models\State::where('country_id', post('id'))->get();
+        $html = '<option data-hidden="true"></option>';
+        if($items){
+            foreach($items as $item){
+                $html .= '<option value="'.$item->id.'">'.$item->name.'</option>';
+            }
+
+        }
+        return array('html'=>$html);
+    }
+}
+function onListcities(){
+    if(null !== post('id')){
+        $items          = Spot\Shipment\Models\City::where('state_id', post('id'))->get();
+        $html = '<option data-hidden="true"></option>';
+        if($items){
+            foreach($items as $item){
+                $html .= '<option value="'.$item->id.'">'.$item->name.'</option>';
+            }
+
+        }
+        return array('html'=>$html);
+    }
+}
+function onListareas(){
+    if(null !== post('id')){
+        $items          = Spot\Shipment\Models\Area::where('city_id', post('id'))->get();
+        $html = '<option data-hidden="true"></option>';
+        if($items){
+            foreach($items as $item){
+                $html .= '<option value="'.$item->id.'">'.$item->name.'</option>';
+            }
+
+        }
+        return array('html'=>$html);
+    }
+}
+function onSave()
+{
+    if(!Auth::getUser()->hasUserPermission(["fees"],'c')) {
+        throw new ApplicationException($this['theme_lang']['not_allowed']);
+    }
+    $data = post();
+    $item                   = new \Spot\Shipment\Models\Fees;
+    $item->type             = htmlspecialchars($data['type']);
+    switch($data['type']){
+        case 4:
+            $item->from             = htmlspecialchars($data['area_from']);
+            $item->to               = htmlspecialchars($data['area_to']);
+        break;
+        case 3:
+            $item->from             = htmlspecialchars($data['city_from']);
+            $item->to               = htmlspecialchars($data['city_to']);
+        break;
+        case 2:
+            $item->from             = htmlspecialchars($data['state_from']);
+            $item->to               = htmlspecialchars($data['state_to']);
+        break;
+        case 1:
+            $item->from             = htmlspecialchars($data['country_from']);
+            $item->to               = htmlspecialchars($data['country_to']);
+        break;
+    }
+    $item->delivery_cost                    = htmlspecialchars($data['delivery_cost']);
+    $item->pickup_cost                      = htmlspecialchars($data['pickup_cost']);
+    $item->delivery_cost_back_sender        = htmlspecialchars($data['delivery_cost_back_sender']);
+    $item->delivery_cost_back_receiver      = htmlspecialchars($data['delivery_cost_back_receiver']);
+    $item->packaging                        = (isset($data['packaging']) ? 1 : 0);
+    $item->packaging_fees                   = $data['packaging_fees'];
+    $item->save();
+
+    \Flash::success($this['theme_lang']['created_successfully']);
+    return Redirect::to('dashboard/settings/'.$this->page->child_of_page);
+}
+?>
+==
+<div class="kt-grid kt-grid--desktop kt-grid--ver-desktop  kt-inbox" id="kt_inbox">
+
+    <!-- begin:: Aside -->
+    {% partial 'settingsmenu' %}
+    <!-- end:: Aside -->
+    <!--Begin:: Inbox List-->
+    <div class="kt-grid__item kt-grid__item--fluid    kt-portlet    kt-inbox__list kt-inbox__list--shown" id="kt_inbox_list">
+        <div class="kt-portlet__head">
+    		<div class="kt-portlet__head-label">
+    			<h3 class="kt-portlet__head-title">
+    				{{this.page.title|__}}
+    			</h3>
+    		</div>
+        </div>
+        {{ form_ajax('onSave', { id: 'kt_form', flash: true, class:'kt_form' }) }}
+            <div class="kt-portlet__body kt-portlet__body--fit-x kt-padding-l-20 kt-padding-r-20">
+                <div class="form-group form-group-last kt-hide">
+                    <div class="alert alert-danger kt_form_msg" role="alert">
+                        <div class="alert-icon"><i class="flaticon-warning"></i></div>
+                        <div class="alert-text">
+                            {{'Oh snap! Change a few things up and try submitting again'|__}}.
+                        </div>
+                        <div class="alert-close">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true"><i class="la la-close"></i></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label">{{'Fees Type'|__}}</label>
+                    <div class="col-lg-9 col-xl-6">
+                        <div class="kt-radio-list">
+                            <label class="kt-radio kt-radio--bold kt-radio--dark">
+                                <input type="radio" name="type" class="fees_type" value="1" checked required> {{"Countries"|__}}
+                                <span></span>
+                            </label>
+                            <label class="kt-radio kt-radio--bold kt-radio--dark">
+                                <input type="radio" name="type" class="fees_type" value="2" required> {{"States"|__}}
+                                <span></span>
+                            </label>
+                            <label class="kt-radio kt-radio--bold kt-radio--dark">
+                                <input type="radio" name="type" class="fees_type" value="3" required> {{"Cities"|__}}
+                                <span></span>
+                            </label>
+                            <label class="kt-radio kt-radio--bold kt-radio--dark">
+                                <input type="radio" name="type" class="fees_type" value="4" required> {{"Areas"|__}}
+                                <span></span>
+                            </label>
+						</div>
+                    </div>
+                </div>
+                <div class="row type_1 type_container">
+                    <div class="form-group col-lg-6">
+                        <label>{{'From Country'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                        <select class="form-control" name="country_from" id="country_from" data-live-search="true" required>
+                            <option data-hidden="true"></option>
+                            {% for country in countries %}
+                                <option value="{{country.id}}">{{country.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label>{{'To Country'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                        <select class="form-control" name="country_to" id="country_to" data-live-search="true" required>
+                            <option data-hidden="true"></option>
+                            {% for country in countries %}
+                                <option value="{{country.id}}">{{country.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row type_2 type_container kt-hidden">
+                    <div class="form-group col-lg-6">
+                        <label>{{'From State'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                        <select class="form-control" id="state_from" name="state_from" data-live-search="true" required title="{{'Please select country first'|__}}">
+                            <option data-hidden="true"></option>
+                        </select>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label>{{'To State'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                        <select class="form-control" id="state_to" name="state_to" data-live-search="true" required title="{{'Please select country first'|__}}">
+                            <option data-hidden="true"></option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row type_3 type_container kt-hidden">
+                    <div class="form-group col-lg-6">
+                        <label>{{'From City'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                        <select class="form-control" id="city_from" name="city_from" data-live-search="true" required title="{{'Please select state first'|__}}">
+                            <option data-hidden="true"></option>
+                        </select>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label>{{'To City'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                        <select class="form-control" id="city_to" name="city_to" data-live-search="true" required title="{{'Please select state first'|__}}">
+                            <option data-hidden="true"></option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row type_4 type_container kt-hidden">
+                    <div class="form-group col-lg-6">
+                        <label>{{'From Area'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                        <select class="form-control" id="area_from" name="area_from" data-live-search="true" required title="{{'Please select city first'|__}}">
+                            <option data-hidden="true"></option>
+                        </select>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label>{{'To Area'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                        <select class="form-control" id="area_to" name="area_to" data-live-search="true" required title="{{'Please select city first'|__}}">
+                            <option data-hidden="true"></option>
+                        </select>
+                    </div>
+                </div>
+                <div class="kt-separator kt-separator--border-dashed kt-separator--space-lg kt-separator--portlet-fit"></div>
+                <div class="row">
+                    <div class="form-group col-lg-6">
+                        <label>{{'Delivery cost'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                        <div class="input-group">
+                            {% if primary_currency.place_symbol_before == 1 %}
+                                <div class="input-group-prepend"><span class="input-group-text">{{primary_currency.currency_symbol}}</span></div>
+                            {% endif %}
+                            <input class="form-control decimal" type="text" name="delivery_cost" value="{{fees.delivery_cost}}" required>
+                            {% if primary_currency.place_symbol_before == 0 %}
+                                <div class="input-group-append"><span class="input-group-text">{{primary_currency.currency_symbol}}</span></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label>{{'Pickup cost'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                        <div class="input-group">
+                            {% if primary_currency.place_symbol_before == 1 %}
+                                <div class="input-group-prepend"><span class="input-group-text">{{primary_currency.currency_symbol}}</span></div>
+                            {% endif %}
+                            <input class="form-control decimal " type="text" name="pickup_cost" value="{{fees.pickup_cost}}" required>
+                            {% if primary_currency.place_symbol_before == 0 %}
+                                <div class="input-group-append"><span class="input-group-text">{{primary_currency.currency_symbol}}</span></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-lg-6">
+                        <label>{{'Delivery back cost by sender'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                        <div class="input-group">
+                            {% if primary_currency.place_symbol_before == 1 %}
+                                <div class="input-group-prepend"><span class="input-group-text">{{primary_currency.currency_symbol}}</span></div>
+                            {% endif %}
+                            <input class="form-control decimal " type="text" name="delivery_cost_back_sender" value="{{fees.delivery_cost_back_sender}}" required>
+                            {% if primary_currency.place_symbol_before == 0 %}
+                                <div class="input-group-append"><span class="input-group-text">{{primary_currency.currency_symbol}}</span></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label>{{'Delivery back cost by receiver'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                        <div class="input-group">
+                            {% if primary_currency.place_symbol_before == 1 %}
+                                <div class="input-group-prepend"><span class="input-group-text">{{primary_currency.currency_symbol}}</span></div>
+                            {% endif %}
+                            <input class="form-control decimal " type="text" name="delivery_cost_back_receiver" value="{{fees.delivery_cost_back_receiver}}" required>
+                            {% if primary_currency.place_symbol_before == 0 %}
+                                <div class="input-group-append"><span class="input-group-text">{{primary_currency.currency_symbol}}</span></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="kt-separator kt-separator--border-dashed kt-separator--space-lg kt-separator--portlet-fit"></div>
+                <div class="form-group row">
+                    <label class="col-xl-3 col-lg-3 col-form-label"></label>
+                    <div class="col-lg-9 col-xl-6">
+                        <div class="kt-checkbox-single">
+                            <label class="kt-checkbox">
+                                <input type="checkbox" id="packaging" name="packaging" {% if item.packaging == 1 %}checked{% endif %}> {{'Packaging'|__}}
+                                <span></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row packaging_row kt-hidden">
+                    {% for package in packaging %}
+                        <div class="form-group col-lg-6">
+                            <label>{{package.name}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></label>
+                            <div class="input-group">
+                                {% if primary_currency.place_symbol_before == 1 %}
+                                    <div class="input-group-prepend"><span class="input-group-text">{{primary_currency.currency_symbol}}</span></div>
+                                {% endif %}
+                                <input class="form-control decimal " type="text" name="packaging_fees[{{package.id}}]" value="0.00" required>
+                                {% if primary_currency.place_symbol_before == 0 %}
+                                    <div class="input-group-append"><span class="input-group-text">{{primary_currency.currency_symbol}}</span></div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+    		<div class="kt-portlet__foot">
+    			<div class="row">
+    				<div class="col-lg-8">
+                    </div>
+    				<div class="col-lg-4">
+    					<button type="submit" class="btn btn-primary">{{'Save'|__}}</button>
+    					<span class="kt-margin-left-10">{{'or'|__}} <a href="{{url('dashboard/settings')}}/{{this.page.child_of_page}}" class="kt-link">{{'Cancel'|__}}</a></span>
+    				</div>
+    			</div>
+    		</div>
+    	{{ form_close() }}
+    </div>
+</div>
+{% put scripts %}
+<script type="text/javascript">
+    $( ".kt_form" ).validate({
+        ignore: ":hidden",
+        // define validation rules
+        /*
+        rules: {
+            digits: {
+                required: true,
+                digits: true,
+                creditcard: true,
+                phoneUS: true,
+                required: true,
+                minlength: 10,
+                maxlength: 100
+            },
+        },
+        */
+
+        //display error alert on form submit
+        invalidHandler: function(event, validator) {
+            var alert = $('.kt_form_msg');
+            alert.removeClass('kt--hide').show();
+            KTUtil.scrollTop();
+        },
+
+        submitHandler: function (form) {
+            form[0].submit(); // submit the form
+        }
+    });
+
+    $('body').on('change', '.fees_type', function(){
+        $('.type_container').addClass('kt-hidden');
+        for (var i = $(this).val(); i >= 1; i--) {
+            $('.type_'+i).removeClass('kt-hidden');
+        }
+    });
+    $('body').on('change', '#packaging', function(){
+        if($(this).is(":checked")){
+            $('.packaging_row').removeClass('kt-hidden');
+        }else{
+            $('.packaging_row').addClass('kt-hidden');
+        }
+    });
+    $('body').on('changed.bs.select', '#country_from', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected != ''){
+            $.request('onListstates', {
+                data: {id: selected},
+                success: function(data) {
+                    $('#state_from').selectpicker("destroy");
+                    $('#state_from').attr('title', '{{"Nothing Selected"|__}}');
+                    $('#state_from').html(data.html);
+                    $('#state_from').selectpicker("refresh");
+                }
+            });
+        }
+    });
+    $('body').on('changed.bs.select', '#country_to', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected != ''){
+            $.request('onListstates', {
+                data: {id: selected},
+                success: function(data) {
+                    $('#state_to').selectpicker("destroy");
+                    $('#state_to').attr('title', '{{"Nothing Selected"|__}}');
+                    $('#state_to').html(data.html);
+                    $('#state_to').selectpicker("refresh");
+                }
+            });
+        }
+    });
+    $('body').on('changed.bs.select', '#state_from', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected != ''){
+            $.request('onListcities', {
+                data: {id: selected},
+                success: function(data) {
+                    $('#city_from').selectpicker("destroy");
+                    $('#city_from').attr('title', '{{"Nothing Selected"|__}}');
+                    $('#city_from').html(data.html);
+                    $('#city_from').selectpicker("refresh");
+                }
+            });
+        }
+    });
+    $('body').on('changed.bs.select', '#state_to', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected != ''){
+            $.request('onListcities', {
+                data: {id: selected},
+                success: function(data) {
+                    $('#city_to').selectpicker("destroy");
+                    $('#city_to').attr('title', '{{"Nothing Selected"|__}}');
+                    $('#city_to').html(data.html);
+                    $('#city_to').selectpicker("refresh");
+                }
+            });
+        }
+    });
+    $('body').on('changed.bs.select', '#city_from', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected != ''){
+            $.request('onListareas', {
+                data: {id: selected},
+                success: function(data) {
+                    $('#area_from').selectpicker("destroy");
+                    $('#area_from').attr('title', '{{"Nothing Selected"|__}}');
+                    $('#area_from').html(data.html);
+                    $('#area_from').selectpicker("refresh");
+                }
+            });
+        }
+    });
+    $('body').on('changed.bs.select', '#city_to', function(e, clickedIndex, newValue, oldValue){
+        var selected = $(e.currentTarget).val();
+        if(selected != ''){
+            $.request('onListareas', {
+                data: {id: selected},
+                success: function(data) {
+                    $('#area_to').selectpicker("destroy");
+                    $('#area_to').attr('title', '{{"Nothing Selected"|__}}');
+                    $('#area_to').html(data.html);
+                    $('#area_to').selectpicker("refresh");
+                }
+            });
+        }
+    });
+</script>
+{% endput %}

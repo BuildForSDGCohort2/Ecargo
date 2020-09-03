@@ -1,0 +1,218 @@
+[viewBag]
+==
+<?php
+    function onStart(){
+        $data = get();
+
+        $this['search'] = false;
+        if(isset($data['number'])){
+            $this['search'] = true;
+        	$order			= new Spot\Shipment\Models\Order;
+            $settings       = \Spot\Shipment\Models\Settings::instance();
+            $length         = strlen($this['settings']['tracking']['prefix_order']);
+            $prefix         = substr($data['number'], 0, $length);
+            if (strcasecmp($prefix, $this['settings']['tracking']['prefix_order']) == 0) {
+                $data['number'] =   str_ireplace($this['settings']['tracking']['prefix_order'],'',$data['number']);
+            }
+        	$this['order']	=	$order->where('number', $data['number'])->first();
+        }elseif($this->param('number') !== null){
+            $data['number'] = $this->param('number');
+            $this['search'] = true;
+        	$order			= new Spot\Shipment\Models\Order;
+            $settings       = \Spot\Shipment\Models\Settings::instance();
+            $length         = strlen($this['settings']['tracking']['prefix_order']);
+            $prefix         = substr($data['number'], 0, $length);
+            if (strcasecmp($prefix, $this['settings']['tracking']['prefix_order']) == 0) {
+                $data['number'] =   str_ireplace($this['settings']['tracking']['prefix_order'],'',$data['number']);
+            }
+        	$this['order']	=	$order->where('number', $data['number'])->first();
+        }
+    }
+?>
+==
+<div class="kt-container ">
+    <div class="kt-portlet">
+        <div class="kt-portlet__body">
+            <div class="kt-infobox" id="tracking">
+                {% if search is empty %}
+                <div class="kt-infobox__header kt-margin-b-0">
+                    <h4 class="kt-infobox__title">{{"Type your full tracking number to get the tracking data"|__}}.</h4>
+                </div>
+                {% endif %}
+                {% if order %}
+                    <div class="row">
+                        <div class="col-xl-9">
+                            <div class="kt-widget kt-widget--user-profile-3">
+                                <div class="kt-widget__top">
+                                    <div class="kt-widget__content">
+                                        <div class="kt-widget__head">
+                                            <a href="javascript:;" class="kt-widget__username">
+                                                {{settings.tracking.prefix_order}}{{order.number}}
+                                            </a>
+                                        </div>
+
+                                        <div class="kt-widget__subhead">
+                                             {{ barcodeHTML({data: order.barcode, type: 'CODABAR'}) }}
+
+                                        </div>
+
+                                        <div class="kt-widget__info">
+                                            <div class="example-preview">
+                                                <table class="table">
+                                                    <thead class="thead-dark">
+                                                        <tr>
+                                                            <th scope="col" colspan="2">{{'SENDER / ORIGIN'|__}}</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1" class="kt-svg-icon">
+                                                                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                                                        <rect id="bound" x="0" y="0" width="24" height="24"></rect>
+                                                                        <path d="M18,2 L20,2 C21.6568542,2 23,3.34314575 23,5 L23,19 C23,20.6568542 21.6568542,22 20,22 L18,22 L18,2 Z" id="Rectangle-161-Copy" fill="#000000" opacity="0.3"></path>
+                                                                        <path d="M5,2 L17,2 C18.6568542,2 20,3.34314575 20,5 L20,19 C20,20.6568542 18.6568542,22 17,22 L5,22 C4.44771525,22 4,21.5522847 4,21 L4,3 C4,2.44771525 4.44771525,2 5,2 Z M12,11 C13.1045695,11 14,10.1045695 14,9 C14,7.8954305 13.1045695,7 12,7 C10.8954305,7 10,7.8954305 10,9 C10,10.1045695 10.8954305,11 12,11 Z M7.00036205,16.4995035 C6.98863236,16.6619875 7.26484009,17 7.4041679,17 C11.463736,17 14.5228466,17 16.5815,17 C16.9988413,17 17.0053266,16.6221713 16.9988413,16.5 C16.8360465,13.4332455 14.6506758,12 11.9907452,12 C9.36772908,12 7.21569918,13.5165724 7.00036205,16.4995035 Z" id="Combined-Shape" fill="#000000"></path>
+                                                                    </g>
+                                                                </svg>
+                                                                <b>{{'SENDER'|__}}:</b> 
+                                                                 {% if order.sender_name %}
+                                                                    {{order.sender_name|capitalize}}
+                                                                {% else%}
+                                                                    {{order.sender.name|capitalize}}
+                                                                {% endif %}
+                                                            </td>
+                                                            <td>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1" class="kt-svg-icon">
+                                                                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                                                        <rect id="bound" x="0" y="0" width="24" height="24"></rect>
+                                                                        <path d="M20.4061385,6.73606154 C20.7672665,6.89656288 21,7.25468437 21,7.64987309 L21,16.4115967 C21,16.7747638 20.8031081,17.1093844 20.4856429,17.2857539 L12.4856429,21.7301984 C12.1836204,21.8979887 11.8163796,21.8979887 11.5143571,21.7301984 L3.51435707,17.2857539 C3.19689188,17.1093844 3,16.7747638 3,16.4115967 L3,7.64987309 C3,7.25468437 3.23273352,6.89656288 3.59386153,6.73606154 L11.5938615,3.18050598 C11.8524269,3.06558805 12.1475731,3.06558805 12.4061385,3.18050598 L20.4061385,6.73606154 Z" id="Combined-Shape" fill="#000000" opacity="0.3"></path>
+                                                                        <polygon id="Combined-Shape-Copy" fill="#000000" points="14.9671522 4.22441676 7.5999999 8.31727912 7.5999999 12.9056825 9.5999999 13.9056825 9.5999999 9.49408582 17.25507 5.24126912"></polygon>
+                                                                    </g>
+                                                                </svg>
+                                                                <b>{{'SHIPPING DATE'|__}}:</b> 
+                                                                {% if addShipmentForm == "add_form_normal" %}
+                                                                {{order.created_at|date(settings.dateformat)}}
+                                                                {% else %}
+                                                                {{order.ship_date|date(settings.dateformat)}}
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <div class="example-preview">
+                                                <table class="table">
+                                                    <thead class="thead-dark">
+                                                        <tr>
+                                                            <th scope="col" colspan="2">{{'RECIPIENT / DESTINATION'|__}}</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td>
+                                                                {% if order.receiver_name or order.receiver %}
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1" class="kt-svg-icon">
+                                                                        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                                                            <rect id="bound" x="0" y="0" width="24" height="24"></rect>
+                                                                            <path d="M18,2 L20,2 C21.6568542,2 23,3.34314575 23,5 L23,19 C23,20.6568542 21.6568542,22 20,22 L18,22 L18,2 Z" id="Rectangle-161-Copy" fill="#000000" opacity="0.3"></path>
+                                                                            <path d="M5,2 L17,2 C18.6568542,2 20,3.34314575 20,5 L20,19 C20,20.6568542 18.6568542,22 17,22 L5,22 C4.44771525,22 4,21.5522847 4,21 L4,3 C4,2.44771525 4.44771525,2 5,2 Z M12,11 C13.1045695,11 14,10.1045695 14,9 C14,7.8954305 13.1045695,7 12,7 C10.8954305,7 10,7.8954305 10,9 C10,10.1045695 10.8954305,11 12,11 Z M7.00036205,16.4995035 C6.98863236,16.6619875 7.26484009,17 7.4041679,17 C11.463736,17 14.5228466,17 16.5815,17 C16.9988413,17 17.0053266,16.6221713 16.9988413,16.5 C16.8360465,13.4332455 14.6506758,12 11.9907452,12 C9.36772908,12 7.21569918,13.5165724 7.00036205,16.4995035 Z" id="Combined-Shape" fill="#000000"></path>
+                                                                        </g>
+                                                                    </svg>
+                                                                    <b>{{'RECIPIENT'|__}}:</b> 
+                                                                    {% if order.receiver_name %}
+                                                                        {{order.receiver_name|capitalize}}
+                                                                    {% else%}
+                                                                        {{order.receiver.name|capitalize}}
+                                                                    {% endif %}
+                                                                {% endif %}
+                                                            </td>
+                                                            <td>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1" class="kt-svg-icon">
+                                                                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                                                        <rect id="bound" x="0" y="0" width="24" height="24"></rect>
+                                                                        <path d="M20.4061385,6.73606154 C20.7672665,6.89656288 21,7.25468437 21,7.64987309 L21,16.4115967 C21,16.7747638 20.8031081,17.1093844 20.4856429,17.2857539 L12.4856429,21.7301984 C12.1836204,21.8979887 11.8163796,21.8979887 11.5143571,21.7301984 L3.51435707,17.2857539 C3.19689188,17.1093844 3,16.7747638 3,16.4115967 L3,7.64987309 C3,7.25468437 3.23273352,6.89656288 3.59386153,6.73606154 L11.5938615,3.18050598 C11.8524269,3.06558805 12.1475731,3.06558805 12.4061385,3.18050598 L20.4061385,6.73606154 Z" id="Combined-Shape" fill="#000000" opacity="0.3"></path>
+                                                                        <polygon id="Combined-Shape-Copy" fill="#000000" points="14.9671522 4.22441676 7.5999999 8.31727912 7.5999999 12.9056825 9.5999999 13.9056825 9.5999999 9.49408582 17.25507 5.24126912"></polygon>
+                                                                    </g>
+                                                                </svg>
+                                                                <b>{{'ESTIMATED DELIVERY DATE'|__}}:</b> 
+                                                                {% if order.delivery_date %}
+                                                                    {{order.delivery_date|date(settings.dateformat)}}
+                                                                    {% if order.postponed == 1 and order.requested in [1,3,5,6,7,10,11] %} | <span class="btn btn-label-info btn-sm btn-bold btn-upper">{{'POSTPONED'|__}}</span>{% endif %}
+                                                                {% else %}
+                                                                    {%if order.deliverytime %}
+                                                                        {{order.ship_date|date_modify("+"~order.deliverytime.count~" hours")|date(settings.dateformat)}}
+                                                                    {% endif %}
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="kt-infobox__body col-xl-3">
+                            <div class="kt-timeline-v1 kt-timeline-v1--justified">
+                                <div class="kt-timeline-v1__items">
+                                    <div class="kt-timeline-v1__marker"></div>
+
+                                    {% for activity in order.activities %}
+                                        <div class="kt-timeline-v1__item {% if loop.index == 1 %}kt-timeline-v1__item--first {% endif %}">
+                                            <div class="kt-timeline-v1__item-circle">
+                                                <div class="kt-bg-danger"></div>
+                                            </div>
+
+                                            <span class="kt-timeline-v1__item-time kt-font-brand">
+                                                {{activity.created_at|date(settings.dateformat)}} {{activity.created_at|date('h:i')}} <span>{{activity.created_at|date('a')|__}}</span>
+                                            </span>
+
+                                            <div class="kt-timeline-v1__item-content">
+                                                <div class="kt-timeline-v1__item-title">
+                                                    <strong class="kt-font-boldest">{{'User'|__}}:</strong> {{activity.user.name}}
+                                                </div>
+                                                <div class="kt-timeline-v1__item-body">
+                                                    <p>
+                                                        {% if activity.other %}
+                                                            {% set text = 'activity_'~activity.description %}
+                                                            {{text|__}}: {{activity.other}}
+                                                        {% else %}
+                                                            {% set text = 'activity_'~activity.description %}
+                                                            {{text|__}}
+                                                        {% endif %}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% elseif search %}
+                <div class="kt-infobox__header kt-margin-b-0">
+                    <h4 class="kt-infobox__title">{{"Please check the tracking number again and type the full number with its prefix correctly and try again"|__}}.</h4>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% put styles %}
+<style>
+.example-preview {
+    border: 4px solid #f3f6f9;
+    margin: 2rem 0;
+    padding: 1.75rem 1.5rem;
+    border-top-left-radius: .42rem;
+    border-top-right-radius: .42rem;
+    width: 100%;
+    display: block;
+}
+.example-preview table tbody tr td b {
+    font-family: tahoma;
+}
+</style>
+{% endput %}

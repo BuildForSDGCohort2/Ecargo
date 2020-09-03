@@ -1,0 +1,234 @@
+title = "Tracking"
+url = "/trackingback/:number?"
+layout = "blank"
+is_hidden = 0
+role = 0
+permission = 0
+child_of = "home"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+function onStart(){
+
+	$data = post();
+	if(isset($data)){
+		$data['number'] = $this->param('number');
+	}
+
+	$order			= new Spot\Shipment\Models\Order;
+    $settings       = \Spot\Shipment\Models\Settings::instance();
+    $length         = strlen($this['settings']['tracking']['prefix_order']);
+    $prefix         = substr($data['number'], 0, $length);
+    if (strcasecmp($prefix, $this['settings']['tracking']['prefix_order']) == 0) {
+        $data['number'] =   str_ireplace($this['settings']['tracking']['prefix_order'],'',$data['number']);
+    }
+	$this['order']	=	$order->where('number', $data['number'])->first();
+}
+?>
+==
+<!-- Page Sub-Header + mask style 6 -->
+		<div id="page_header" class="page-subheader site-subheader-cst uh_hg_def_header_style maskcontainer--mask6">
+			<div class="bgback"></div>
+
+			<!-- Bakcground -->
+			<div class="kl-bg-source">
+				<!-- Background image -->
+				<div class="kl-bg-source__bgimage" style="background-image: url(./front/images/about-me.jpg); background-repeat: no-repeat; background-attachment: scroll; background-position-x: center; background-position-y: center; background-size: cover;">
+				</div>
+				<!--/ Background image -->
+
+				<!-- Gradient overlay -->
+				<div class="kl-bg-source__overlay" style="">
+				</div>
+				<!--/ Gradient overlay -->
+			</div>
+			<!--/ Bakcground -->
+
+			<!-- Animated Sparkles -->
+			<div class="th-sparkles"></div>
+			<!--/ Animated Sparkles -->
+
+					<!-- Sub-Header content wrapper -->
+					<div class="ph-content-wrap d-flex">
+						<div class="container align-self-center">
+							<div class="row">
+								<div class="col-sm-12 col-md-6 col-lg-6">
+
+									{% if currentCrumb.show_crumb %}
+										<!-- Breadcrumbs -->
+										<ul class="breadcrumbs fixclear">
+											{% set activeCrumb = '' %}
+											{% for crumb in breadcrumbs %}
+												{% if crumb.in_crumb_trail %}
+													{% if not loop.last and not crumb.crumb_disabled %}
+														<li><a href="{{crumb.baseFileName | page}}">{{crumb.title|__|upper}}</a></li>
+													{% else %}
+														<li class="active">{{crumb.title|__|upper}}</li>
+													{% endif %}
+												{% endif %}
+												{% if not loop.last %}
+													{% set activeCrumb = crumb %}
+												{% endif %}
+											{% endfor %}
+										</ul>
+										<!--/ Breadcrumbs -->
+									{% endif %}
+
+
+									<!-- Current date -->
+									<span id="current-date" class="subheader-currentdate">{{'now'|date(settings.dateformat)}}</span>
+									<!--/ Current date -->
+
+									<div class="clearfix"></div>
+								</div>
+								<!--/ col-sm-12 col-md-6 col-lg-6 -->
+
+								<div class="col-sm-12 col-md-6 col-lg-6">
+									<!-- Sub-header titles -->
+									<div class="subheader-titles">
+										<h2 class="subheader-maintitle">{{this.page.title|__}}</h2>
+									</div>
+									<!--/ Sub-header titles -->
+								</div>
+								<!--/ col-sm-12 col-md-6 col-lg-6 -->
+							</div>
+							<!--/ row -->
+						</div>
+						<!--/ .container .align-self-center -->
+					</div>
+					<!--/ Sub-Header content wrapper -->
+
+			<!-- Bottom mask style 7 -->
+			<div class="kl-bottommask kl-bottommask--mask7">
+				<svg width="767px" height="60px" class="kl-bottommask--mask7 screffect opacity3" viewBox="0 0 767 60" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="none">
+					<polygon fill="#000" points="767 0 767 60 0 60 "></polygon>
+				</svg>
+				<svg width="767px" height="50px" class="kl-bottommask--mask7 mask-over" viewBox="0 0 767 50" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="none">
+					<polygon fill="#fbfbfb" points="767 0 767 50 0 50 "></polygon>
+				</svg>
+			</div>
+			<!--/ Bottom mask style 7 -->
+			{% if currentCrumb.show_crumb %}
+				<!-- Breadcrumb style 2 for bottom mask style 7 -->
+				<div class="container mb-40">
+					<div class="row">
+						<div class="col-sm-12">
+							<!-- Breadcrumb style 2 aligned right -->
+							<ul class="breadcrumbs2 white text-right kl-font-alt">
+								{% set activeCrumb = '' %}
+								{% for crumb in breadcrumbs %}
+									{% if crumb.in_crumb_trail %}
+										{% if not loop.last and not crumb.crumb_disabled %}
+											<li><a href="{{crumb.baseFileName | page}}">{{crumb.title|__|upper}}</a></li>
+										{% else %}
+											<li class="active"><span>{{crumb.title|__|upper}}</span></li>
+										{% endif %}
+									{% endif %}
+									{% if not loop.last %}
+										{% set activeCrumb = crumb %}
+									{% endif %}
+								{% endfor %}
+							</ul>
+						</div>
+						<!--/ col-sm-12 -->
+					</div>
+					<!--/ row -->
+				</div>
+				<!--/ Breadcrumb style 2 for bottom mask style 7 -->
+			{% endif %}
+		</div>
+		<!--/ Page Sub-Header + mask style 6 -->
+
+		<!-- RIGHT SIDED VECTOR LAPTOP & SMARTPHONE element section with custom paddings -->
+		<section class="hg_section pt-80 pb-100">
+			<div class="container">
+				<div class="row">
+
+					<div class="col-sm-12 col-md-12 col-lg-12 mb-md-30">
+						<!-- Spacer with custom height -->
+						<div style="height: 50px;"></div>
+
+						<!-- Title element -->
+						<div class="kl-title-block">
+							{% if order %}
+							<!-- Small Title -->
+							<h5 class="fs-normal fw-bold light-gray">
+								{{'Tracking History'|__}}
+							</h5>
+							<!-- Title -->
+							<h2 class="fs-l reset-line-height fw-normal mb-50">
+								<strong>#{{settings.tracking.prefix_order}}{{order.number}}</strong>
+							</h2>
+							{% else %}
+							<!-- Small Title -->
+							<h5 class="fs-normal fw-bold orange">
+								{{"The tracking number you entered is wrong, please check it again and type the full number with its prefix"|__}}
+							</h5>
+							<!-- Title -->
+							<h2 class="fs-l reset-line-height fw-normal mb-50">
+								<strong>{{"eg"|__}}: {{settings.tracking.prefix_order}}00001</strong>
+							</h2>
+							{% endif %}
+						</div>
+
+						{% if order %}
+						<!-- Text box -->
+						<div class="timeline_bar">
+							<div class="row">
+								{% if order.requested == 4 %}
+									<!-- Start timeline -->
+									<div class="col-sm-12 end_timeline">
+										<span>{{order.updated_at|date(settings.dateformat)}} › {{"DELIVERIED"|__}}</span>
+									</div>
+									<!--/ Start timeline -->
+								{% endif %}
+
+
+			                    {% for activity in order.activities %}
+									<div class="col-sm-12 col-md-6 {% if loop.index is odd %}offset-md-6{% endif %}" {% if loop.index is odd %}data-align="right"{% endif %}>
+										<!-- Timeline box -->
+										<div class="timeline_box">
+											<!-- Date -->
+											<div class="date">
+												{{activity.created_at|date(settings.dateformat)}} {{activity.created_at|date('h:i')}} {{activity.created_at|date('a')|__}}
+											</div>
+											<!--/ Date -->
+
+											<!-- Title -->
+											<h4 class="htitle">
+												{% if activity.other %}
+		                                            {% set text = 'activity_'~activity.description %}
+		                                            {{text|__}}: {{activity.other}}
+		                                        {% else %}
+		                                            {% set text = 'activity_'~activity.description %}
+		            								{{text|__}}
+		                                        {% endif %}
+											</h4>
+											<!--/ Title -->
+										</div>
+										<!--/ Timeline box -->
+									</div>
+								{% endfor %}
+
+								<!-- End timeline -->
+								<div class="col-sm-12 end_timeline">
+									<span>{{'Order Created'|__}}<br />{{order.created_at|date(settings.dateformat)}}</span>
+								</div>
+								<!--/ End timeline -->
+							</div>
+							<!--/ row -->
+						</div>
+						<!--/ Historic timeline element -->
+						{% endif %}
+					</div>
+					<!--/ col-sm-12 col-md-12 col-lg-6 mb-md-30 -->
+				</div>
+				<!--/ row -->
+			</div>
+			<!--/ container -->
+		</section>
+		<!--/ RIGHT SIDED VECTOR LAPTOP & SMARTPHONE section -->

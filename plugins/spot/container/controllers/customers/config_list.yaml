@@ -1,0 +1,12 @@
+list: $/spot/container/models/customer/columns.yaml
+modelClass: spot\Container\Models\Customer
+title: Customers
+noRecordsMessage: 'backend::lang.list.no_records'
+showSetup: true
+showCheckboxes: true
+recordsPerPage: 20
+toolbar:
+    buttons: list_toolbar
+    search:
+        prompt: 'backend::lang.list.search_prompt'
+recordUrl: 'spot/container/customers/update/:id'

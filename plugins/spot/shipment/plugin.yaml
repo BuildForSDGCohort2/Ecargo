@@ -1,0 +1,6 @@
+plugin:
+    name: 'spot.shipment::lang.plugin.name'
+    description: 'spot.shipment::lang.plugin.description'
+    author: spot
+    icon: oc-icon-truck
+    homepage: ''

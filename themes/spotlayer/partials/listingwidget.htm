@@ -1,0 +1,303 @@
+[viewBag]
+==
+<?php
+    function onStart(){
+        $data = post();
+        $this['user']   =   Auth::getUser();
+
+        $start              = '';
+        $end                = '';
+        if(isset($data['start']) && isset($data['end'])){
+            $start          =   \Carbon\Carbon::parse(\Carbon\Carbon::createFromFormat($this['settings']['dateformat'], $data['start']));
+            $end            =   \Carbon\Carbon::parse(\Carbon\Carbon::createFromFormat($this['settings']['dateformat'], $data['end']));
+
+            $start          = $start->copy()->startOfDay();
+            $end            = $end->copy()->endOfDay();
+        }
+
+        $this['start']      = $start;
+        $this['end']        = $end;
+    }
+    function onDelete()
+    {
+        $data = post();
+        if(!Auth::getUser()->hasUserPermission(["order"],'d')) {
+            return Response::json(['error' => $this['theme_lang']['not_allowed']], 401);
+        }
+
+        if(null !== post('id')){
+            if(is_array(post('id'))){
+                \Spot\Shipment\Models\Order::whereIn('id',post('id'))->delete();
+            }else{
+                \Spot\Shipment\Models\Order::find($data['id'])->delete();
+            }
+            return Redirect::back();
+        }
+    }
+?>
+==
+
+<div class="kt-datatable"></div>
+
+<script>
+function listing(){
+    $('.kt-datatable').KTDatatable({
+        translate: {
+            records: {
+                processing: '{{"Please wait"|__}}...',
+                noRecords: '{{"No records found"|__}}'
+            },
+            toolbar: {
+                pagination: {
+                    items: {
+                        default: {
+                            first: '{{"First"|__}}',
+                            prev: '{{"Previous"|__}}',
+                            next: '{{"Next"|__}}',
+                            last: '{{"Last"|__}}',
+                            more: '{{"More pages"|__}}',
+                            input: '{{"Page number"|__}}',
+                            select: '{{"Select page size"|__}}'
+                        },
+
+                        info: "{{"Displaying"|__}} {{ '{{' }}start{{ '}}' }} - {{ '{{' }}end{{ '}}' }} {{"of"|__}} {{total}} {{"records"|__}}"
+                    }
+                }
+            }
+        },
+
+        // layout definition
+        layout: {
+            scroll: true, // enable/disable datatable scroll both horizontal and vertical when needed.
+            footer: false, // display/hide footer
+        },
+
+        // column sorting
+        sortable: true,
+
+        pagination: true,
+
+        search: {
+            input: $('#generalSearch'),
+            delay: 400,
+        },
+        data: {
+            type: 'remote',
+            source: {
+                read: {
+                    url: '{{url("api/dashboardshipments")}}',
+                    params: {
+                      start: '{{start}}',
+                      end: '{{end}}'
+                    }
+                },
+            },
+            pageSize: 10, // display 20 records per page
+            serverPaging: true,
+            serverFiltering: true,
+            serverSorting: true,
+        },
+        // columns definition
+        columns: [
+            {
+                field: "number",
+                title: "{{'Tracking'|__}}",
+                sortable: true,
+                width: 100,
+                template: function(row) {
+                    return '<a href="{{url('dashboard/shipments')}}/'+row.id+'/view">{{settings.tracking.prefix_order}}'+row.shipping_number+'</a>';
+                }
+            },
+            {
+                field: "details",
+                title: "{{'Shipment Details'|__}}",
+                sortable: false,
+                width: 'auto',
+                template: function(data, i) {
+                    if(data.sender && data.sender.name){
+                        var output  = '\
+                            <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                                <div class="kt-user-card-v2__details">\
+                                    <a href="{% if user.hasUserPermission('client', 'r') %}{{url('dashboard/clients')}}/'+data.sender.id+'/view{% else %}javascript:;{% endif %}" class="kt-user-card-v2__name"><b class="kt-font-boldest">{{"Sender"|__}}:</b> ' + data.sender.name + '</a>';
+                      if(+ data.shipping_from_area && + data.shipping_from_area != '-'){
+                          output      += '\
+                                    <span class="kt-user-card-v2__email"><b class="kt-font-boldest">{{"From"|__}}:</b> ' + data.shipping_from_area + '</span>';
+                                }
+                    }else{
+                        var output  = '\
+                                <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                                    <div class="kt-user-card-v2__details">\
+                                        <a href="javascript:;" class="kt-user-card-v2__name"><b class="kt-font-boldest">{{"Sender"|__}}:</b> ' + data.sender_name + '</a>';
+                      if(+ data.shipping_from_area && + data.shipping_from_area != '-'){
+                          output      += '\
+                                          <span class="kt-user-card-v2__email"><b class="kt-font-boldest">{{"From"|__}}:</b> ' + data.shipping_from_area + '</span>';
+                      }
+                    }
+                    if(data.receiver && data.receiver.name && data.receiver.name != '-'){
+                        output      += '\
+                                    <a href="{% if user.hasUserPermission('client', 'r') %}{{url('dashboard/clients')}}/'+data.receiver.id+'/view{% else %}javascript:;{% endif %}" class="kt-margin-t-5 kt-user-card-v2__name"><b>{{"Receiver"|__}}:</b> ' + data.receiver.name + '</a>';
+                      if(data.shipping_to_area && + data.shipping_to_area != '-'){
+                          output      += '\
+                                    <span class="kt-user-card-v2__email"><b class="kt-font-boldest">{{"To"|__}}:</b> ' + data.shipping_to_area + '</span>';
+                      }
+                    }else if(data.receiver_name && data.receiver_name != '-'){
+                        output  += '\
+                                <div class="kt-user-card-v2 kt-user-card-v2--uncircle">\
+                                    <div class="kt-user-card-v2__details">\
+                                        <a href="javascript:;" class="kt-user-card-v2__name"><b class="kt-font-boldest">{{"Receiver"|__}}:</b> ' + data.receiver_name + '</a>';
+                        if(data.shipping_to_area && + data.shipping_to_area != '-'){
+                            output      += '\
+                                            <span class="kt-user-card-v2__email"><b class="kt-font-boldest">{{"From"|__}}:</b> ' + data.shipping_to_area + '</span>';
+                        }
+                    }
+                    output      += '\
+                            </div>\
+                        </div>';
+                    return output;
+                }
+            },
+            {
+                field: "office",
+                title: "{{'Branch'|__}}",
+                sortable: false,
+                width: 100,
+                template: function(data, i) {
+                    return '<a href="javascript:;">'+data.office+'</a>';
+                }
+            },
+            {
+                field: "status",
+                title: "{{'Status'|__}}",
+                sortable: false,
+                width: 'auto',
+                template: function(row) {
+                    if(row.requested == 100){
+                        var output = '<span class="btn btn-bold btn-sm btn-label-primary">{{"Saved"|__}}</span>';
+                    }else{
+                        var output = '<span class="btn btn-bold btn-sm btn-label-' + row.status.color + '">' + row.status.name + '</span>';
+                        if(row.delayed == 1){
+                            output  += '&nbsp;<span class="btn btn-bold btn-sm btn-label-danger">{{"Delayed"|__}}</span>';
+                        }
+                        if(row.requested == 10 || row.requested == 11){
+                            output  += '&nbsp;<span class="btn btn-bold btn-sm btn-label-warning">{{"Returning Discards"|__}}</span>';
+                        }
+                        if(row.requested == 12 && row.status.equal != 12){
+                            output  += '&nbsp;<span class="btn btn-bold btn-sm btn-label-success">{{"Supplied"|__}}</span>';
+                        }
+                    }
+
+                    return output;
+                }
+            },
+            {
+                field: "created_at_date",
+                title: "{{'Date'|__}}",
+                sortable: false,
+                width: 100,
+            },
+            {
+                field: "Actions",
+                width: 100,
+                title: "{{'Actions'|__}}",
+                sortable: false,
+                overflow: 'visible',
+                template: function (data) {
+                    var output = '' +
+                    '<div class="btn-group btn-group" role="group" aria-label="...">'+
+                        '<a href="{{url("dashboard/shipments")}}/'+data.id+'/view" class="btn btn-brand btn-sm btn-icon" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"View Shipment"|__}}"><i class="la la-eye"></i></button>';
+                        {% if user.hasUserPermission('order', 'u') and user.role_id != 5 %}
+                            if(data.requested   ==  0 || data.requested == 1 || data.requested == 100){
+                                output += '<a href="{{url("dashboard/shipments")}}/'+data.id+'/edit" class="btn btn-brand btn-sm btn-icon" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"Edit Shipment"|__}}"><i class="la la-edit"></i></button>';
+                            }
+                        {% endif %}
+                        {% if user.role_id == 5 %}
+                            if((data.requested   ==  0 || data.requested == 100) && data.sender_id == {{user.id}}){
+                                output += '<a href="{{url("dashboard/shipments")}}/'+data.id+'/edit" class="btn btn-brand btn-sm btn-icon" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"Edit Shipment"|__}}"><i class="la la-edit"></i></button>';
+                            }
+                        {% endif %}
+                            if((data.requested   !=  0 && data.requested   !=  1 && data.requested != 100)){
+                                output += '<a href="{{url("dashboard/shipments")}}/'+data.id+'/print/shipment" target="_blank" class="btn btn-info btn-sm btn-icon" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"Print Shipment"|__}}"><i class="la la-print"></i></button>';
+                            }
+                        {% if user.hasUserPermission('order', 'u') %}
+                            if((data.requested   ==  100 || data.requested   ==  0 || data.requested == 1)){
+                                output += '<a href="{{url("dashboard/shipments")}}/'+data.id+'/print/label" class="btn btn-info btn-sm btn-icon" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"Print Label"|__}}" target="_blank" ><i class="la la-qrcode"></i></button>';
+                            }
+                        {% endif %}
+                        {% if user.hasUserPermission('order', 'u') %}
+                            if((data.requested   ==  3 || data.requested   ==  5 || data.requested == 6 || data.requested == 7 || data.requested == 9)){
+                                output += '<a href="{{url("dashboard/shipments")}}/'+data.id+'/update" class="btn btn-info btn-sm btn-icon" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"Update Status"|__}}"><i class="la la-street-view"></i></button>';
+                            }
+                        {% endif %}
+
+                        {% if user.hasUserPermission('order', 'u') %}
+                            if((data.requested   ==  9 || data.requested   ==  3)){
+                                output += '<a href="{{url("dashboard/shipments")}}/'+data.id+'/deliver" class="btn btn-success btn-sm btn-icon" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"Mark as delivered"|__}}"><i class="la la-smile-o"></i></button>';
+                            }
+                        {% endif %}
+                        {% if user.hasUserPermission('order', 'd') and user.role_id != 5 %}
+                            if(data.requested   ==  0 || data.requested == 100 || data.requested == 1){
+                                output += '<a href="javascript:void(0);" class="btn btn-danger btn-sm delete_record kt-font-light btn-icon" rel="'+data.id+'" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"Delete Shipment"|__}}"><i class="la la-remove"></i></a>';
+                            }
+                        {% endif %}
+                        {% if user.role_id == 5 %}
+                            if((data.requested   ==  0 || data.requested == 100) && data.sender_id != {{user.id}}){
+                                output += '<a href="javascript:void(0);" class="btn btn-danger btn-sm delete_record kt-font-light btn-icon" rel="'+data.id+'" data-skin="dark" data-toggle="kt-tooltip" data-placement="top" title="{{"Delete Shipment"|__}}"><i class="la la-remove"></i></a>';
+                            }
+                        {% endif %}
+                    output +='</div>';
+
+                    return output;
+                    },
+                }
+
+        ]
+    });
+    $('body').tooltip({selector: '[data-toggle="kt-tooltip"]'});
+    $('body').on('click','.delete_record',function(){
+        var id      = $(this).attr('rel');
+        var type    = $(this).attr('data-type');
+        swal.fire({
+            buttonsStyling: false,
+
+            text: "{{'Are you sure to delete this item ?'|__}}",
+            type: "question",
+
+            confirmButtonText: "{{'Yes, delete!'|__}}",
+            confirmButtonClass: "btn btn-sm btn-bold btn-danger",
+
+            showCancelButton: true,
+            cancelButtonText: '{{"No, cancel"|__}}',
+            cancelButtonClass: "btn btn-sm btn-bold btn-brand"
+        }).then(function (result) {
+            if (result.value) {
+                $.request('onDelete', {
+                    data: {id: id, type: type},
+                    success: function(data) {
+
+                        swal.fire({
+                            title: '{{"Deleted!"|__}}',
+                            text: '{{"Your selected record has been deleted! :("|__}}',
+                            type: 'success',
+                            buttonsStyling: false,
+                            confirmButtonText: '{{"OK"|__}}',
+                            confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                        });
+                        datatable.reload();
+                    }
+                });
+                // result.dismiss can be 'cancel', 'overlay',
+                // 'close', and 'timer'
+            } else if (result.dismiss === 'cancel') {
+                swal.fire({
+                    title: '{{"Cancelled"|__}}',
+                    text: '{{"You selected record has not been deleted! :)"|__}}',
+                    type: 'error',
+                    buttonsStyling: false,
+                    confirmButtonText: '{{"OK"|__}}',
+                    confirmButtonClass: "btn btn-sm btn-bold btn-brand",
+                });
+            }
+        });
+    });
+}
+</script>

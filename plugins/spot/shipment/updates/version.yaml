@@ -1,0 +1,7 @@
+1.0.1: 'First version of Plugin'
+1.0.27:
+    - 'Created table spot_shipment_container'
+    - builder_table_create_spot_shipment_container.php
+1.0.28:
+    - 'Drop table spot_shipment_container'
+    - builder_table_delete_spot_shipment_container.php

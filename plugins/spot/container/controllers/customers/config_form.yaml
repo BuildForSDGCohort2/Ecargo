@@ -1,0 +1,10 @@
+name: Customers
+form: $/spot/container/models/customer/fields.yaml
+modelClass: spot\Container\Models\Customer
+defaultRedirect: spot/container/customers
+create:
+    redirect: 'spot/container/customers/update/:id'
+    redirectClose: spot/container/customers
+update:
+    redirect: spot/container/customers
+    redirectClose: spot/container/customers

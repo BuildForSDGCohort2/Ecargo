@@ -1,0 +1,11 @@
+name: 'Footer Menu'
+items:
+    -
+        title: Demo
+        type: url
+        url: '#'
+        code: ''
+        viewBag:
+            isHidden: '0'
+            cssClass: ''
+            isExternal: '0'

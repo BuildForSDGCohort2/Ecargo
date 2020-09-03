@@ -1,0 +1,21 @@
+fields:
+    name:
+        label: Name
+        span: full
+        required: 1
+        type: text
+    color:
+        label: Color
+        span: auto
+        required: 1
+        type: text
+    equal:
+        label: Equal
+        span: auto
+        required: 1
+        type: number
+    description:
+        label: Description
+        size: ''
+        span: full
+        type: textarea

@@ -1,0 +1,5 @@
+.style3 .action_box_inner {padding-top: 20px;}
+.bootstrap-select:not([class*=col-]):not([class*=form-control]):not(.input-group-btn) {margin: 14px;}
+.btn-group.bootstrap-select .btn-default {padding: 7px 20px;}
+.action_box .ac-btn {padding: 7px 38px;}
+.action_box .action_box_content {margin-left: 18px;}

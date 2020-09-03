@@ -1,0 +1,155 @@
+title = "Update Country"
+url = "/dashboard/settings/countries/:id/edit"
+layout = "admin"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/settings"
+child_of_page = "countries"
+settings_breadcrumb = "definitions"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+function onStart() {
+    if(!Auth::getUser()->hasUserPermission(["countries"],'u')) {
+        \Flash::error($this['theme_lang']['not_allowed']);
+        return Redirect::to('dashboard/settings/'.$this->page->child_of_page);
+    }
+    $this['languages']          =   RainLab\Translate\Models\Locale::get();
+    $this['item']               =   \RainLab\Location\Models\Country::find($this->param('id'));
+}
+function onSave()
+{
+    if(!Auth::getUser()->hasUserPermission(["countries"],'c')) {
+        throw new ApplicationException($this['theme_lang']['not_allowed']);
+    }
+    $data = post();
+    $item                   = \RainLab\Location\Models\Country::find($this->param('id'));
+    $item->name             = htmlspecialchars($data['name'][$this['currentLang']]);
+    $item->update();
+
+    $languages              =   RainLab\Translate\Models\Locale::get();
+    foreach($languages as $lang){
+        if(isset($data['name'][$lang->code]) && $data['name'][$lang->code] != ''){
+            $item->lang($lang->code)->name             = htmlspecialchars($data['name'][$lang->code]);
+        }
+        $item->update();
+    }
+    \Flash::success($this['theme_lang']['updated_successfully']);
+    return Redirect::to('dashboard/settings/'.$this->page->child_of_page);
+}
+?>
+==
+<div class="kt-grid kt-grid--desktop kt-grid--ver-desktop  kt-inbox" id="kt_inbox">
+
+    <!-- begin:: Aside -->
+    {% partial 'settingsmenu' %}
+    <!-- end:: Aside -->
+    <!--Begin:: Inbox List-->
+    <div class="kt-grid__item kt-grid__item--fluid    kt-portlet    kt-inbox__list kt-inbox__list--shown" id="kt_inbox_list">
+        <div class="kt-portlet__head">
+    		<div class="kt-portlet__head-label">
+    			<h3 class="kt-portlet__head-title">
+    				{{this.page.title|__}}
+    			</h3>
+    		</div>
+        </div>
+        {{ form_ajax('onSave', { id: 'kt_form', flash: true, class:'kt_form' }) }}
+            <div class="kt-portlet__body kt-portlet__body--fit-x kt-padding-t-0 kt-padding-b-0">
+                <div class="form-group form-group-last kt-hide">
+                    <div class="alert alert-danger kt_form_msg" role="alert">
+                        <div class="alert-icon"><i class="flaticon-warning"></i></div>
+                        <div class="alert-text">
+                            {{'Oh snap! Change a few things up and try submitting again'|__}}.
+                        </div>
+                        <div class="alert-close">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true"><i class="la la-close"></i></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion  accordion-toggle-arrow kt-margin-b-40" id="accordion">
+                    {% for lang in languages %}
+    					<div class="card">
+    						<div class="card-header" id="heading{{loop.index}}">
+                                <div class="card-title {% if lang.code != currentLang %}collapsed{% endif %}" data-toggle="collapse" data-target="#collapse{{loop.index}}" aria-expanded="false" aria-controls="collapse{{loop.index}}">
+    								<img class="card-icon" src="./admin/media/flags/{{lang.code}}.svg" alt="" /> {{lang.name}} {% if lang.code == currentLang %}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span>{% endif %}
+    							</div>
+    						</div>
+    						<div id="collapse{{loop.index}}" class="collapse {% if lang.code == currentLang %}show{% endif %}" aria-labelledby="headingOne" data-parent="#accordion">
+    							<div class="card-body">
+                                    <div class="form-group row">
+                                        <label class="col-xl-3 col-lg-3 col-form-label">{{'Name'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <div class="col-lg-9 col-xl-6">
+                        					<input type="text" class="form-control" name="name[{{lang.code}}]" value="{{item.lang(lang.code).name}}" required />
+                                        </div>
+                                    </div>
+    							</div>
+    						</div>
+    					</div>
+                    {% endfor %}
+				</div>
+            </div>
+    		<div class="kt-portlet__foot">
+    			<div class="row">
+    				<div class="col-lg-8">
+                    </div>
+    				<div class="col-lg-4">
+    					<button type="submit" class="btn btn-primary">{{'Save'|__}}</button>
+    					<span class="kt-margin-left-10">{{'or'|__}} <a href="{{url('dashboard/settings')}}/{{this.page.child_of_page}}" class="kt-link">{{'Cancel'|__}}</a></span>
+    				</div>
+    			</div>
+    		</div>
+    	{{ form_close() }}
+    </div>
+</div>
+
+{% put styles %}
+    <style>
+        .accordion .card-icon{
+            width: 15px;
+            margin: 5px;
+        }
+    </style>
+{% endput %}
+{% put scripts %}
+<script type="text/javascript">
+    $( ".kt_form" ).validate({
+        ignore: ":hidden",
+        // define validation rules
+        /*
+        rules: {
+            digits: {
+                required: true,
+                digits: true,
+                creditcard: true,
+                phoneUS: true,
+                required: true,
+                minlength: 10,
+                maxlength: 100
+            },
+        },
+        */
+
+        //display error alert on form submit
+        invalidHandler: function(event, validator) {
+            var alert = $('.kt_form_msg');
+            alert.removeClass('kt--hide').show();
+            KTUtil.scrollTop();
+        },
+
+        submitHandler: function (form) {
+            form[0].submit(); // submit the form
+        }
+    });
+
+
+</script>
+{% endput %}

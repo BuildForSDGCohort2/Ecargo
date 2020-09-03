@@ -1,0 +1,812 @@
+[viewBag]
+==
+
+ <div class="row">
+    <div class="col-lg-12 col-xl-6">
+        <div class="kt-portlet kt-portlet--mobile">
+            <div class="kt-portlet__head">
+                <div class="kt-portlet__head-label">
+                    <h3 class="kt-portlet__head-title">
+                        {{'Details'|__}}
+                    </h3>
+                </div>
+            </div>
+            <div class="kt-portlet__body">
+             <input type="text" class="kt-hidden form-control mask" name="number" value="{{order.number}}" aria-describedby="basic-addon1">
+                <div class="row">
+                    <div class="form-group col-lg-12">
+                        <label>{{'Airwaybill'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <input type="text" class="form-control " value="{{order.airWayBill}}" name="airwaybill" required />
+                    </div>
+                </div>
+                {% for item in order.items %}
+                <div class="row">
+                    <div class="form-group col-lg-6">
+                        <label>{{'Number of boxes'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <div class="input-group">
+                            <input type="text" class="form-control bootstrap-touchspin-vertical-btn" name="num_boxes" aria-describedby="basic-addon1" value="{{item.num_boxes}}">
+                            <div class="input-group-append"><span class="input-group-text">{{'Boxes'|__}}</span></div>
+                        </div>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label>{{'Number of pallets'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <div class="input-group">
+                            <input type="text" class="form-control bootstrap-touchspin-vertical-btn" name="num_pallets" aria-describedby="basic-addon1" value="{{item.num_pallets}}">
+                            <div class="input-group-append"><span class="input-group-text">{{'Pallets'|__}}</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-lg-12">
+                        <label>{{'Weight'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <div class="kt-form__control">
+                            <div class="input-group">
+              <div class="input-group-append"><span class="input-group-text">{{'Kg'|__}}</span></div>
+        <input type="text" class="form-control bootstrap-touchspin-vertical-btn" name="weight" value="{{item.weight}}">
+             </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                <div class="row">
+                 <div class="form-group col-lg-6">
+                        <label>{{'Courier Company'|__}}</label>
+                        <select class="form-control" data-live-search="true" name="courier_id">
+                            <option data-hidden="true"></option>
+                            {% for courier in couriers %}
+                                <option value="{{courier.id}}" {%if order.courier_id == courier.id %}selected{%endif%}>{{courier.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label>{{'Cc'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <div class="kt-checkbox-single">
+                            <label class="kt-checkbox">
+                                <input type="radio" id="yes" name="cc" {%if order.cc == 1%}checked {%endif%} value="1"> {{'Yes'|__}}
+                                <span></span>
+                            </label>
+                        </div>
+                        <div class="kt-checkbox-single">
+                            <label class="kt-checkbox">
+                                <input type="radio" id="no" name="cc" {%if order.cc == 2%}checked {%endif%} value="2"> {{'No'|__}}
+                                <span></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-lg-6">
+                        <label>{{'Location'|__}}</label>
+                        <input type="text" class="form-control " name="location" value="{{order.location}}"   required/>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label></label>
+                        <div class="kt-checkbox-single">
+                            <label class="kt-checkbox">
+                                <input type="checkbox" id="JOST" name="transfer" class="transfer" value="JOST" {%if order.transfer_jost == 1 %}checked {% endif %}> {{'Transfer to JOST'|__}}
+                                <span></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="kt-portlet kt-portlet--mobile">
+        <div class="kt-portlet__head">
+   <div class="kt-portlet__head-label">
+    <h3 class="kt-portlet__head-title">
+     {{'Sender information'|__}}
+    </h3>
+   </div>
+  </div>
+        <div class="kt-portlet__body">
+            <div class="form-group form-group-last kt-hide">
+    <div class="alert alert-danger kt_form_msg" role="alert">
+     <div class="alert-icon"><i class="flaticon-warning"></i></div>
+       <div class="alert-text">
+                        {{'Oh snap! Change a few things up and try submitting again'|__}}.
+     </div>
+     <div class="alert-close">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true"><i class="la la-close"></i></span>
+        </button>
+     </div>
+    </div>
+   </div>
+            <div class="form-group row">
+                <label>{{'Customer'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                {% if user.role_id == 5 %}
+                    <input name="sender_id" value="{{user.id}}" type="hidden" />
+                    <input value="{{user.name}}" type="text" class="form-control" disabled />
+                {% else %}
+                    <select class="form-control clients" name="sender_id" id="sender_id" required>
+                        <option data-hidden="true"></option>
+                        <option value="{{order.sender_id}}" selected>{{order.sender.name}}</option>
+                        <option value="new" data-icon="flaticon2-add">{{'Add New'|__}}</option>
+                    </select>
+                    <span class="text-muted">{{'Choose or add a new Customer that will send the package'|__}}</span>
+                {% endif %}
+            </div>
+            {% if user.role_id == 5 %}
+                {% if user.mobile is null %}
+                    <div class="form-group row">
+                        <label>{{'Mobile'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <input type="text" class="form-control mobile" name="sender_mobile" required />
+                    </div>
+                {% endif %}
+            {% endif %}
+            <div class="form-group row">
+                <label>{{'Customer Address'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                <select class="form-control sender_address_id" name="sender_address_id" id="sender_address_id" data-live-search="true" title="{{'Please select Customer first'|__}}" required>
+                 <option value="{{order.sender_address_id}}" selected>{{order.sender_address.name}}</option>
+                    <option data-hidden="true"></option><label>{{'Sender'|__}}/{{'Client'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                    {% if user.role_id == 5 %}
+                        {% for address in user.addresses %}
+                            <option value="{{address.id}}" {% if address.default == 1 %}selected{% endif %}>{{address.name}}</option>
+                        {% endfor %}
+                        <option value="new" data-icon="flaticon2-add">{{'Add New'|__}}</option>
+                    {% endif %}
+                </select>
+            </div>
+              <!-- payment -->
+                <div class="payment ">
+                    <div class="row">
+                        <div class="form-group col-lg-6">
+                            <label>{{'Custom Clearance'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">
+                                        {{primary_currency.currency_symbol}}
+                                    </span>
+                                </div>
+                                {% if user.role_id == 5 %}
+                                <input type="text" class="form-control decimal " data-type='currency' id="clearance" name="clearance" value="{{order.custom_clearance ? order.custom_clearance : user.custom_clearance }}" required >
+                                {% else %}
+                                <input type="text" class="form-control decimal " data-type='currency' id="clearance" name="clearance" value="{{order.custom_clearance}}" required >
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="form-group col-lg-6">
+                            <label>{{'Fiscal Representation'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">
+                                        {{primary_currency.currency_symbol}}
+                                    </span>
+                                </div>
+                                {% if user.role_id == 5 %}
+                                <input type="text" class="form-control decimal " data-type='currency' id="fiscal" name="fiscal" value="{{order.fiscal_representation ? order.fiscal_representation : user.fiscal_representation}}" required >
+                                {% else %}
+                                <input type="text" class="form-control decimal " data-type='currency' id="fiscal" name="fiscal" value="{{order.fiscal_representation}}" required >
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-lg-6">
+                            <label>{{'Invoice Payment Term'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                            <div class="input-group">
+                                {% if user.role_id == 5 %}
+                                <input type="text" class="form-control decimal " data-type='currency' id="payment_term" name="payment_term" value="{{order.payment_term ? order.payment_term : user.payment_term}}" required >
+                                {% else %}
+                                <input type="text" class="form-control decimal " data-type='currency' id="payment_term" name="payment_term" value="{{order.payment_term}}" required >
+                                {% endif %}
+                                <div class="input-group-append">
+                                    <span class="input-group-text">
+                                        {{'day'|__}}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group col-lg-6">
+                            <label>{{'Handling Price per Kg'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">
+                                        {{primary_currency.currency_symbol}}
+                                    </span>
+                                </div>
+                                {% if user.role_id == 5 %}
+                                <input type="text" class="form-control decimal " data-type='currency' id="price_kg" name="price_kg" value="{{order.price_kg ? order.price_kg : user.price_kg}}" required >
+                                {% else %}
+                                <input type="text" class="form-control decimal " data-type='currency' id="price_kg" name="price_kg" value="{{order.price_kg}}" required >
+                                {% endif %}
+                                <div class="input-group-append">
+                                    <span class="input-group-text">
+                                        {{'Kg'|__}}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-lg-6">
+                            <label>{{'Does this customer pay storage fee?'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                            <div class="kt-checkbox-single">
+                                <label class="kt-checkbox">
+                                    {% if user.role_id == 5 %}
+                                        {% if order.storage_fee %}
+                                        <input type="radio" class="cfeeRadio" id="storage_yes" name="storage_fee" {% if order.storage_fee == 1%}checked{%endif%} value="yes"> 
+                                        {% else %}
+                                        <input type="radio" class="cfeeRadio" id="storage_yes" name="storage_fee" {% if user.storage_fee == 1%}checked{%endif%} value="yes"> 
+                                        {% endif %}
+                                    {% else %}
+                                    <input type="radio" class="cfeeRadio" id="storage_yes" name="storage_fee" {% if order.storage_fee == 1%}checked{%endif%} value="yes"> 
+                                    {% endif %}
+                                    {{'Yes'|__}}
+                                    <span></span>
+                                </label>
+                            </div>
+                            <div class="kt-checkbox-single">
+                                <label class="kt-checkbox">
+                                    {% if user.role_id == 5 %}
+                                        {% if order.storage_fee %}
+                                        <input type="radio" class="cfeeRadio" id="storage_no" name="storage_fee" {% if order.storage_fee == 2%}checked{%endif%} value="no">
+                                        {% else %}
+                                        <input type="radio" class="cfeeRadio" id="storage_no" name="storage_fee" {% if user.storage_fee == 2%}checked{%endif%} value="no">
+                                        {% endif %}
+                                    {% else %}
+                                    <input type="radio" class="cfeeRadio" id="storage_no" name="storage_fee" {% if order.storage_fee == 2%}checked{%endif%} value="no"> 
+                                    {% endif %}
+                                    {{'No'|__}}
+                                    <span></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    {% if user.role_id == 5 %}
+                        {% if order.storage_fee %}
+                    <div class="row {% if order.storage_fee !=1 %}kt-hidden {% endif %}" id="ccost" >
+                        {% else %}
+                    <div class="row {% if user.storage_fee !=1 %}kt-hidden {% endif %}" id="ccost" >    
+                        {% endif %}
+                    {% else %}
+                    <div class="row {% if order.storage_fee !=1 %}kt-hidden {% endif %}" id="ccost" >
+                    {% endif %}    
+                        <div class="form-group col-lg-6">
+                            <label>{{'Storage Costs after 24 Hours'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">
+                                        {{primary_currency.currency_symbol}}
+                                    </span>
+                                </div>
+                                {% if user.role_id == 5 %}
+                                <input type="text" class="form-control decimal " data-type='currency' id="cost_24" name="cost_24" value="{{order.cost_24 ? order.cost_24 : user.cost_24}}" required >
+                                {% else %}
+                                <input type="text" class="form-control decimal " data-type='currency' id="cost_24" name="cost_24" value="{{order.cost_24}}" required >
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="form-group col-lg-6">
+                            <label>{{'Storage Costs after 48 Hours'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">
+                                        {{primary_currency.currency_symbol}}
+                                    </span>
+                                </div>
+                                {% if user.role_id == 5 %}
+                                <input type="text" class="form-control decimal " data-type='currency' id="cost_48" name="cost_48" value="{{order.cost_48 ? order.cost_48 : user.cost_48}}" required >
+                                {% else %}
+                                <input type="text" class="form-control decimal " data-type='currency' id="cost_48" name="cost_48" value="{{order.cost_48}}" required >
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- payment -->
+            {% if user.role_id != 5 %}
+                <div class="row kt-hidden" id="addnewsender">
+                    <div class="kt-portlet kt-portlet--bordered kt-portlet--head--noborder kt-margin-b-0">
+            <div class="kt-portlet__head">
+                            <div class="kt-portlet__head-label">
+                             <span class="kt-portlet__head-icon">
+                              <i class="flaticon2-user"></i>
+                             </span>
+                             <h3 class="kt-portlet__head-title">
+                              {{'Add a new Customer'|__}} <small>{{'Fill data and save it brefore you can continue'}}</small>
+                             </h3>
+                            </div>
+            </div>
+            <div class="kt-portlet__body">
+                            <div class="row">
+                                <div class="form-group col-lg-12">
+                                    <label>{{'Customer Name'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                    <input type="text" class="form-control name" name="sender[name]" required />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-lg-12">
+                                    <label>{{'Email Address'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                    <input type="email" class="form-control email" name="sender[email]" required />
+                                </div>
+                            </div>
+                            <div class="row">    
+                                <div class="form-group col-lg-6">
+                                    <label>{{'Vat Number'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                    <input type="text" class="form-control vat" name="sender[vat]" required />
+                                </div>
+                                <div class="form-group col-lg-6">
+                                    <label>{{'Budget'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">
+                                                {{primary_currency.currency_symbol}}
+                                            </span>
+                                        </div>
+                                        <input type="text" class="form-control decimal budget" data-type='currency' name="sender[budget]" required >
+                                        <!-- <div class="input-group-append">
+                                            <span class="input-group-text">
+                                                {{primary_currency.currency_symbol}}
+                                            </span>
+                                        </div -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="location-sender">
+                                <div class="row">
+                                    <div class="form-group col-lg-6">
+                                        <label>{{'Address'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <input type="text" class="form-control street"  name="sender[street_address]"   />
+                                    </div>
+                                    <div class="form-group col-lg-6">
+                                        <label>{{'Number'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <input type="text" class="form-control num"  name="sender[number]"   />
+                                    </div>
+                                    <div class="form-group col-lg-6">
+                                        <label>{{'Box'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <input type="text" class="form-control box" name="sender[box]"   />
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group col-lg-5">
+                                        <label>{{'Country'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <select class="form-control country_id" data-sender="country" data-live-search="true" name="sender[country]" required>
+                                            <option data-hidden="true"></option>
+                                            {% for country in countries %}
+                                                <option value="{{country.id}}" {% if currentLang != 'en' %}data-subtext="{{country.lang(currentLang).name}}"{% endif %}>{{country.lang('en').name}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-lg-3">
+                                        <label>{{'Postal Code'|__}}</label>
+                                        <input class="form-control postal_code" type="text" data-sender="postal_code" name="sender[postal_code]" >
+                                    </div>
+                                    <div class="form-group col-lg-4">
+                                        <label>{{'City'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <select class="form-control city_id" data-sender="locality" name="sender[city]" title="{{'Please select state first'|__}}" data-live-search="true" required>
+                                            <option data-hidden="true"></option>
+                                            {% for city in cities %}
+                                                <option value="{{city.id}}">{{city.name}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- modify in sitting -->
+                                <div class="row">
+                                    <div class="form-group col-lg-12">
+                                        <label>{{'Language'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <select class="form-control lang"  name="sender[lang]" required>
+                                            {% for lang in languages %}
+                                                <option value="{{lang.id}}" >{{lang.name}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- --- -->
+                                <div class="row">
+                                    <div class="form-group col-lg-6">
+                                        <label>{{'Custom Clearance'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">
+                                                    {{primary_currency.currency_symbol}}
+                                                </span>
+                                            </div>
+                                            <input type="text" class="form-control decimal clearance" data-type='currency' name="sender[clearance]" required >
+                                        </div>
+                                    </div>
+                                    <div class="form-group col-lg-6">
+                                        <label>{{'Fiscal Representation'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">
+                                                    {{primary_currency.currency_symbol}}
+                                                </span>
+                                            </div>
+                                            <input type="text" class="form-control decimal fiscal" data-type='currency' name="sender[fiscal]" required >
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group col-lg-6">
+                                        <label>{{'Invoice Payment Term'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control decimal payment_term" data-type='currency' name="sender[payment_term]" required >
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">
+                                                    {{'day'|__}}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group col-lg-6">
+                                        <label>{{'Handling Price per Kg'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">
+                                                    {{primary_currency.currency_symbol}}
+                                                </span>
+                                            </div>
+                                            <input type="text" class="form-control decimal price_kg" data-type='currency' name="sender[price_kg]" required >
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">
+                                                    {{'Kg'|__}}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group col-lg-6">
+                                        <label>{{'Does this customer pay storage fee?'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <div class="kt-checkbox-single">
+                                            <label class="kt-checkbox">
+                                                <input type="radio" class="feeRadio" id="yes_radio" name="sender[storage_fee]" value="yes"> {{'Yes'|__}}
+                                                <span></span>
+                                            </label>
+                                        </div>
+                                        <div class="kt-checkbox-single">
+                                            <label class="kt-checkbox">
+                                                <input type="radio" class="feeRadio" id="no_radio" name="sender[storage_fee]" value="no"> {{'No'|__}}
+                                                <span></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row kt-hidden" id="cost" >
+                                    <div class="form-group col-lg-6">
+                                        <label>{{'Storage Costs after 24 Hours'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">
+                                                    {{primary_currency.currency_symbol}}
+                                                </span>
+                                            </div>
+                                            <input type="text" class="form-control decimal cost_24" data-type='currency' name="sender[cost_24]" required >
+                                        </div>
+                                    </div>
+                                    <div class="form-group col-lg-6">
+                                        <label>{{'Storage Costs after 48 Hours'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">
+                                                    {{primary_currency.currency_symbol}}
+                                                </span>
+                                            </div>
+                                            <input type="text" class="form-control decimal cost_48" data-type='currency' name="sender[cost_48]" required >
+                                        </div>
+                                    </div>
+                                </div>
+                            
+                            </div>
+            </div>
+                        <div class="kt-portlet__foot">
+                <div class="row align-items-center">
+                 <div class="col-lg-12">
+                  <button type="button" class="btn btn-success save">{{'Save'|__}}</button>
+                  <button type="button" class="btn btn-secondary cancel">{{'Cancel'|__}}</button>
+                 </div>
+                </div>
+               </div>
+           </div>
+       </div>
+            {% endif %}
+            <div class="row kt-hidden" id="addnewsenderaddress">
+                    <div class="kt-portlet kt-portlet--bordered kt-portlet--head--noborder kt-margin-b-0">
+                        <div class="kt-portlet__head">
+                            <div class="kt-portlet__head-label">
+                                <h3 class="kt-portlet__head-title">
+                                    {{'Add a new client address'|__}}
+                                </h3>
+                            </div>
+                        </div>
+                        <div class="kt-portlet__body">
+                            <div class="location-senderaddress">
+                                <div class="row">
+                                    <div class="form-group col-lg-12">
+                                        <label>{{'Address'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <input type="text" class="form-control street street_addr"  name="senderaddress[street_address]"   />
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group col-lg-5">
+                                        <label>{{'Country'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <select class="form-control country_id" data-sender="country" data-live-search="true" name="senderaddress[country]" required>
+                                            <option data-hidden="true"></option>
+                                            {% for country in countries %}
+                                                <option value="{{country.id}}" {% if currentLang != 'en' %}data-subtext="{{country.lang(currentLang).name}}"{% endif %}>{{country.lang('en').name}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-lg-3">
+                                        <label>{{'Postal Code'|__}}</label>
+                                        <input class="form-control postal_code" type="text" data-sender="postal_code" name="senderaddress[postal_code]" >
+                                    </div>
+                                    <div class="form-group col-lg-4">
+                                        <label>{{'City'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                        <select class="form-control city_id" data-sender="locality" name="senderaddress[city]" title="{{'Please select state first'|__}}" data-live-search="true" required>
+                                            <option data-hidden="true"></option>
+                                            {% for city in cities %}
+                                                <option value="{{city.id}}">{{city.name}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="kt-portlet__foot">
+                            <div class="row align-items-center">
+                                <div class="col-lg-12">
+                                    <button type="button" class="btn btn-success save">{{'Save'|__}}</button>
+                                    <button type="button" class="btn btn-secondary cancel">{{'Cancel'|__}}</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <div class="kt-separator kt-separator--border-dashed kt-separator--space-lg kt-separator--portlet-fit"></div>
+           
+        </div>
+    </div>
+</div>
+<div class="row">
+ <div class="col-lg-12 col-xl-6">
+        <div class="kt-portlet kt-portlet--mobile">
+            <div class="kt-portlet__head">
+                <div class="kt-portlet__head-label">
+                    <h3 class="kt-portlet__head-title">
+                        {{'Extra Info'|__}}
+                    </h3>
+                </div>
+            </div>
+            <div class="kt-portlet__body">
+               <div class="row">
+                    <div class="form-group col-lg-12">
+                        <label>{{'Label'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <select class="form-control" data-live-search="true" name="label_id" id="label_other">
+                            <option data-hidden="true"></option>
+                            {% for label in labels %}
+                                <option value="{{label.id}}" {%if order.label_id == label.id%}selected{%endif%}>{{label.name}}</option>
+                            {% endfor %}
+                            <option id="other" value="other" class="label_other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row kt-hidden" id="div_label_other">
+                    <div class="form-group col-lg-12">
+                        <label>{{'Other'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <div class="input-group">
+                            
+                            <input type="text" class="form-control " name="label_other" aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-lg-12">
+                        <label>{{'Ground Handler'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <select class="form-control" data-live-search="true" name="handler_id" >
+                            <option data-hidden="true"></option>
+                            {% for handler in handlers %}
+                                <option value="{{handler.id}}" {%if order.handler_id == handler.id%}selected{%endif%}>{{handler.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-lg-12">
+                        <label>{{'breakdown'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <select class="form-control" data-live-search="true" name="breakdown_id" >
+                            <option data-hidden="true"></option>
+                            {% for breakdown in breakdowns %}
+                                <option value="{{breakdown.id}}" {%if order.breakdown_id == breakdown.id%}selected{%endif%}>{{breakdown.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                 <div class="form-group col-lg-12">
+                        <label>{{'Delivery Status'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <select class="form-control" data-live-search="true" name="status_id" required>
+                            <option data-hidden="true"></option>
+                            {% for status in statuses %}
+                                <option value="{{status.id}}_{{status.equal}}" {% if order.status_id == status.id %}selected{% endif %}>{{status.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-lg-6">
+                        <label>{{'Pre alert received'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <div class="input-group date">
+                            <input type="text" class="form-control date"  name="alert_received" value="{{order.preAlert_received|date(settings.dateformat)}}" required>
+                            <div class="input-group-append">
+                                <span class="input-group-text">
+                                    <i class="la la-calendar"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label>{{'Released note received'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <div class="input-group date">
+                            <input type="text" class="form-control date" readonly="" name="note_received" value="{{order.releasedNote_received|date(settings.dateformat)}}" required>
+                            <div class="input-group-append">
+                                <span class="input-group-text">
+                                    <i class="la la-calendar"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-lg-12">
+                        <label>{{'Remarks'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <div class="form-group">
+                         <textarea class="form-control" id="remarks_message" rows="3" name="remarks" placeholder="{{'Write your remarks'|__}}" required>{{order.remarks}}</textarea>
+                     </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-lg-12">
+                        <label>{{'Released Note'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                        <div class="form-group">
+                         <textarea class="form-control" id="notes_message" rows="3" name="notes" placeholder="{{'Write your notes'|__}}" required>{{order.released_note}}</textarea>
+                     </div>
+                    </div>
+                </div>
+                {% if (user.hasUserPermission('assign', 'c')) %}
+                    <div class="form-group row kt-margin-t-20">
+                        <label class="col-xl-3 col-lg-3 col-form-label">{{'Assign Employee'|__}}</label>
+                        <div class="col-lg-9 col-xl-6">
+                            <select class="form-control" data-live-search="true" name="assigned_id">
+                                <option data-hidden="true"></option>
+                                {% for employee in employees %}
+                                    <option value="{{employee.id}}" {% if order.assigned_id == employee.id %}selected{% endif %}>{{employee.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+ {% if this.param.id %}
+   <!--  <div class="col-lg-12 col-xl-6">
+     <div class="kt-portlet kt-portlet--mobile">
+            <div class="kt-portlet__head">
+                <div class="kt-portlet__head-label">
+                    <h3 class="kt-portlet__head-title">
+                        {{'Destinations'|__}}
+                    </h3>
+                </div>
+            </div>
+            <div class="kt-portlet__body">
+             <div id="kt_repeater_destinations">
+                    <div class="form-group form-group-last row">
+                        <div data-repeater-list="destinations" class="col-lg-12">
+                            <div data-repeater-item class="align-items-center first-child">
+                                <div class="location">
+                                    <div class="row">
+                                        <div class="form-group col-lg-12">
+                                            <label>{{'Country'|__}}&nbsp;<span class="kt-badge kt-badge--danger kt-badge--dot"></span></label>
+                                            <input type="text" class="form-control" name="dest_country" />
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                     <div class="form-group col-md-4">
+                                            <label>{{'Number Of Boxes'|__}}</label>
+                                            <div class="">
+                                                <input type="text" class="form-control" name="dest_boxes"  />
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label>{{'Price'|__}}</label>
+                                            <div class="">
+                                                <input type="text" class="form-control" name="dest_price"  />
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label>{{'Amount'|__}}</label>
+                                            <div class="">
+                                                <input type="text" class="form-control" name="dest_amount"  />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                     <div class="form-group col-md-6">
+                                            <label>{{'Subtotal'|__}}</label>
+                                            <div class="">
+                                                <input type="text" class="form-control" name="dest_subtotal"  />
+                                            </div>
+                                        </div>
+                                     <div class="form-group col-md-6">
+                                            <label>{{'Total'|__}}</label>
+                                            <div class="">
+                                                <input type="text" class="form-control" name="dest_total"  />
+                                            </div>
+                                        </div>
+                                    </div> 
+                                </div>
+
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <a href="javascript:;" data-repeater-delete="" class="btn-sm btn btn-label-danger btn-bold kt-margin-t-25 delete_btn">
+                                            <i class="la la-trash-o"></i>
+                                            {{'Delete'|__}}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                     </div>
+                     <div class="form-group form-group-last row">
+                         <label class="col-xl-12 col-form-label kt-align-left">
+                             <a href="javascript:;" data-repeater-create="" class="btn btn-bold btn-label-brand">
+                                 <i class="la la-plus"></i> {{'Add Another Destination'|__}}
+                             </a>
+                         </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> -->
+    {% endif %}
+</div>
+
+{% if this.param.id %}
+<!-- <div class="row">
+ <div class="col-lg-12 col-xl-12">
+  <div class="kt-portlet kt-portlet--height-fluid" id="listing_container">
+         <div class="kt-portlet__head">
+          <div class="kt-portlet__head-label">
+           <h3 class="kt-portlet__head-title">
+            {{'History'|__}}
+           </h3>
+          </div>
+         </div>
+         <div class="kt-portlet__body">
+    <div class="kt-widget11">
+     <div class="table-responsive" id="listing">
+      <table class="table">
+          <thead>
+           <tr>
+               <th>Date</th>
+               <th>Status</th>
+               <th>saff member</th>
+           </tr>
+          </thead>
+          <tbody>
+           <tr>
+            <td>2020-6-2</td>
+            <td>Blocked</td>
+            <td>Nawras</td>
+           </tr>
+          </tbody>
+      </table>
+     </div>
+    </div>
+         </div>
+        </div>
+ </div>
+</div> -->
+{% endif %}
+{% put styles %}
+ {% if currentLang == 'ar'%}
+     <link href="./admin/css/demo1/pages/inbox/inbox.rtl.css" rel="stylesheet" type="text/css" />
+ {% else %}
+  <link href="./admin/css/demo1/pages/inbox/inbox.css" rel="stylesheet" type="text/css" />
+ {% endif %}
+{% endput %}

@@ -1,0 +1,13 @@
+.style3 .action_box_inner {background-color: #243775;}
+.style3 .action_box_inner:before {background-color: #243775;}
+.action_box.style3:before {background-color: #243775;}
+.tbg {background-color: #243775 !important;}
+.kl-icon img {width: 60px; margin: 0 auto;}
+.media-container.media-container--type-pb {margin-top: -130px;}
+@media (max-width: 992px) {
+	.media-container.media-container--type-pb {margin-bottom: 180px;}
+}
+@media (max-width: 768px) {
+	.media-container.media-container--type-pb {margin-top: -100px; margin-bottom: 150px;}
+}
+img.kl-iconbox__icon {width: 100%;}

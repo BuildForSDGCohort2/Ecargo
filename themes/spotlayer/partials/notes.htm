@@ -1,0 +1,55 @@
+[viewBag]
+==
+{% if item.notes is not empty %}
+
+	<div class="kt-notes kt-scroll kt-scroll--pull" data-scroll="true" style="height: 400px;">
+		<div class="kt-notes__items">
+			{% for note in item.notes %}
+				<div class="kt-notes__item kt-notes__item--clean">
+					<div class="kt-notes__media">
+						{% if note.user.avatar %}
+							<img src="{{note.user.avatar.thumb(100, 100,'crop')}}" alt="image">
+						{% else %}
+							<h3 class="kt-notes__user kt-font-boldest">
+								{{note.user.name|capitalize|slice(0,2)}}
+							</h3>
+						{% endif %}
+					</div>
+
+					<div class="kt-notes__content">
+						<div class="kt-notes__section">
+							<div class="kt-notes__info">
+								<a href="#" class="kt-notes__title">
+									{% if note.user.id == user.id %}
+										{{'You'|__}}
+									{% else %}
+										{{note.user.name}}
+									{% endif %}
+								</a>
+								<span class="kt-notes__desc">
+									 {{note.created_at|date('h:ia')}} {{note.created_at|date(settings.dateformat)}}
+								</span>
+								{% if note.created_at %}
+								<span class="kt-badge kt-badge--info kt-badge--inline">{{note.created_at|time_diff}}</span>
+								{% endif %}
+							</div>
+						</div>
+						<span class="kt-notes__body">
+							{{note.content}}
+						</span>
+					</div>
+				</div>
+			{% endfor %}
+		</div>
+	</div>
+{% else %}
+	<div class="alert alert-solid-warning alert-bold fade show kt-margin-b-20" role="alert">
+		<div class="alert-icon"><i class="fa fa-exclamation-triangle"></i></div>
+		<div class="alert-text">{{"There's no notes yet"|__}}.</div>
+		<div class="alert-close">
+			<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+				<span aria-hidden="true"><i class="la la-close"></i></span>
+			</button>
+		</div>
+	</div>
+{% endif %}

@@ -1,0 +1,247 @@
+title = "Report Print"
+url = "/dashboard/reports/:category/:type/excel"
+layout = "blank"
+is_hidden = 0
+role = 0
+permission = 0
+anonymous_only = 0
+logged_only = 1
+child_of = "dashboard/shipments"
+menu_breadcrumb = "order"
+hide_crumb = 0
+remove_crumb_trail = 0
+crumb_disabled = 0
+
+[viewBag]
+==
+<?php
+function onStart(){
+    if(!Auth::getUser()->hasUserPermission(["report"],'r')) {
+        \Flash::error($this['theme_lang']['not_allowed']);
+    }
+
+    header("Content-Type: application/xls");
+    header("Content-Disposition: attachment; filename=".$this->param('category')."_".$this->param('type')."_".\Carbon\Carbon::now()->format('Y-m-d')."_".\Carbon\Carbon::now()->format('H-i-s').".xls");
+    header("Pragma: no-cache");
+    header("Expires: 0");
+
+
+
+        $this['user']       =   Auth::getUser();
+
+    if($this->param('category') == 'shipments'){
+        $created_at         =   \Session::get('created_at');
+        $sender_id          =   \Session::get('sender_id');
+        $employee_id        =   \Session::get('employee_id');
+
+
+
+        $records            =   \Spot\Shipment\Models\Order::orderBy('id', 'DESC');
+        if($this->param('type') == 'delayed'){
+            $records            =   $records->whereIn('requested',[0,1,3])->where('delivery_date', '<', \Carbon\Carbon::now()->format('Y-m-d'));
+        }
+        if($this->param('type') == 'delivered'){
+            $records            =   $records->whereIn('requested',[4])->where('delivery_date', '<', \Carbon\Carbon::now()->format('Y-m-d'));
+        }
+
+        if(isset($created_at) && $created_at != ''){
+            $this['created_at'] =   $created_at;
+            $created_at     =   explode(" - ", $created_at);
+            $start          =   \Carbon\Carbon::parse(\Carbon\Carbon::createFromFormat($this['settings']['dateformat'], $created_at[0]));
+            if(!isset($created_at[1])){
+                $start          =   $start->copy()->startOfDay();
+                $end            =   $start->copy()->endOfDay();
+            }else{
+                $end            =   \Carbon\Carbon::parse(\Carbon\Carbon::createFromFormat($this['settings']['dateformat'], $created_at[1]));
+                $start          =   $start->copy()->startOfDay();
+                $end            =   $end->copy()->endOfDay();
+            }
+
+            $records        =   $records->where('created_at', '>=', $start);
+            $records        =   $records->where('created_at', '<=', $end);
+        }
+        if(isset($employee_id) && $employee_id != ''){
+            $this['employee_id'] =   $employee_id;
+            $this['employee'] =   RainLab\User\Models\User::find($employee_id);
+            $records    =   $records->where(function($q) use($employee_id){
+                $q->where('assigned_id', $employee_id)
+                ->orWhere(function($q) use($employee_id){
+                    $q->whereHas('manifest',function($q) use($employee_id){
+                        $q->where('driver_id', $employee_id)
+                        ->orWhere('employee_id', $employee_id);
+                    });
+                });
+            });
+        }
+        if(isset($sender_id) && $sender_id != ''){
+            $this['sender_id'] =   $sender_id;
+            $this['sender'] =   RainLab\User\Models\User::find($sender_id);
+            $records    =   $records->where('sender_id', $sender_id);
+        }
+
+        $orders     =   $records->get();
+
+        Session::forget('created_at');
+        Session::forget('sender_id');
+        Session::forget('employee_id');
+
+
+        $data =  $this['theme_lang']['id']."\t".$this['theme_lang']['created_on']."\t".$this['theme_lang']['payment']."\t".$this['theme_lang']['sender_details']."\t".$this['theme_lang']['area']."\t".$this['theme_lang']['office']."\t".$this['theme_lang']['status']."\t".$this['theme_lang']['mobile']."\t"."\n";
+
+        foreach($orders as $order){
+
+
+            $shipping_from_area = $shipping_to_area = $shipping_from_area_id = $shipping_to_area_id = null;
+            if($order->sender_address){
+                if($order->sender_address->area){
+                    $shipping_from_area =   $order->sender_address->area->name;
+                    $shipping_from_area_id =   $order->sender_address->area->id;
+                }elseif($order->sender_address->thecity){
+                    $shipping_from_area =   $order->sender_address->thecity->name;
+                    $shipping_from_area_id =   $order->sender_address->thecity->id;
+                }elseif($order->sender_address->thestate){
+                    $shipping_from_area =   $order->sender_address->thestate->name;
+                    $shipping_from_area_id =   $order->sender_address->thestate->id;
+                }elseif($order->sender_address->thecountry){
+                    $shipping_from_area =   $order->sender_address->thecountry->name;
+                    $shipping_from_area_id =   $order->sender_address->thecountry->id;
+                }
+            }
+            if($order->receiver_address){
+                if($order->receiver_address->area){
+                    $shipping_to_area =   $order->receiver_address->area->name;
+                    $shipping_to_area_id =   $order->receiver_address->area->id;
+                }elseif($order->receiver_address->thecity){
+                    $shipping_to_area =   $order->receiver_address->thecity->name;
+                    $shipping_to_area_id =   $order->receiver_address->thecity->id;
+                }elseif($order->receiver_address->thestate){
+                    $shipping_to_area =   $order->receiver_address->thestate->name;
+                    $shipping_to_area_id =   $order->receiver_address->thestate->id;
+                }elseif($order->receiver_address->thecountry){
+                    $shipping_to_area =   $order->receiver_address->thecountry->name;
+                    $shipping_to_area_id =   $order->receiver_address->thecountry->id;
+                }
+            }
+
+
+            $created_at         =   \Carbon\Carbon::parse($order->created_at)->format($this['settings']['dateformat']).' '.\Carbon\Carbon::parse($order->created_at)->format('h:i a');
+            $payment            =   (($order->payment == 1) ? $this['theme_lang']['postpaid'] : $this['theme_lang']['prepaid'] );
+            $sender_details     =   $order->sender->name.' ('.$shipping_from_area.')';
+            $area               =   (($order->type == 1) ? $shipping_from_area_id : $shipping_to_area_id);
+            $office             =   ($order->office ? $order->office->name: '');
+            $status             =   ($order->status ? $order->status->name: '');
+            $mobile             =   (($order->type == 1) ? $order->sender->mobile : $order->receiver->mobile);
+
+            $data .= $order->id."\t".$created_at."\t".$payment."\t".$sender_details."\t".$area."\t".$office."\t".$status."\t".$mobile."\t"."\n";
+        }
+
+    }elseif($this->param('category') == 'transactions'){
+
+
+        $created_at         =   \Session::get('created_at');
+        $for_id             =   \Session::get('for_id');
+        $status_id          =   \Session::get('status_id');
+
+        $records            =   \Spot\Shipment\Models\Payment::orderBy('id', 'DESC');
+        if($this->param('type') == 'deposited'){
+            $records    =   $records->whereIn('movement',[2,4,6,8]);
+        }
+        if($this->param('type') == 'withdrwal'){
+            $records    =   $records->whereIn('movement',[1,3,5,7]);
+        }
+
+
+        if(isset($created_at) && $created_at != ''){
+            $this['created_at'] =   $created_at;
+            $created_at     =   explode(" - ", $created_at);
+            $start          =   \Carbon\Carbon::parse(\Carbon\Carbon::createFromFormat($this['settings']['dateformat'], $created_at[0]));
+            if(!isset($created_at[1])){
+                $start          =   $start->copy()->startOfDay();
+                $end            =   $start->copy()->endOfDay();
+            }else{
+                $end            =   \Carbon\Carbon::parse(\Carbon\Carbon::createFromFormat($this['settings']['dateformat'], $created_at[1]));
+                $start          =   $start->copy()->startOfDay();
+                $end            =   $end->copy()->endOfDay();
+            }
+
+            $records        =   $records->where('created_at', '>=', $start);
+            $records        =   $records->where('created_at', '<=', $end);
+        }
+        if(isset($for_id) && $for_id != ''){
+            $this['for_id'] =   $for_id;
+            $this['for']    =   RainLab\User\Models\User::find($for_id);
+            $records        =   $records->where('for_id', $for_id);
+        }
+        if(isset($status_id) && $status_id != ''){
+            $this['status_id'] =   $status_id;
+            $records        =   $records->where('status', $status_id);
+        }
+        $orders     =   $records->get();
+
+        Session::forget('created_at');
+        Session::forget('for_id');
+        Session::forget('status_id');
+
+
+        $data =  $this['theme_lang']['id']."\t".$this['theme_lang']['created_on']."\t".$this['theme_lang']['for']."\t".$this['theme_lang']['type']."\t".$this['theme_lang']['movement']."\t".$this['theme_lang']['description']."\t".$this['theme_lang']['date']."\t".$this['theme_lang']['amount']."\t".$this['theme_lang']['amount']."\t".$this['theme_lang']['shipment']."\t"."\n";
+
+        foreach($orders as $order){
+
+            $created_at         =   \Carbon\Carbon::parse($order->created_at)->format($this['settings']['dateformat']).' '.\Carbon\Carbon::parse($order->created_at)->format('h:i a');
+            switch ($order->movement) {
+                case 1:
+                    $movement           =   $this['theme_lang']['withdrawl'];
+                    break;
+                case 2:
+                    $movement           =   $this['theme_lang']['deposit'];
+                    break;
+                case 3:
+                    $movement           =   $this['theme_lang']['deduction_from_the_wallet'];
+                    break;
+                case 4:
+                    $movement           =   $this['theme_lang']['add_to_wallet'];
+                    break;
+                case 5:
+                    $movement           =   $this['theme_lang']['deduction_of_commission_balance'];
+                    break;
+                case 6:
+                    $movement           =   $this['theme_lang']['add_to_the_commission_balance'];
+                    break;
+                case 7:
+                    $movement           =   $this['theme_lang']['deduction_from_the_balance_of_packages'];
+                    break;
+                case 8:
+                    $movement           =   $this['theme_lang']['add_to_the_balance_of_packages'];
+                    break;
+            }
+            $description        =   $order->description;
+            $date               =   \Carbon\Carbon::parse($order->date)->format($this['settings']['dateformat']);
+
+            if($order->type == 1 ){
+                if($order->payment_with ){
+                    $for    =   $order->gotit->name;
+                    $for_type    =   $this['theme_lang']['employee'];
+                }else{
+                    $for    =   $order->user->name;
+                    $for_type    =   $this['theme_lang']['client'];
+                }
+
+            }elseif($order->type == 3){
+                $for    =   $order->treasury->name;
+                $for_type    =   $this['theme_lang']['treasury'];
+            }
+            $amount             =   Currency::format($order->amount);
+            $amount_number             =  $order->amount;
+            $shipment          =   $order->item_id;
+
+
+            $data .= $order->id."\t".$created_at."\t".$for."\t".$for_type."\t".$movement."\t".$description."\t".$date."\t".$amount."\t".$amount_number."\t".$shipment."\t"."\n";
+        }
+    }
+
+    echo $data;
+    //echo chr(255).chr(254).iconv("UTF-8", "UTF-16LE//IGNORE", $data);
+    exit;
+}
+?>
+==

@@ -1,0 +1,31 @@
+.kl-cta-ribbon .trisvg {fill: #EC4933;}
+
+.logo-container .logo-infocard .left-side {background-color: #c11515;}
+.logo-container .logo-infocard .right-side {background-color: #EC4933;}
+
+.site-header .kl-cart-button .fas:after {background-color: #EC4933;}
+.cart-container .buttons .button.wc-forward {background-color: #EC4933;}
+.cart-container .buttons .button.wc-forward:hover {background-color: #c11515;}
+
+.css3panel-title,
+.css3panel-btn-area .btn {font-family: "Cardo", "Helvetica Neue", Helvetica, Arial, sans-serif;}
+.section-video-icons .left-side {background-color: #EC4933 !important;}
+
+.section-video-icons .right-side .kl-iconbox__title,
+.section-video-icons .right-side .kl-iconbox__desc {color: #3e3e3e !important;}
+
+.custom-position2 .kl-iconbox__icon-wrapper img {width: 135px;}
+.tbg {background-color: #EC4933 !important;}
+.processitems .kl-icon img {width: 60px; position: absolute; top: 50%; left: 50%; -webkit-transform: translate3d(-50%, -50%,0); transform: translate3d(-50%, -50%,0);}
+.process-list .processitems li:hover .ico-wrapper > span {background-color: #f2f3f4;}
+.m_title {color: #EC4933;}
+.theHoverBorder:hover {box-shadow: 0 0 0 5px #EC4933 inset;}
+.kl-cta-ribbon {background: #EC4933;}
+.site-header .kl-cart-button .glyphicon:after {background-color: #EC4933;}
+.kl-cta-ribbon .trisvg path {fill: #EC4933;}
+.logo-container .logo-infocard {background: #EC4933;}
+.how_to_shop .number {background: #EC4933;}
+@media (min-width: 992px) {
+	.main-nav > ul > li > a:before {background-color: #EC4933;}
+	.main-nav .hg_mega_container li a:not(.zn_mega_title):before {background-color: #EC4933;}
+}
