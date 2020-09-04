@@ -1,4 +1,4 @@
-1599256842a:1:{s:27:"dashboard/update-client.htm";a:19:{s:8:"fileName";s:27:"dashboard/update-client.htm";s:7:"content";s:63022:"title = "Update Client"
+1599260361a:1:{s:27:"dashboard/update-client.htm";a:19:{s:8:"fileName";s:27:"dashboard/update-client.htm";s:7:"content";s:63022:"title = "Update Client"
 url = "/dashboard/clients/:id/edit"
 layout = "admin"
 is_hidden = 0

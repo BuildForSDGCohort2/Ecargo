@@ -1,4 +1,4 @@
-1599256842a:1:{s:29:"dashboard/update-manifest.htm";a:19:{s:8:"fileName";s:29:"dashboard/update-manifest.htm";s:7:"content";s:32774:"title = "Edit Manifest"
+1599260361a:1:{s:29:"dashboard/update-manifest.htm";a:19:{s:8:"fileName";s:29:"dashboard/update-manifest.htm";s:7:"content";s:32774:"title = "Edit Manifest"
 url = "/dashboard/shipments/manifest/:id/edit"
 layout = "admin"
 is_hidden = 0
