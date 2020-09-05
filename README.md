@@ -1,5 +1,7 @@
 # Installation wizard for October
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/86f5ab159ef342dba907d13ca12b4326)](https://app.codacy.com/gh/BuildForSDGCohort2/Team-343-frontend?utm_source=github.com&utm_medium=referral&utm_content=BuildForSDGCohort2/Team-343-frontend&utm_campaign=Badge_Grade_Dashboard)
+
 The wizard installation is a recommended way to install October. It is simpler than the command-line installation and doesn't require any special skills.
 
 1. Prepare a directory on your server that is empty. It can be a sub-directory, domain root or a sub-domain.
