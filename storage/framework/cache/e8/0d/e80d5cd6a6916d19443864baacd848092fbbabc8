@@ -1,4 +1,4 @@
-1599260361a:1:{s:9:"track.htm";a:16:{s:8:"fileName";s:9:"track.htm";s:7:"content";s:4483:"title = "Shipment Tracking"
+1599574019a:1:{s:9:"track.htm";a:16:{s:8:"fileName";s:9:"track.htm";s:7:"content";s:4599:"title = "Shipment Tracking"
 url = "/tracking/:number?"
 layout = "blank"
 is_hidden = 0
@@ -35,9 +35,11 @@ function onTracking()
     <div class="kt-container ">
         <div class="kt-sc__top">
             <h3 class="kt-sc__title">
-                <a class="kt-login__logo " href="{{url('/')}}">
+               <!-- <a class="kt-login__logo " href="{{url('/')}}">
                     <img style="max-width:90px;width:auto" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}">
-                </a>
+                </a>-->
+                <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
+
 			</h3>
             <div class="kt-sc__nav">
                 <a href="{{url('/')}}" class="kt-link kt-font-bold">{% if user %}{{'Dashboard'|__}}{% else %}{{'Login'|__}}{% endif %}</a>
@@ -104,7 +106,7 @@ function onTracking()
      });
  </script>
  {% endput %}
-";s:5:"mtime";i:1593301836;s:6:"markup";s:4031:"<div class="kt-content  kt-content--fit-top  kt-grid__item kt-grid__item--fluid kt-grid kt-grid--hor" id="kt_content">
+";s:5:"mtime";i:1599570718;s:6:"markup";s:4147:"<div class="kt-content  kt-content--fit-top  kt-grid__item kt-grid__item--fluid kt-grid kt-grid--hor" id="kt_content">
 
 					<!-- begin:: Content -->
 	<!-- begin:: Hero -->
@@ -112,9 +114,11 @@ function onTracking()
     <div class="kt-container ">
         <div class="kt-sc__top">
             <h3 class="kt-sc__title">
-                <a class="kt-login__logo " href="{{url('/')}}">
+               <!-- <a class="kt-login__logo " href="{{url('/')}}">
                     <img style="max-width:90px;width:auto" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}">
-                </a>
+                </a>-->
+                <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
+
 			</h3>
             <div class="kt-sc__nav">
                 <a href="{{url('/')}}" class="kt-link kt-font-bold">{% if user %}{{'Dashboard'|__}}{% else %}{{'Login'|__}}{% endif %}</a>

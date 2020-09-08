@@ -52,9 +52,11 @@ function onMyRegister()
                      <div class="kt-login__signin">
                          <div class="kt-login__head">
                              <div class="kt-login__title">
+                                 <!--
                                  <a class="kt-login__logo " href="{{url('/')}}">
                                      <img style="height:90px;width:auto" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}">
                                  </a>
+                                -->
                                  <h3 class="kt-margin-t-30">{{"Sign In"|__}}</h3>
                              </div>
                          </div>
@@ -102,9 +104,11 @@ function onMyRegister()
                          {% if canRegister %}
                              <div class="kt-login__head">
                                  <div class="kt-login__title">
-                                     <a class="kt-login__logo " href="{{url('/')}}">
+                                     <!--<a class="kt-login__logo " href="{{url('/')}}">
                                          <img style="height:90px;width:auto" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}">
-                                     </a>
+                                     </a>-->
+                                     <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
+                                        
                                      <h3 class="kt-margin-t-30">{{"Sign Up"|__}}</h3>
              						<div class="kt-login__desc">{{'Enter your details to create your account'|__}}:</div>
                                  </div>

@@ -1,4 +1,4 @@
-1599260361a:1:{s:8:"home.htm";a:18:{s:8:"fileName";s:8:"home.htm";s:7:"content";s:29982:"title = "Login"
+1599574019a:1:{s:8:"home.htm";a:18:{s:8:"fileName";s:8:"home.htm";s:7:"content";s:30484:"title = "Login"
 url = "/"
 layout = "blank"
 is_hidden = 0
@@ -39,9 +39,17 @@ function onMyRegister()
                      <div class="kt-login__signin">
                          <div class="kt-login__head">
                              <div class="kt-login__title">
+                                 <!---
                                  <a class="kt-login__logo " href="{{url('/')}}">
                                      <img style="max-height:90px;max-width:80%;width:auto;height:auto" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}">
                                  </a>
+                                -->
+                                <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
+
+                                <!--<img src="ecargologo.jpg">-->
+                            
+                                
+                                
                                  <h3 class="kt-margin-t-30">{{"Sign In"|__}}</h3>
                              </div>
                          </div>
@@ -97,7 +105,9 @@ function onMyRegister()
                              <div class="kt-login__head">
                                  <div class="kt-login__title">
                                      <a class="kt-login__logo " href="{{url('/')}}">
-                                         <img style="max-height:90px;max-width:80%;width:auto;height:auto" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}">
+                                         <!--<img style="max-height:90px;max-width:80%;width:auto;height:auto" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}">-->
+                                         <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
+
                                      </a>
                                      <h3 class="kt-margin-t-30">{{"Sign Up"|__}}</h3>
              						<div class="kt-login__desc">{{'Enter your details to create your account'|__}}:</div>
@@ -553,7 +563,7 @@ function onMyRegister()
      });
  </script>
  {% endput %}
-";s:5:"mtime";i:1587868768;s:6:"markup";s:29364:"<!-- begin:: Page -->
+";s:5:"mtime";i:1599571722;s:6:"markup";s:29866:"<!-- begin:: Page -->
  <div class="kt-grid kt-grid--ver kt-grid--root kt-page">
      <div class="kt-grid kt-grid--hor kt-grid--root  kt-login kt-login--v5 kt-login--signin" id="kt_login">
          <div class="kt-grid__item kt-grid__item--fluid kt-grid kt-grid--desktop kt-grid--ver-desktop kt-grid--hor-tablet-and-mobile">
@@ -563,9 +573,17 @@ function onMyRegister()
                      <div class="kt-login__signin">
                          <div class="kt-login__head">
                              <div class="kt-login__title">
+                                 <!---
                                  <a class="kt-login__logo " href="{{url('/')}}">
                                      <img style="max-height:90px;max-width:80%;width:auto;height:auto" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}">
                                  </a>
+                                -->
+                                <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
+
+                                <!--<img src="ecargologo.jpg">-->
+                            
+                                
+                                
                                  <h3 class="kt-margin-t-30">{{"Sign In"|__}}</h3>
                              </div>
                          </div>
@@ -621,7 +639,9 @@ function onMyRegister()
                              <div class="kt-login__head">
                                  <div class="kt-login__title">
                                      <a class="kt-login__logo " href="{{url('/')}}">
-                                         <img style="max-height:90px;max-width:80%;width:auto;height:auto" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}">
+                                         <!--<img style="max-height:90px;max-width:80%;width:auto;height:auto" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}">-->
+                                         <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
+
                                      </a>
                                      <h3 class="kt-margin-t-30">{{"Sign Up"|__}}</h3>
              						<div class="kt-login__desc">{{'Enter your details to create your account'|__}}:</div>

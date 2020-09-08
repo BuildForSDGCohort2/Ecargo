@@ -11865,6 +11865,7 @@ code {
     width: auto; }
     .kt-page--loading-non-block .kt-page-loader.kt-page-loader--non-block {
       display: inline-block; }
+      /*
   .kt-page-loader.kt-page-loader--logo {
     -webkit-box-orient: vertical;
     -webkit-box-direction: normal;
@@ -11882,6 +11883,7 @@ code {
         height: 26px;
         margin-top: -13px;
         margin-right: -13px; }
+        */
 
 /*! normalize.css v3.0.3 | MIT License | github.com/necolas/normalize.css */
 html {

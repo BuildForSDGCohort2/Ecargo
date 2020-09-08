@@ -2,7 +2,7 @@
 use \Spot\Shipment\Models\Settings;
 use RainLab\Translate\Classes\Translator;
 use RainLab\Translate\Components\LocalePicker;
-class Cms5f52b6dda97ee243468856_9d0adf39760c7cc2f364bed909332a8fClass extends Cms\Classes\LayoutCode
+class Cms5f578dab68fab089702410_6ea6043ce83d48a1ca21fc780ebd1b85Class extends Cms\Classes\LayoutCode
 {
 protected $translator;
 public function onStart()

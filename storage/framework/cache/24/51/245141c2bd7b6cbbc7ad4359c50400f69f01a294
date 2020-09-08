@@ -1,4 +1,4 @@
-1599260361a:1:{s:29:"dashboard/create-shipping.htm";a:20:{s:8:"fileName";s:29:"dashboard/create-shipping.htm";s:7:"content";s:5969:"title = "Create Shipping"
+1599574019a:1:{s:29:"dashboard/create-shipping.htm";a:20:{s:8:"fileName";s:29:"dashboard/create-shipping.htm";s:7:"content";s:5969:"title = "Create Shipping"
 url = "/dashboard/settings/shipping/create"
 layout = "admin"
 is_hidden = 0
@@ -150,7 +150,7 @@ function onSave()
     });
 </script>
 {% endput %}
-";s:5:"mtime";i:1578684248;s:6:"markup";s:4494:"<div class="kt-grid kt-grid--desktop kt-grid--ver-desktop  kt-inbox" id="kt_inbox">
+";s:5:"mtime";i:1599303800;s:6:"markup";s:4494:"<div class="kt-grid kt-grid--desktop kt-grid--ver-desktop  kt-inbox" id="kt_inbox">
 
     <!-- begin:: Aside -->
     {% partial 'settingsmenu' %}

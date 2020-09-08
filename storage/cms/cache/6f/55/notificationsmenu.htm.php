@@ -1,5 +1,5 @@
 <?php 
-class Cms5f52b6de57115427984971_5950c0b24b8949d076a9954451bfece1Class extends Cms\Classes\PartialCode
+class Cms5f52ddcdbe6d1452818893_d41c1f1cbc88b61892c6ee1dd1608c06Class extends Cms\Classes\PartialCode
 {
 public function onStart(){
         $data = post();

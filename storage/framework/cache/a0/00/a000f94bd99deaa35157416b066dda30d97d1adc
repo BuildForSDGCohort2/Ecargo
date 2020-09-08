@@ -1,4 +1,4 @@
-1599260361a:1:{s:23:"dashboard/dashboard.htm";a:20:{s:8:"fileName";s:23:"dashboard/dashboard.htm";s:7:"content";s:32841:"title = "Dashboard"
+1599574019a:1:{s:23:"dashboard/dashboard.htm";a:20:{s:8:"fileName";s:23:"dashboard/dashboard.htm";s:7:"content";s:32839:"title = "E-cargo"
 daterange = 1
 url = "/dashboard"
 layout = "admin"
@@ -733,7 +733,7 @@ jQuery(document).ready(function() {
 });
 </script>
 {% endput %}
-";s:5:"mtime";i:1591557502;s:6:"markup";s:20207:"<!--Begin::Section-->
+";s:5:"mtime";i:1599303304;s:6:"markup";s:20207:"<!--Begin::Section-->
 <div class="row">
     <div class="col-xl-12">
         <!--begin:: Widgets/Applications/User/Profile3-->
@@ -1446,4 +1446,4 @@ jQuery(document).ready(function() {
             }
             return Redirect::back();
         }
-    }";s:5:"title";s:9:"Dashboard";s:9:"daterange";s:1:"1";s:3:"url";s:10:"/dashboard";s:6:"layout";s:5:"admin";s:11:"description";s:23:"Overview on your system";s:9:"is_hidden";s:1:"0";s:4:"role";s:1:"0";s:10:"permission";s:1:"0";s:14:"anonymous_only";s:1:"0";s:11:"logged_only";s:1:"1";s:8:"child_of";s:13:"mey_no_parent";s:10:"hide_crumb";s:1:"1";s:18:"remove_crumb_trail";s:1:"0";s:14:"crumb_disabled";s:1:"0";s:7:"viewBag";a:0:{}}}
+    }";s:5:"title";s:7:"E-cargo";s:9:"daterange";s:1:"1";s:3:"url";s:10:"/dashboard";s:6:"layout";s:5:"admin";s:11:"description";s:23:"Overview on your system";s:9:"is_hidden";s:1:"0";s:4:"role";s:1:"0";s:10:"permission";s:1:"0";s:14:"anonymous_only";s:1:"0";s:11:"logged_only";s:1:"1";s:8:"child_of";s:13:"mey_no_parent";s:10:"hide_crumb";s:1:"1";s:18:"remove_crumb_trail";s:1:"0";s:14:"crumb_disabled";s:1:"0";s:7:"viewBag";a:0:{}}}

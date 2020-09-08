@@ -1,4 +1,4 @@
-1599260362a:1:{s:9:"admin.htm";a:13:{s:8:"fileName";s:9:"admin.htm";s:7:"content";s:85229:"description = "Admin layout"
+1599574019a:1:{s:9:"admin.htm";a:13:{s:8:"fileName";s:9:"admin.htm";s:7:"content";s:85463:"description = "Admin layout"
 
 [localePicker]
 forceUrl = 1
@@ -320,7 +320,9 @@ function onRefreshTime(){
         <div id="kt_header_mobile" class="kt-header-mobile  kt-header-mobile--fixed " >
             <div class="kt-header-mobile__logo">
           <a href="{{url('/')}}">
-           <img alt="Logo" src="{% if settings.mobile_logo %}{{ settings.mobile_logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}" style="max-height:40px"/>
+           <!--<img alt="Logo" src="{% if settings.mobile_logo %}{{ settings.mobile_logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}" style="max-height:40px"/>-->
+           <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
+
              </a>
             </div>
             <div class="kt-header-mobile__toolbar">
@@ -340,7 +342,9 @@ function onRefreshTime(){
                     <div class="kt-aside__brand kt-grid__item " id="kt_aside_brand">
                      <div class="kt-aside__brand-logo">
                       <a href="{{url('dashboard')}}">
-                       <img alt="Logo" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}" style="max-height:50px;"/>
+                       <!--<img alt="Logo" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}" style="max-height:50px;"/>-->
+                       <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
+
                       </a>
                      </div>
 
@@ -1268,7 +1272,7 @@ function onRefreshTime(){
     </body>
     <!-- end::Body -->
 </html>
-";s:5:"mtime";i:1587868964;s:6:"markup";s:74441:"<!DOCTYPE html>
+";s:5:"mtime";i:1599571358;s:6:"markup";s:74675:"<!DOCTYPE html>
 <html lang="{{currentLang}}" {% if currentLang == 'ar'%}direction="rtl" dir="rtl" style="direction: rtl"{% endif %} >
 
     <!-- begin::Head -->
@@ -1346,7 +1350,9 @@ function onRefreshTime(){
         <div id="kt_header_mobile" class="kt-header-mobile  kt-header-mobile--fixed " >
             <div class="kt-header-mobile__logo">
           <a href="{{url('/')}}">
-           <img alt="Logo" src="{% if settings.mobile_logo %}{{ settings.mobile_logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}" style="max-height:40px"/>
+           <!--<img alt="Logo" src="{% if settings.mobile_logo %}{{ settings.mobile_logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}" style="max-height:40px"/>-->
+           <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
+
              </a>
             </div>
             <div class="kt-header-mobile__toolbar">
@@ -1366,7 +1372,9 @@ function onRefreshTime(){
                     <div class="kt-aside__brand kt-grid__item " id="kt_aside_brand">
                      <div class="kt-aside__brand-logo">
                       <a href="{{url('dashboard')}}">
-                       <img alt="Logo" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}" style="max-height:50px;"/>
+                       <!--<img alt="Logo" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}" style="max-height:50px;"/>-->
+                       <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
+
                       </a>
                      </div>
 

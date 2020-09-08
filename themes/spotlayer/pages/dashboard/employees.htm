@@ -103,8 +103,8 @@ var KTAppUserListDatatable = function () {
         datatable = $('.kt-datatable').KTDatatable({
             translate: {
                 records: {
-                    processing: '{{"Please wait"|__}}...',
-                    noRecords: '{{"No records found"|__}}'
+                    processing: '{{"Please wait."|__}}...',
+                    noRecords: '{{"No records found."|__}}'
                 },
                 toolbar: {
                     pagination: {
@@ -295,20 +295,20 @@ var KTAppUserListDatatable = function () {
                 swal.fire({
                     buttonsStyling: false,
 
-                    html: "{{"Are you sure to update"|__}} " + ids.length + " {{"selected records status to"|__}} " + status + " ?",
+                    html: "{{"Are you sure you want to update?"|__}} " + ids.length + " {{"selected records status to"|__}} " + status + " ?",
                     type: "info",
 
-                    confirmButtonText: "{{"Yes, update"|__}}!",
+                    confirmButtonText: "{{"Yes, update!"|__}}!",
                     confirmButtonClass: "btn btn-sm btn-bold btn-brand",
 
                     showCancelButton: true,
-                    cancelButtonText: "{{"No, cancel"|__}}",
+                    cancelButtonText: "{{"No, cancel."|__}}",
                     cancelButtonClass: "btn btn-sm btn-bold btn-default"
                 }).then(function (result) {
                     if (result.value) {
                         swal.fire({
-                            title: '{{"Deleted"|__}}!',
-                            text: '{{"Your selected records statuses have been updated"|__}}!',
+                            title: '{{"Deleted."|__}}!',
+                            text: '{{"Your selected records statuses have been updated."|__}}!',
                             type: 'success',
                             buttonsStyling: false,
                             confirmButtonText: "{{"OK"|__}}",
@@ -319,7 +319,7 @@ var KTAppUserListDatatable = function () {
                     } else if (result.dismiss === 'cancel') {
                         swal.fire({
                             title: '{{"Cancelled"|__}}',
-                            text: '{{"You selected records statuses have not been updated"|__}}!',
+                            text: '{{"Your selected records statuses have not been updated."|__}}!',
                             type: 'error',
                             buttonsStyling: false,
                             confirmButtonText: "{{"OK"|__}}",
@@ -347,7 +347,7 @@ var KTAppUserListDatatable = function () {
                 swal.fire({
                     buttonsStyling: false,
 
-                    text: "{{'Are you sure to delete'|__}} " + ids.length + " {{'selected records ?'|__}}",
+                    text: "{{'Are you sure you want to delete?'|__}} " + ids.length + " {{'selected records ?'|__}}",
                     type: "error",
 
                     confirmButtonText: "{{'Yes, delete!'|__}}",
@@ -363,7 +363,7 @@ var KTAppUserListDatatable = function () {
                             success: function(data) {
                                 swal.fire({
                                     title: '{{"Deleted!"|__}}',
-                                    text: '{{"Your selected records have been deleted! :("|__}}',
+                                    text: '{{"Your selected records have been deleted. :("|__}}',
                                     type: 'success',
                                     buttonsStyling: false,
                                     confirmButtonText: '{{"OK"|__}}',
@@ -377,7 +377,7 @@ var KTAppUserListDatatable = function () {
                     } else if (result.dismiss === 'cancel') {
                         swal.fire({
                             title: '{{"Cancelled"|__}}',
-                            text: '{{"You selected records have not been deleted! :)"|__}}',
+                        text: '{{"Your selected records have not been deleted! :)"|__}}',
                             type: 'error',
                             buttonsStyling: false,
                             confirmButtonText: '{{"OK"|__}}',
@@ -395,7 +395,7 @@ var KTAppUserListDatatable = function () {
             swal.fire({
                 buttonsStyling: false,
 
-                text: "{{'Are you sure to delete this item ?'|__}}",
+                text: "{{'Are you sure to delete this item?'|__}}",
                 type: "danger",
 
                 confirmButtonText: "{{'Yes, delete!'|__}}",
@@ -426,7 +426,7 @@ var KTAppUserListDatatable = function () {
                 } else if (result.dismiss === 'cancel') {
                     swal.fire({
                         title: '{{"Cancelled"|__}}',
-                        text: '{{"You selected record has not been deleted! :)"|__}}',
+                        text: '{{"Your selected record has not been deleted! :)"|__}}',
                         type: 'error',
                         buttonsStyling: false,
                         confirmButtonText: '{{"OK"|__}}',
@@ -451,7 +451,7 @@ var KTAppUserListDatatable = function () {
                 swal.fire({
                     buttonsStyling: false,
 
-                    text: "{{'Are you sure you want to create new manifest with'|__}} " + ids.length + " {{'selected records ?'|__}}",
+                    text: "{{'Are you sure you want to create a new manifest with?'|__}} " + ids.length + " {{'selected records ?'|__}}",
                     type: "error",
 
                     confirmButtonText: "{{'Yes!'|__}}",
@@ -467,7 +467,7 @@ var KTAppUserListDatatable = function () {
                     } else if (result.dismiss === 'cancel') {
                         swal.fire({
                             title: '{{"Cancelled"|__}}',
-                            text: '{{"Your manifest not created! :)"|__}}',
+                            text: '{{"Your manifest has not been created! :)"|__}}',
                             type: 'error',
                             buttonsStyling: false,
                             confirmButtonText: '{{"OK"|__}}',

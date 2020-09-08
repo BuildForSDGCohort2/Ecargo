@@ -8,9 +8,11 @@
     .kt-login.kt-login--v2 .kt-login__wrapper .kt-login__container {
       width: 430px;
       margin: 0 auto; }
+      /*
       .kt-login.kt-login--v2 .kt-login__wrapper .kt-login__container .kt-login__logo {
         text-align: center;
         margin: 0 auto 4rem auto; }
+      */
       .kt-login.kt-login--v2 .kt-login__wrapper .kt-login__container .kt-login__head {
         margin-top: 1rem; }
         .kt-login.kt-login--v2 .kt-login__wrapper .kt-login__container .kt-login__head .kt-login__title {

@@ -35,9 +35,11 @@ function onTracking()
     <div class="kt-container ">
         <div class="kt-sc__top">
             <h3 class="kt-sc__title">
-                <a class="kt-login__logo " href="{{url('/')}}">
+               <!-- <a class="kt-login__logo " href="{{url('/')}}">
                     <img style="max-width:90px;width:auto" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}">
-                </a>
+                </a>-->
+                <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
+
 			</h3>
             <div class="kt-sc__nav">
                 <a href="{{url('/')}}" class="kt-link kt-font-bold">{% if user %}{{'Dashboard'|__}}{% else %}{{'Login'|__}}{% endif %}</a>

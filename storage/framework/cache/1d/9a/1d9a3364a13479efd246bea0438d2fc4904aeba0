@@ -1,4 +1,4 @@
-1599260361a:1:{s:25:"dashboard/order-print.htm";a:19:{s:8:"fileName";s:25:"dashboard/order-print.htm";s:7:"content";s:51016:"title = "Shipment Print"
+1599574019a:1:{s:25:"dashboard/order-print.htm";a:19:{s:8:"fileName";s:25:"dashboard/order-print.htm";s:7:"content";s:51053:"title = "Shipment Print"
 url = "/dashboard/shipments/:id/print/:type"
 layout = "blank"
 is_hidden = 0
@@ -104,7 +104,8 @@ function onStart(){
             <tr>
                 <td style="border: 0;  text-align: left" width="18%">
         			<div id="logo" style="text-align:left">
-        				<img src='{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}' style="max-height:70px">
+                        <img src='{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}' style="max-height:70px">
+                        
                     </div>
                 </td>
     			<td style="border: 0;  text-align: center" width="56%">
@@ -1098,13 +1099,14 @@ KTUtil.ready(function () {
 });
 </script>
 {% endput %}
-";s:5:"mtime";i:1587860696;s:6:"markup";s:48096:"{% if this.param.type == 'shipment' %}
+";s:5:"mtime";i:1599573405;s:6:"markup";s:48133:"{% if this.param.type == 'shipment' %}
     <div class="page-wrap" style="page-break-after: always;">
         <table width="100%">
             <tr>
                 <td style="border: 0;  text-align: left" width="18%">
         			<div id="logo" style="text-align:left">
-        				<img src='{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}' style="max-height:70px">
+                        <img src='{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}' style="max-height:70px">
+                        
                     </div>
                 </td>
     			<td style="border: 0;  text-align: center" width="56%">
