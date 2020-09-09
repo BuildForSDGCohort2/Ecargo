@@ -1,4 +1,4 @@
-1599574019a:1:{s:9:"login.htm";a:21:{s:8:"fileName";s:9:"login.htm";s:7:"content";s:30030:"title = "Login"
+1599672554a:1:{s:9:"login.htm";a:21:{s:8:"fileName";s:9:"login.htm";s:7:"content";s:30175:"title = "Login"
 url = "/login/:code?"
 layout = "blank"
 is_hidden = 0
@@ -43,6 +43,11 @@ function onMyRegister()
 ?>
 ==
 <!-- begin:: Page -->
+<!DOCTYPE html>
+<head>
+<link href="https://fonts.googleapis.com/css2?family=Yanone+Kaffeesatz&display=swap" rel="stylesheet">
+</head>
+
  <div class="kt-grid kt-grid--ver kt-grid--root kt-page">
      <div class="kt-grid kt-grid--hor kt-grid--root  kt-login kt-login--v5 kt-login--signin" id="kt_login">
          <div class="kt-grid__item kt-grid__item--fluid kt-grid kt-grid--desktop kt-grid--ver-desktop kt-grid--hor-tablet-and-mobile">
@@ -134,7 +139,7 @@ function onMyRegister()
         						<div class="row kt-login__extra kt-hidden">
         							<div class="col kt-align-left">
         								<label class="kt-checkbox">
-        									<input type="checkbox" name="agree" id="agreement" checked required>{{'I Agree the'|__}} <a href="#" data-toggle="modal" data-target="#kt_modal_6" class="kt-link kt-login__link kt-font-bold">{{'terms and conditions'|__}}</a>.
+        									<input type="checkbox" name="agree" id="agreement" checked required>{{'I Agree to the'|__}} <a href="#" data-toggle="modal" data-target="#kt_modal_6" class="kt-link kt-login__link kt-font-bold">{{'terms and conditions'|__}}</a>.
         									<span></span>
         								</label>
         								<span class="form-text text-muted"></span>
@@ -564,7 +569,12 @@ function onMyRegister()
      });
  </script>
  {% endput %}
-";s:5:"mtime";i:1599570614;s:6:"markup";s:29181:"<!-- begin:: Page -->
+</html>";s:5:"mtime";i:1599578751;s:6:"markup";s:29327:"<!-- begin:: Page -->
+<!DOCTYPE html>
+<head>
+<link href="https://fonts.googleapis.com/css2?family=Yanone+Kaffeesatz&display=swap" rel="stylesheet">
+</head>
+
  <div class="kt-grid kt-grid--ver kt-grid--root kt-page">
      <div class="kt-grid kt-grid--hor kt-grid--root  kt-login kt-login--v5 kt-login--signin" id="kt_login">
          <div class="kt-grid__item kt-grid__item--fluid kt-grid kt-grid--desktop kt-grid--ver-desktop kt-grid--hor-tablet-and-mobile">
@@ -656,7 +666,7 @@ function onMyRegister()
         						<div class="row kt-login__extra kt-hidden">
         							<div class="col kt-align-left">
         								<label class="kt-checkbox">
-        									<input type="checkbox" name="agree" id="agreement" checked required>{{'I Agree the'|__}} <a href="#" data-toggle="modal" data-target="#kt_modal_6" class="kt-link kt-login__link kt-font-bold">{{'terms and conditions'|__}}</a>.
+        									<input type="checkbox" name="agree" id="agreement" checked required>{{'I Agree to the'|__}} <a href="#" data-toggle="modal" data-target="#kt_modal_6" class="kt-link kt-login__link kt-font-bold">{{'terms and conditions'|__}}</a>.
         									<span></span>
         								</label>
         								<span class="form-text text-muted"></span>
@@ -1085,7 +1095,8 @@ function onMyRegister()
           {% endif %}
      });
  </script>
- {% endput %}";s:4:"code";s:390:"function onStart(){
+ {% endput %}
+</html>";s:4:"code";s:390:"function onStart(){
     if(Auth::getUser()){
         return Redirect::to('dashboard');
     }
