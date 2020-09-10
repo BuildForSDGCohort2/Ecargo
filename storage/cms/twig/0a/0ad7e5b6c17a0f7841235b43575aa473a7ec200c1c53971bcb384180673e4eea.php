@@ -105,13 +105,13 @@ class __TwigTemplate_bad2bac54312dc5f4565b6f42d262110a44074046161da8f7fa0a578cee
         }
         $context["type"] = $_type;        $context["message"] = $_message;        // line 39
         echo "                                 <div class=\"form-group\">
-                                     <input style=\"font-family: 'Oregano', cursive; font-size:25px; color:black\" class=\"form-control\" type=\"text\" placeholder=\"";
+                                     <input style=\"font-family: 'Oregano', cursive; font-size: 20px; color:black\" class=\"form-control\" type=\"text\" placeholder=\"";
         // line 40
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), [($context["loginAttributeLabel"] ?? null)]);
         echo "\" name=\"login\" id=\"userSigninLogin\" autocomplete=\"off\">
                                  </div>
                                  <div class=\"form-group\">
-                                     <input style=\"font-family: 'Oregano', cursive; font-size:25px; color:black\" class=\"form-control form-control-last\" type=\"Password\" placeholder=\"";
+                                     <input style=\"font-family: 'Oregano', cursive; font-size: 20px; color:black\" class=\"form-control form-control-last\" type=\"Password\" placeholder=\"";
         // line 43
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Password"]);
         echo "\" id=\"userSigninPassword\" name=\"password\">
@@ -122,7 +122,7 @@ class __TwigTemplate_bad2bac54312dc5f4565b6f42d262110a44074046161da8f7fa0a578cee
         if ((($context["rememberLoginMode"] ?? null) == "ask")) {
             // line 47
             echo "                                     <div class=\"col kt-align-left\">
-                                         <label class=\"kt-checkbox\">
+                                         <label style=\"font-family: 'Oregano', cursive; font-size: 20px; color:black\" class=\"kt-checkbox\">
                                              <input name=\"remember\" type=\"checkbox\" value=\"1\"> ";
             // line 49
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Remember me"]);
@@ -198,11 +198,11 @@ class __TwigTemplate_bad2bac54312dc5f4565b6f42d262110a44074046161da8f7fa0a578cee
                                          <img style=\"max-height:500px; max-width: 80%; width:auto;height:auto\" src=\"ecargologo.jpg\">
 
                                      </a>
-                                     <h3 class=\"kt-margin-t-30\">";
+                                     <h3 style=\"font-family: 'Oregano', cursive;\" class=\"kt-margin-t-30\">";
             // line 86
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Sign Up"]);
             echo "</h3>
-             \t\t\t\t\t\t<div class=\"kt-login__desc\">";
+             \t\t\t\t\t\t<div style=\"font-family: 'Oregano', cursive; font-size:22px; color:black;\" class=\"kt-login__desc\">";
             // line 87
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Enter your details to create your account"]);
             echo ":</div>
@@ -210,13 +210,13 @@ class __TwigTemplate_bad2bac54312dc5f4565b6f42d262110a44074046161da8f7fa0a578cee
                              </div>
                             <form class=\"kt-form\" action=\"\">
         \t\t\t\t\t\t<div class=\"input-group\">
-        \t\t\t\t\t\t\t<input class=\"form-control\" type=\"text\" id=\"registerName\" placeholder=\"";
+        \t\t\t\t\t\t\t<input style=\"font-family: 'Oregano', cursive; font-size: 22px; color:black;\" class=\"form-control\" type=\"text\" id=\"registerName\" placeholder=\"";
             // line 92
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Full Name"]);
             echo "\" name=\"name\" required>
         \t\t\t\t\t\t</div>
         \t\t\t\t\t\t<div class=\"input-group\">
-        \t\t\t\t\t\t\t<input class=\"form-control\" type=\"text\" placeholder=\"";
+        \t\t\t\t\t\t\t<input style=\"font-family: 'Oregano', cursive; font-size: 22px; color:black;\" class=\"form-control\" type=\"text\" placeholder=\"";
             // line 95
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Email"]);
             echo "\" id=\"registerEmail\" name=\"email\" autocomplete=\"off\" required>
@@ -226,7 +226,7 @@ class __TwigTemplate_bad2bac54312dc5f4565b6f42d262110a44074046161da8f7fa0a578cee
             if ((($context["loginAttribute"] ?? null) == "username")) {
                 // line 98
                 echo "            \t\t\t\t\t\t<div class=\"input-group\">
-            \t\t\t\t\t\t\t<input class=\"form-control\" type=\"text\" placeholder=\"";
+            \t\t\t\t\t\t\t<input style=\"font-family: 'Oregano', cursive; font-size: 22px; color:black;\" class=\"form-control\" type=\"text\" placeholder=\"";
                 // line 99
                 echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Enter your username"]);
                 echo "\" id=\"registerUsername\" name=\"username\" autocomplete=\"off\" required>
@@ -235,21 +235,21 @@ class __TwigTemplate_bad2bac54312dc5f4565b6f42d262110a44074046161da8f7fa0a578cee
             }
             // line 102
             echo "        \t\t\t\t\t\t<div class=\"input-group\">
-        \t\t\t\t\t\t\t<input class=\"form-control\" type=\"password\" placeholder=\"";
+        \t\t\t\t\t\t\t<input style=\"font-family: 'Oregano', cursive; font-size: 22px; color:black;\" class=\"form-control\" type=\"password\" placeholder=\"";
             // line 103
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Choose a Password"]);
             echo "\" id=\"registerPassword\" name=\"password\" required>
         \t\t\t\t\t\t</div>
         \t\t\t\t\t\t<div class=\"input-group\">
-        \t\t\t\t\t\t\t<input class=\"form-control\" type=\"password\" placeholder=\"";
+        \t\t\t\t\t\t\t<input style=\"font-family: 'Oregano', cursive; font-size: 22px; color:black;\" class=\"form-control\" type=\"password\" placeholder=\"";
             // line 106
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Confirm Password"]);
             echo "\" name=\"rpassword\" id=\"rpassword\" required>
         \t\t\t\t\t\t</div>
         \t\t\t\t\t\t<div class=\"row kt-login__extra kt-hidden\">
         \t\t\t\t\t\t\t<div class=\"col kt-align-left\">
-        \t\t\t\t\t\t\t\t<label class=\"kt-checkbox\">
-        \t\t\t\t\t\t\t\t\t<input type=\"checkbox\" name=\"agree\" id=\"agreement\" checked required>";
+        \t\t\t\t\t\t\t\t<label style=\"font-family: 'Oregano', cursive; font-size: 22px; color:black;\" class=\"kt-checkbox\">
+        \t\t\t\t\t\t\t\t\t<input style=\"font-family: 'Oregano', cursive; font-size: 22px; color:black;\" type=\"checkbox\" name=\"agree\" id=\"agreement\" checked required>";
             // line 111
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["I Agree the"]);
             echo " <a href=\"#\" data-toggle=\"modal\" data-target=\"#kt_modal_6\" class=\"kt-link kt-login__link kt-font-bold\">";
@@ -261,11 +261,11 @@ class __TwigTemplate_bad2bac54312dc5f4565b6f42d262110a44074046161da8f7fa0a578cee
         \t\t\t\t\t\t\t</div>
         \t\t\t\t\t\t</div>
         \t\t\t\t\t\t<div class=\"kt-login__actions\">
-        \t\t\t\t\t\t\t<button id=\"kt_login_signup_submit\" type=\"submit\" class=\"btn btn-brand btn-pill kt-login__btn-primary\">";
+        \t\t\t\t\t\t\t<button style=\"font-family: 'Oregano', cursive; font-size:22px; color:white; background-color: mediumpurple; border:mediumpurple\" id=\"kt_login_signup_submit\" type=\"submit\" class=\"btn btn-brand btn-pill kt-login__btn-primary\">";
             // line 118
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Sign Up"]);
             echo "</button>&nbsp;&nbsp;
-        \t\t\t\t\t\t\t<button id=\"kt_login_signup_cancel\" class=\"btn btn-secondary btn-pill kt-login__btn-secondary\">";
+        \t\t\t\t\t\t\t<button style=\"font-family: 'Oregano', cursive; font-size:22px; color:white; background-color: mediumpurple; border-style: solid; border-color:mediumpurple\" id=\"kt_login_signup_cancel\" class=\"btn btn-secondary btn-pill kt-login__btn-secondary\">";
             // line 119
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Cancel"]);
             echo "</button>
@@ -281,11 +281,11 @@ class __TwigTemplate_bad2bac54312dc5f4565b6f42d262110a44074046161da8f7fa0a578cee
         echo "    \t\t\t\t</div>
                      <div class=\"kt-login__forgot\">
                          <div class=\"kt-login__head\">
-                             <h3 class=\"kt-login__title\">";
+                             <h3 style=\"font-family: 'Oregano', cursive; font-size:22px; color:black;\" class=\"kt-login__title\">";
         // line 128
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Forgotten Password ?"]);
         echo "</h3>
-                             <div class=\"kt-login__desc\">";
+                             <div style=\"font-family: 'Oregano', cursive; font-size:22px; color:black;\" class=\"kt-login__desc\">";
         // line 129
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Enter your email to reset your password"]);
         echo ":</div>
@@ -299,17 +299,17 @@ class __TwigTemplate_bad2bac54312dc5f4565b6f42d262110a44074046161da8f7fa0a578cee
         echo twig_escape_filter($this->env, ($context["__SELF__"] ?? null), "html", null, true);
         echo "::reset': '#partialUserResetForm'\">
                                  <div class=\"form-group\">
-                                     <input class=\"form-control\" type=\"email\" placeholder=\"";
+                                     <input style=\"font-family: 'Oregano', cursive; font-size:22px; color:black;\" class=\"form-control\" type=\"email\" placeholder=\"";
         // line 135
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Email"]);
         echo "\" name=\"email\" id=\"userRestoreEmail\" autocomplete=\"off\">
                                  </div>
                                  <div class=\"kt-login__actions\">
-                                     <button id=\"kt_login_forgot_submit\" class=\"btn btn-brand btn-pill btn-elevate\">";
+                                     <button style=\"font-family: 'Oregano', cursive; font-size:22px; color:white; background-color: mediumpurple; border:mediumpurple\" id=\"kt_login_forgot_submit\" class=\"btn btn-brand btn-pill btn-elevate\">";
         // line 138
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Request"]);
         echo "</button>
-                                     <button id=\"kt_login_forgot_cancel\" class=\"btn btn-outline-brand btn-pill\">";
+                                     <button style=\"font-family: 'Oregano', cursive; font-size:22px; color:mediumpurple; background-color:white;\" id=\"kt_login_forgot_cancel\" class=\"btn btn-outline-brand btn-pill\">";
         // line 139
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Cancel"]);
         echo "</button>
@@ -863,15 +863,15 @@ class __TwigTemplate_bad2bac54312dc5f4565b6f42d262110a44074046161da8f7fa0a578cee
                                     </div>
                                  {% endflash %}
                                  <div class=\"form-group\">
-                                     <input style=\"font-family: 'Oregano', cursive; font-size:25px; color:black\" class=\"form-control\" type=\"text\" placeholder=\"{{ loginAttributeLabel|__ }}\" name=\"login\" id=\"userSigninLogin\" autocomplete=\"off\">
+                                     <input style=\"font-family: 'Oregano', cursive; font-size: 20px; color:black\" class=\"form-control\" type=\"text\" placeholder=\"{{ loginAttributeLabel|__ }}\" name=\"login\" id=\"userSigninLogin\" autocomplete=\"off\">
                                  </div>
                                  <div class=\"form-group\">
-                                     <input style=\"font-family: 'Oregano', cursive; font-size:25px; color:black\" class=\"form-control form-control-last\" type=\"Password\" placeholder=\"{{'Password'|__}}\" id=\"userSigninPassword\" name=\"password\">
+                                     <input style=\"font-family: 'Oregano', cursive; font-size: 20px; color:black\" class=\"form-control form-control-last\" type=\"Password\" placeholder=\"{{'Password'|__}}\" id=\"userSigninPassword\" name=\"password\">
                                  </div>
                                  <div class=\"row kt-login__extra\">
                                      {% if rememberLoginMode == 'ask' %}
                                      <div class=\"col kt-align-left\">
-                                         <label class=\"kt-checkbox\">
+                                         <label style=\"font-family: 'Oregano', cursive; font-size: 20px; color:black\" class=\"kt-checkbox\">
                                              <input name=\"remember\" type=\"checkbox\" value=\"1\"> {{'Remember me'|__}}
                                              <span></span>
                                          </label>
@@ -909,40 +909,40 @@ class __TwigTemplate_bad2bac54312dc5f4565b6f42d262110a44074046161da8f7fa0a578cee
                                          <img style=\"max-height:500px; max-width: 80%; width:auto;height:auto\" src=\"ecargologo.jpg\">
 
                                      </a>
-                                     <h3 class=\"kt-margin-t-30\">{{\"Sign Up\"|__}}</h3>
-             \t\t\t\t\t\t<div class=\"kt-login__desc\">{{'Enter your details to create your account'|__}}:</div>
+                                     <h3 style=\"font-family: 'Oregano', cursive;\" class=\"kt-margin-t-30\">{{\"Sign Up\"|__}}</h3>
+             \t\t\t\t\t\t<div style=\"font-family: 'Oregano', cursive; font-size:22px; color:black;\" class=\"kt-login__desc\">{{'Enter your details to create your account'|__}}:</div>
                                  </div>
                              </div>
                             <form class=\"kt-form\" action=\"\">
         \t\t\t\t\t\t<div class=\"input-group\">
-        \t\t\t\t\t\t\t<input class=\"form-control\" type=\"text\" id=\"registerName\" placeholder=\"{{'Full Name'|__}}\" name=\"name\" required>
+        \t\t\t\t\t\t\t<input style=\"font-family: 'Oregano', cursive; font-size: 22px; color:black;\" class=\"form-control\" type=\"text\" id=\"registerName\" placeholder=\"{{'Full Name'|__}}\" name=\"name\" required>
         \t\t\t\t\t\t</div>
         \t\t\t\t\t\t<div class=\"input-group\">
-        \t\t\t\t\t\t\t<input class=\"form-control\" type=\"text\" placeholder=\"{{'Email'|__}}\" id=\"registerEmail\" name=\"email\" autocomplete=\"off\" required>
+        \t\t\t\t\t\t\t<input style=\"font-family: 'Oregano', cursive; font-size: 22px; color:black;\" class=\"form-control\" type=\"text\" placeholder=\"{{'Email'|__}}\" id=\"registerEmail\" name=\"email\" autocomplete=\"off\" required>
         \t\t\t\t\t\t</div>
                                 {% if loginAttribute == \"username\" %}
             \t\t\t\t\t\t<div class=\"input-group\">
-            \t\t\t\t\t\t\t<input class=\"form-control\" type=\"text\" placeholder=\"{{'Enter your username'|__}}\" id=\"registerUsername\" name=\"username\" autocomplete=\"off\" required>
+            \t\t\t\t\t\t\t<input style=\"font-family: 'Oregano', cursive; font-size: 22px; color:black;\" class=\"form-control\" type=\"text\" placeholder=\"{{'Enter your username'|__}}\" id=\"registerUsername\" name=\"username\" autocomplete=\"off\" required>
             \t\t\t\t\t\t</div>
                                 {% endif %}
         \t\t\t\t\t\t<div class=\"input-group\">
-        \t\t\t\t\t\t\t<input class=\"form-control\" type=\"password\" placeholder=\"{{'Choose a Password'|__}}\" id=\"registerPassword\" name=\"password\" required>
+        \t\t\t\t\t\t\t<input style=\"font-family: 'Oregano', cursive; font-size: 22px; color:black;\" class=\"form-control\" type=\"password\" placeholder=\"{{'Choose a Password'|__}}\" id=\"registerPassword\" name=\"password\" required>
         \t\t\t\t\t\t</div>
         \t\t\t\t\t\t<div class=\"input-group\">
-        \t\t\t\t\t\t\t<input class=\"form-control\" type=\"password\" placeholder=\"{{'Confirm Password'|__}}\" name=\"rpassword\" id=\"rpassword\" required>
+        \t\t\t\t\t\t\t<input style=\"font-family: 'Oregano', cursive; font-size: 22px; color:black;\" class=\"form-control\" type=\"password\" placeholder=\"{{'Confirm Password'|__}}\" name=\"rpassword\" id=\"rpassword\" required>
         \t\t\t\t\t\t</div>
         \t\t\t\t\t\t<div class=\"row kt-login__extra kt-hidden\">
         \t\t\t\t\t\t\t<div class=\"col kt-align-left\">
-        \t\t\t\t\t\t\t\t<label class=\"kt-checkbox\">
-        \t\t\t\t\t\t\t\t\t<input type=\"checkbox\" name=\"agree\" id=\"agreement\" checked required>{{'I Agree the'|__}} <a href=\"#\" data-toggle=\"modal\" data-target=\"#kt_modal_6\" class=\"kt-link kt-login__link kt-font-bold\">{{'terms and conditions'|__}}</a>.
+        \t\t\t\t\t\t\t\t<label style=\"font-family: 'Oregano', cursive; font-size: 22px; color:black;\" class=\"kt-checkbox\">
+        \t\t\t\t\t\t\t\t\t<input style=\"font-family: 'Oregano', cursive; font-size: 22px; color:black;\" type=\"checkbox\" name=\"agree\" id=\"agreement\" checked required>{{'I Agree the'|__}} <a href=\"#\" data-toggle=\"modal\" data-target=\"#kt_modal_6\" class=\"kt-link kt-login__link kt-font-bold\">{{'terms and conditions'|__}}</a>.
         \t\t\t\t\t\t\t\t\t<span></span>
         \t\t\t\t\t\t\t\t</label>
         \t\t\t\t\t\t\t\t<span class=\"form-text text-muted\"></span>
         \t\t\t\t\t\t\t</div>
         \t\t\t\t\t\t</div>
         \t\t\t\t\t\t<div class=\"kt-login__actions\">
-        \t\t\t\t\t\t\t<button id=\"kt_login_signup_submit\" type=\"submit\" class=\"btn btn-brand btn-pill kt-login__btn-primary\">{{'Sign Up'|__}}</button>&nbsp;&nbsp;
-        \t\t\t\t\t\t\t<button id=\"kt_login_signup_cancel\" class=\"btn btn-secondary btn-pill kt-login__btn-secondary\">{{'Cancel'|__}}</button>
+        \t\t\t\t\t\t\t<button style=\"font-family: 'Oregano', cursive; font-size:22px; color:white; background-color: mediumpurple; border:mediumpurple\" id=\"kt_login_signup_submit\" type=\"submit\" class=\"btn btn-brand btn-pill kt-login__btn-primary\">{{'Sign Up'|__}}</button>&nbsp;&nbsp;
+        \t\t\t\t\t\t\t<button style=\"font-family: 'Oregano', cursive; font-size:22px; color:white; background-color: mediumpurple; border-style: solid; border-color:mediumpurple\" id=\"kt_login_signup_cancel\" class=\"btn btn-secondary btn-pill kt-login__btn-secondary\">{{'Cancel'|__}}</button>
         \t\t\t\t\t\t</div>
         \t\t\t\t\t</form>
                         {% else %}
@@ -951,18 +951,18 @@ class __TwigTemplate_bad2bac54312dc5f4565b6f42d262110a44074046161da8f7fa0a578cee
     \t\t\t\t</div>
                      <div class=\"kt-login__forgot\">
                          <div class=\"kt-login__head\">
-                             <h3 class=\"kt-login__title\">{{'Forgotten Password ?'|__}}</h3>
-                             <div class=\"kt-login__desc\">{{'Enter your email to reset your password'|__}}:</div>
+                             <h3 style=\"font-family: 'Oregano', cursive; font-size:22px; color:black;\" class=\"kt-login__title\">{{'Forgotten Password ?'|__}}</h3>
+                             <div style=\"font-family: 'Oregano', cursive; font-size:22px; color:black;\" class=\"kt-login__desc\">{{'Enter your email to reset your password'|__}}:</div>
                          </div>
                          <div class=\"kt-login__form\">
 
                              <form class=\"kt-form\" data-request=\"{{ __SELF__ }}::onRestorePassword\" data-request-update=\"'{{ __SELF__ }}::reset': '#partialUserResetForm'\">
                                  <div class=\"form-group\">
-                                     <input class=\"form-control\" type=\"email\" placeholder=\"{{'Email'|__}}\" name=\"email\" id=\"userRestoreEmail\" autocomplete=\"off\">
+                                     <input style=\"font-family: 'Oregano', cursive; font-size:22px; color:black;\" class=\"form-control\" type=\"email\" placeholder=\"{{'Email'|__}}\" name=\"email\" id=\"userRestoreEmail\" autocomplete=\"off\">
                                  </div>
                                  <div class=\"kt-login__actions\">
-                                     <button id=\"kt_login_forgot_submit\" class=\"btn btn-brand btn-pill btn-elevate\">{{'Request'|__}}</button>
-                                     <button id=\"kt_login_forgot_cancel\" class=\"btn btn-outline-brand btn-pill\">{{'Cancel'|__}}</button>
+                                     <button style=\"font-family: 'Oregano', cursive; font-size:22px; color:white; background-color: mediumpurple; border:mediumpurple\" id=\"kt_login_forgot_submit\" class=\"btn btn-brand btn-pill btn-elevate\">{{'Request'|__}}</button>
+                                     <button style=\"font-family: 'Oregano', cursive; font-size:22px; color:mediumpurple; background-color:white;\" id=\"kt_login_forgot_cancel\" class=\"btn btn-outline-brand btn-pill\">{{'Cancel'|__}}</button>
                                  </div>
                              </form>
 

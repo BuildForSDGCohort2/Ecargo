@@ -1,4 +1,4 @@
-1599672554a:1:{s:29:"dashboard/update-currency.htm";a:20:{s:8:"fileName";s:29:"dashboard/update-currency.htm";s:7:"content";s:12497:"title = "Update Currency"
+1599730171a:1:{s:29:"dashboard/update-currency.htm";a:20:{s:8:"fileName";s:29:"dashboard/update-currency.htm";s:7:"content";s:12497:"title = "Update Currency"
 url = "/dashboard/settings/currencies/:id/edit"
 layout = "admin"
 is_hidden = 0

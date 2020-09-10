@@ -68,15 +68,15 @@ function onMyRegister()
                                     </div>
                                  {% endflash %}
                                  <div class="form-group">
-                                     <input style="font-family: 'Oregano', cursive; font-size:25px; color:black" class="form-control" type="text" placeholder="{{ loginAttributeLabel|__ }}" name="login" id="userSigninLogin" autocomplete="off">
+                                     <input style="font-family: 'Oregano', cursive; font-size: 20px; color:black" class="form-control" type="text" placeholder="{{ loginAttributeLabel|__ }}" name="login" id="userSigninLogin" autocomplete="off">
                                  </div>
                                  <div class="form-group">
-                                     <input style="font-family: 'Oregano', cursive; font-size:25px; color:black" class="form-control form-control-last" type="Password" placeholder="{{'Password'|__}}" id="userSigninPassword" name="password">
+                                     <input style="font-family: 'Oregano', cursive; font-size: 20px; color:black" class="form-control form-control-last" type="Password" placeholder="{{'Password'|__}}" id="userSigninPassword" name="password">
                                  </div>
                                  <div class="row kt-login__extra">
                                      {% if rememberLoginMode == 'ask' %}
                                      <div class="col kt-align-left">
-                                         <label class="kt-checkbox">
+                                         <label style="font-family: 'Oregano', cursive; font-size: 20px; color:black" class="kt-checkbox">
                                              <input name="remember" type="checkbox" value="1"> {{'Remember me'|__}}
                                              <span></span>
                                          </label>
@@ -114,40 +114,40 @@ function onMyRegister()
                                          <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
 
                                      </a>
-                                     <h3 class="kt-margin-t-30">{{"Sign Up"|__}}</h3>
-             						<div class="kt-login__desc">{{'Enter your details to create your account'|__}}:</div>
+                                     <h3 style="font-family: 'Oregano', cursive;" class="kt-margin-t-30">{{"Sign Up"|__}}</h3>
+             						<div style="font-family: 'Oregano', cursive; font-size:22px; color:black;" class="kt-login__desc">{{'Enter your details to create your account'|__}}:</div>
                                  </div>
                              </div>
                             <form class="kt-form" action="">
         						<div class="input-group">
-        							<input class="form-control" type="text" id="registerName" placeholder="{{'Full Name'|__}}" name="name" required>
+        							<input style="font-family: 'Oregano', cursive; font-size: 22px; color:black;" class="form-control" type="text" id="registerName" placeholder="{{'Full Name'|__}}" name="name" required>
         						</div>
         						<div class="input-group">
-        							<input class="form-control" type="text" placeholder="{{'Email'|__}}" id="registerEmail" name="email" autocomplete="off" required>
+        							<input style="font-family: 'Oregano', cursive; font-size: 22px; color:black;" class="form-control" type="text" placeholder="{{'Email'|__}}" id="registerEmail" name="email" autocomplete="off" required>
         						</div>
                                 {% if loginAttribute == "username" %}
             						<div class="input-group">
-            							<input class="form-control" type="text" placeholder="{{'Enter your username'|__}}" id="registerUsername" name="username" autocomplete="off" required>
+            							<input style="font-family: 'Oregano', cursive; font-size: 22px; color:black;" class="form-control" type="text" placeholder="{{'Enter your username'|__}}" id="registerUsername" name="username" autocomplete="off" required>
             						</div>
                                 {% endif %}
         						<div class="input-group">
-        							<input class="form-control" type="password" placeholder="{{'Choose a Password'|__}}" id="registerPassword" name="password" required>
+        							<input style="font-family: 'Oregano', cursive; font-size: 22px; color:black;" class="form-control" type="password" placeholder="{{'Choose a Password'|__}}" id="registerPassword" name="password" required>
         						</div>
         						<div class="input-group">
-        							<input class="form-control" type="password" placeholder="{{'Confirm Password'|__}}" name="rpassword" id="rpassword" required>
+        							<input style="font-family: 'Oregano', cursive; font-size: 22px; color:black;" class="form-control" type="password" placeholder="{{'Confirm Password'|__}}" name="rpassword" id="rpassword" required>
         						</div>
         						<div class="row kt-login__extra kt-hidden">
         							<div class="col kt-align-left">
-        								<label class="kt-checkbox">
-        									<input type="checkbox" name="agree" id="agreement" checked required>{{'I Agree the'|__}} <a href="#" data-toggle="modal" data-target="#kt_modal_6" class="kt-link kt-login__link kt-font-bold">{{'terms and conditions'|__}}</a>.
+        								<label style="font-family: 'Oregano', cursive; font-size: 22px; color:black;" class="kt-checkbox">
+        									<input style="font-family: 'Oregano', cursive; font-size: 22px; color:black;" type="checkbox" name="agree" id="agreement" checked required>{{'I Agree the'|__}} <a href="#" data-toggle="modal" data-target="#kt_modal_6" class="kt-link kt-login__link kt-font-bold">{{'terms and conditions'|__}}</a>.
         									<span></span>
         								</label>
         								<span class="form-text text-muted"></span>
         							</div>
         						</div>
         						<div class="kt-login__actions">
-        							<button id="kt_login_signup_submit" type="submit" class="btn btn-brand btn-pill kt-login__btn-primary">{{'Sign Up'|__}}</button>&nbsp;&nbsp;
-        							<button id="kt_login_signup_cancel" class="btn btn-secondary btn-pill kt-login__btn-secondary">{{'Cancel'|__}}</button>
+        							<button style="font-family: 'Oregano', cursive; font-size:22px; color:white; background-color: mediumpurple; border:mediumpurple" id="kt_login_signup_submit" type="submit" class="btn btn-brand btn-pill kt-login__btn-primary">{{'Sign Up'|__}}</button>&nbsp;&nbsp;
+        							<button style="font-family: 'Oregano', cursive; font-size:22px; color:white; background-color: mediumpurple; border:mediumpurple" id="kt_login_signup_cancel" class="btn btn-secondary btn-pill kt-login__btn-secondary">{{'Cancel'|__}}</button>
         						</div>
         					</form>
                         {% else %}
@@ -156,18 +156,18 @@ function onMyRegister()
     				</div>
                      <div class="kt-login__forgot">
                          <div class="kt-login__head">
-                             <h3 class="kt-login__title">{{'Forgotten Password ?'|__}}</h3>
-                             <div class="kt-login__desc">{{'Enter your email to reset your password'|__}}:</div>
+                             <h3 style="font-family: 'Oregano', cursive; font-size:22px; color:black;" class="kt-login__title">{{'Forgotten Password ?'|__}}</h3>
+                             <div style="font-family: 'Oregano', cursive; font-size:22px; color:black;" class="kt-login__desc">{{'Enter your email to reset your password'|__}}:</div>
                          </div>
                          <div class="kt-login__form">
 
                              <form class="kt-form" data-request="{{ __SELF__ }}::onRestorePassword" data-request-update="'{{ __SELF__ }}::reset': '#partialUserResetForm'">
                                  <div class="form-group">
-                                     <input class="form-control" type="email" placeholder="{{'Email'|__}}" name="email" id="userRestoreEmail" autocomplete="off">
+                                     <input style="font-family: 'Oregano', cursive; font-size:22px; color:black;" class="form-control" type="email" placeholder="{{'Email'|__}}" name="email" id="userRestoreEmail" autocomplete="off">
                                  </div>
                                  <div class="kt-login__actions">
-                                     <button id="kt_login_forgot_submit" class="btn btn-brand btn-pill btn-elevate">{{'Request'|__}}</button>
-                                     <button id="kt_login_forgot_cancel" class="btn btn-outline-brand btn-pill">{{'Cancel'|__}}</button>
+                                     <button style="font-family: 'Oregano', cursive; font-size:22px; color:white; background-color: mediumpurple; border:mediumpurple" id="kt_login_forgot_submit" class="btn btn-brand btn-pill btn-elevate">{{'Request'|__}}</button>
+                                     <button style="font-family: 'Oregano', cursive; font-size:22px; color:mediumpurple; background-color:white;" id="kt_login_forgot_cancel" class="btn btn-outline-brand btn-pill">{{'Cancel'|__}}</button>
                                  </div>
                              </form>
 
