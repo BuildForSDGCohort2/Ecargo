@@ -1,4 +1,4 @@
-1599730623a:1:{s:8:"home.htm";a:18:{s:8:"fileName";s:8:"home.htm";s:7:"content";s:32559:"title = "Login"
+1600092885a:1:{s:8:"home.htm";a:18:{s:8:"fileName";s:8:"home.htm";s:7:"content";s:32461:"title = "Login"
 url = "/"
 layout = "blank"
 is_hidden = 0
@@ -45,14 +45,12 @@ function onMyRegister()
                      <div class="kt-login__signin">
                          <div class="kt-login__head">
                              <div class="kt-login__title">
-                                 <!---
-                                 <a class="kt-login__logo " href="{{url('/')}}">
+                             
+                                 <!--<a class="kt-login__logo " href="{{url('/')}}">
                                      <img style="max-height:90px;max-width:80%;width:auto;height:auto" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}">
-                                 </a>
-                                -->
+                                 </a>-->
+                                
                                 <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
-
-                                <!--<img src="ecargologo.jpg">-->
                             
                                 
                                  <h3 style="font-family: 'Oregano', cursive;" class="kt-margin-t-30">{{"Sign In"|__}}</h3>
@@ -68,7 +66,7 @@ function onMyRegister()
                                     </div>
                                  {% endflash %}
                                  <div class="form-group">
-                                     <input style="font-family: 'Oregano', cursive; font-size: 20px; color:black" class="form-control" type="text" placeholder="{{ loginAttributeLabel|__ }}" name="login" id="userSigninLogin" autocomplete="off">
+                                     <input style="font-family: 'Oregano', cursive; font-size: 20px; color:black;" class="form-control" type="text" placeholder="{{ loginAttributeLabel|__ }}" name="login" id="userSigninLogin" autocomplete="off">
                                  </div>
                                  <div class="form-group">
                                      <input style="font-family: 'Oregano', cursive; font-size: 20px; color:black" class="form-control form-control-last" type="Password" placeholder="{{'Password'|__}}" id="userSigninPassword" name="password">
@@ -147,7 +145,7 @@ function onMyRegister()
         						</div>
         						<div class="kt-login__actions">
         							<button style="font-family: 'Oregano', cursive; font-size:22px; color:white; background-color: mediumpurple; border:mediumpurple" id="kt_login_signup_submit" type="submit" class="btn btn-brand btn-pill kt-login__btn-primary">{{'Sign Up'|__}}</button>&nbsp;&nbsp;
-        							<button style="font-family: 'Oregano', cursive; font-size:22px; color:white; background-color: mediumpurple; border-style: solid; border-color:mediumpurple" id="kt_login_signup_cancel" class="btn btn-secondary btn-pill kt-login__btn-secondary">{{'Cancel'|__}}</button>
+        							<button style="font-family: 'Oregano', cursive; font-size:22px; color:white; background-color: mediumpurple; border:mediumpurple" id="kt_login_signup_cancel" class="btn btn-secondary btn-pill kt-login__btn-secondary">{{'Cancel'|__}}</button>
         						</div>
         					</form>
                         {% else %}
@@ -568,7 +566,7 @@ function onMyRegister()
      });
  </script>
  {% endput %}
-";s:5:"mtime";i:1599730016;s:6:"markup";s:31941:"<!-- begin:: Page -->
+";s:5:"mtime";i:1599746390;s:6:"markup";s:31843:"<!-- begin:: Page -->
 <!DOCTYPE html>
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Oregano:ital@0;1&display=swap" rel="stylesheet">
@@ -584,14 +582,12 @@ function onMyRegister()
                      <div class="kt-login__signin">
                          <div class="kt-login__head">
                              <div class="kt-login__title">
-                                 <!---
-                                 <a class="kt-login__logo " href="{{url('/')}}">
+                             
+                                 <!--<a class="kt-login__logo " href="{{url('/')}}">
                                      <img style="max-height:90px;max-width:80%;width:auto;height:auto" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}">
-                                 </a>
-                                -->
+                                 </a>-->
+                                
                                 <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
-
-                                <!--<img src="ecargologo.jpg">-->
                             
                                 
                                  <h3 style="font-family: 'Oregano', cursive;" class="kt-margin-t-30">{{"Sign In"|__}}</h3>
@@ -607,7 +603,7 @@ function onMyRegister()
                                     </div>
                                  {% endflash %}
                                  <div class="form-group">
-                                     <input style="font-family: 'Oregano', cursive; font-size: 20px; color:black" class="form-control" type="text" placeholder="{{ loginAttributeLabel|__ }}" name="login" id="userSigninLogin" autocomplete="off">
+                                     <input style="font-family: 'Oregano', cursive; font-size: 20px; color:black;" class="form-control" type="text" placeholder="{{ loginAttributeLabel|__ }}" name="login" id="userSigninLogin" autocomplete="off">
                                  </div>
                                  <div class="form-group">
                                      <input style="font-family: 'Oregano', cursive; font-size: 20px; color:black" class="form-control form-control-last" type="Password" placeholder="{{'Password'|__}}" id="userSigninPassword" name="password">
@@ -686,7 +682,7 @@ function onMyRegister()
         						</div>
         						<div class="kt-login__actions">
         							<button style="font-family: 'Oregano', cursive; font-size:22px; color:white; background-color: mediumpurple; border:mediumpurple" id="kt_login_signup_submit" type="submit" class="btn btn-brand btn-pill kt-login__btn-primary">{{'Sign Up'|__}}</button>&nbsp;&nbsp;
-        							<button style="font-family: 'Oregano', cursive; font-size:22px; color:white; background-color: mediumpurple; border-style: solid; border-color:mediumpurple" id="kt_login_signup_cancel" class="btn btn-secondary btn-pill kt-login__btn-secondary">{{'Cancel'|__}}</button>
+        							<button style="font-family: 'Oregano', cursive; font-size:22px; color:white; background-color: mediumpurple; border:mediumpurple" id="kt_login_signup_cancel" class="btn btn-secondary btn-pill kt-login__btn-secondary">{{'Cancel'|__}}</button>
         						</div>
         					</form>
                         {% else %}

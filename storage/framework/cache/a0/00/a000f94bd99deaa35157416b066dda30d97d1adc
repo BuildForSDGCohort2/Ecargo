@@ -1,8 +1,8 @@
-1599730171a:1:{s:23:"dashboard/dashboard.htm";a:20:{s:8:"fileName";s:23:"dashboard/dashboard.htm";s:7:"content";s:32839:"title = "E-cargo"
+1600092885a:1:{s:23:"dashboard/dashboard.htm";a:20:{s:8:"fileName";s:23:"dashboard/dashboard.htm";s:7:"content";s:32847:"title = "E-cargo"
 daterange = 1
 url = "/dashboard"
 layout = "admin"
-description = "Overview on your system"
+description = "Overview of your system"
 is_hidden = 0
 role = 0
 permission = 0
@@ -282,6 +282,7 @@ crumb_disabled = 0
 ?>
 ==
 <!--Begin::Section-->
+
 <div class="row">
     <div class="col-xl-12">
         <!--begin:: Widgets/Applications/User/Profile3-->
@@ -291,7 +292,7 @@ crumb_disabled = 0
                     <div class="kt-widget__top">
                         {% if user.avatar %}
                             <div class="kt-widget__media">
-                                <img src="{{user.avatar.thumb(100, 100,'crop')}}" alt="image">
+                                <!--<img src="{{user.avatar.thumb(100, 100,'crop')}}" alt="image">-->
                             </div>
                        {% else %}
                             <div class="kt-widget__pic kt-widget__pic--brand kt-font-boldest kt-font-light">
@@ -733,7 +734,8 @@ jQuery(document).ready(function() {
 });
 </script>
 {% endput %}
-";s:5:"mtime";i:1599303304;s:6:"markup";s:20207:"<!--Begin::Section-->
+";s:5:"mtime";i:1599747444;s:6:"markup";s:20215:"<!--Begin::Section-->
+
 <div class="row">
     <div class="col-xl-12">
         <!--begin:: Widgets/Applications/User/Profile3-->
@@ -743,7 +745,7 @@ jQuery(document).ready(function() {
                     <div class="kt-widget__top">
                         {% if user.avatar %}
                             <div class="kt-widget__media">
-                                <img src="{{user.avatar.thumb(100, 100,'crop')}}" alt="image">
+                                <!--<img src="{{user.avatar.thumb(100, 100,'crop')}}" alt="image">-->
                             </div>
                        {% else %}
                             <div class="kt-widget__pic kt-widget__pic--brand kt-font-boldest kt-font-light">
@@ -1446,4 +1448,4 @@ jQuery(document).ready(function() {
             }
             return Redirect::back();
         }
-    }";s:5:"title";s:7:"E-cargo";s:9:"daterange";s:1:"1";s:3:"url";s:10:"/dashboard";s:6:"layout";s:5:"admin";s:11:"description";s:23:"Overview on your system";s:9:"is_hidden";s:1:"0";s:4:"role";s:1:"0";s:10:"permission";s:1:"0";s:14:"anonymous_only";s:1:"0";s:11:"logged_only";s:1:"1";s:8:"child_of";s:13:"mey_no_parent";s:10:"hide_crumb";s:1:"1";s:18:"remove_crumb_trail";s:1:"0";s:14:"crumb_disabled";s:1:"0";s:7:"viewBag";a:0:{}}}
+    }";s:5:"title";s:7:"E-cargo";s:9:"daterange";s:1:"1";s:3:"url";s:10:"/dashboard";s:6:"layout";s:5:"admin";s:11:"description";s:23:"Overview of your system";s:9:"is_hidden";s:1:"0";s:4:"role";s:1:"0";s:10:"permission";s:1:"0";s:14:"anonymous_only";s:1:"0";s:11:"logged_only";s:1:"1";s:8:"child_of";s:13:"mey_no_parent";s:10:"hide_crumb";s:1:"1";s:18:"remove_crumb_trail";s:1:"0";s:14:"crumb_disabled";s:1:"0";s:7:"viewBag";a:0:{}}}

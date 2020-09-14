@@ -35,6 +35,11 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
         $macros = $this->macros;
         // line 1
         echo "<!-- begin:: Page -->
+<!DOCTYPE html>
+<head>
+<link href=\"https://fonts.googleapis.com/css2?family=Yanone+Kaffeesatz&display=swap\" rel=\"stylesheet\">
+</head>
+
  <div class=\"kt-grid kt-grid--ver kt-grid--root kt-page\">
      <div class=\"kt-grid kt-grid--hor kt-grid--root  kt-login kt-login--v5 kt-login--signin\" id=\"kt_login\">
          <div class=\"kt-grid__item kt-grid__item--fluid kt-grid kt-grid--desktop kt-grid--ver-desktop kt-grid--hor-tablet-and-mobile\">
@@ -46,13 +51,13 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                              <div class=\"kt-login__title\">
                                  <!--
                                  <a class=\"kt-login__logo \" href=\"";
-        // line 12
+        // line 17
         echo url("/");
         echo "\">
                                      <img style=\"height:90px;width:auto\" src=\"";
-        // line 13
-        if (twig_get_attribute($this->env, $this->source, ($context["settings"] ?? null), "logo", [], "any", false, false, false, 13)) {
-            echo twig_escape_filter($this->env, twig_get_attribute($this->env, $this->source, twig_get_attribute($this->env, $this->source, ($context["settings"] ?? null), "logo", [], "any", false, false, false, 13), "path", [], "any", false, false, false, 13), "html", null, true);
+        // line 18
+        if (twig_get_attribute($this->env, $this->source, ($context["settings"] ?? null), "logo", [], "any", false, false, false, 18)) {
+            echo twig_escape_filter($this->env, twig_get_attribute($this->env, $this->source, twig_get_attribute($this->env, $this->source, ($context["settings"] ?? null), "logo", [], "any", false, false, false, 18), "path", [], "any", false, false, false, 18), "html", null, true);
         } else {
             echo "./admin/media/logos/logo.svg";
         }
@@ -60,7 +65,7 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                                  </a>
                                 -->
                                  <h3 class=\"kt-margin-t-30\">";
-        // line 16
+        // line 21
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Sign In"]);
         echo "</h3>
                              </div>
@@ -69,10 +74,10 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                              <form class=\"kt-form\" action=\"\">
 
                                  ";
-        $_type = isset($context["type"]) ? $context["type"] : null;        $_message = isset($context["message"]) ? $context["message"] : null;        // line 22
+        $_type = isset($context["type"]) ? $context["type"] : null;        $_message = isset($context["message"]) ? $context["message"] : null;        // line 27
         foreach (Flash::getMessages() as $type => $messages) {
             foreach ($messages as $message) {
-                $context["type"] = $type;                $context["message"] = $message;                // line 23
+                $context["type"] = $type;                $context["message"] = $message;                // line 28
                 echo "                                    <div class=\"kt-alert kt-alert--outline alert alert-";
                 if ((($context["type"] ?? null) == "error")) {
                     echo "danger";
@@ -81,39 +86,39 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                 }
                 echo " alert-dismissible\" role=\"alert\">
                                         <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"";
-                // line 24
+                // line 29
                 echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Close"]);
                 echo "\"></button>
                                         <span>";
-                // line 25
+                // line 30
                 echo twig_escape_filter($this->env, ($context["message"] ?? null), "html", null, true);
                 echo "</span>
                                     </div>
                                  ";
             }
         }
-        $context["type"] = $_type;        $context["message"] = $_message;        // line 28
+        $context["type"] = $_type;        $context["message"] = $_message;        // line 33
         echo "                                 <div class=\"form-group\">
                                      <input class=\"form-control\" type=\"text\" placeholder=\"";
-        // line 29
+        // line 34
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), [($context["loginAttributeLabel"] ?? null)]);
         echo "\" name=\"login\" id=\"userSigninLogin\" autocomplete=\"off\">
                                  </div>
                                  <div class=\"form-group\">
                                      <input class=\"form-control form-control-last\" type=\"Password\" placeholder=\"";
-        // line 32
+        // line 37
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Password"]);
         echo "\" id=\"userSigninPassword\" name=\"password\">
                                  </div>
                                  <div class=\"row kt-login__extra\">
                                      ";
-        // line 35
+        // line 40
         if ((($context["rememberLoginMode"] ?? null) == "ask")) {
-            // line 36
+            // line 41
             echo "                                     <div class=\"col kt-align-left\">
                                          <label class=\"kt-checkbox\">
                                              <input name=\"remember\" type=\"checkbox\" value=\"1\"> ";
-            // line 38
+            // line 43
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Remember me"]);
             echo "
                                              <span></span>
@@ -121,14 +126,14 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                                      </div>
                                      ";
         }
-        // line 43
+        // line 48
         echo "                                     <div class=\"col kt-align-right \">
                                          <button id=\"kt_login_signin_submit\" class=\"btn btn-brand btn-pill btn-elevate\">";
-        // line 44
+        // line 49
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Sign In"]);
         echo "</button>
                                          <a href=\"javascript:;\" id=\"kt_login_forgot\" class=\"kt-link kt-hidden\">";
-        // line 45
+        // line 50
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Forget Password ?"]);
         echo "</a>
                                      </div>
@@ -136,13 +141,13 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                                  <div class=\"kt-login__actions text-center\">
                   \t\t\t\t\t<span class=\"kt-login__account-msg\">
                   \t\t\t\t\t\t";
-        // line 50
+        // line 55
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Don't have an account yet ?"]);
         echo "
                   \t\t\t\t\t</span>
                   \t\t\t\t\t&nbsp;&nbsp;
                   \t\t\t\t\t<a href=\"javascript:;\" id=\"kt_login_signup\" class=\"kt-login__account-link\">";
-        // line 53
+        // line 58
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Sign Up!"]);
         echo "</a>
                   \t\t\t\t</div>
@@ -152,32 +157,32 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                      </div>
 \t\t             <div class=\"kt-login__signup\">
                          ";
-        // line 60
+        // line 65
         if (($context["canRegister"] ?? null)) {
-            // line 61
+            // line 66
             echo "                             <div class=\"kt-login__head\">
                                  <div class=\"kt-login__title\">
                                      <!--<a class=\"kt-login__logo \" href=\"";
-            // line 63
+            // line 68
             echo url("/");
             echo "\">
                                          <img style=\"height:90px;width:auto\" src=\"";
-            // line 64
-            if (twig_get_attribute($this->env, $this->source, ($context["settings"] ?? null), "logo", [], "any", false, false, false, 64)) {
-                echo twig_escape_filter($this->env, twig_get_attribute($this->env, $this->source, twig_get_attribute($this->env, $this->source, ($context["settings"] ?? null), "logo", [], "any", false, false, false, 64), "path", [], "any", false, false, false, 64), "html", null, true);
+            // line 69
+            if (twig_get_attribute($this->env, $this->source, ($context["settings"] ?? null), "logo", [], "any", false, false, false, 69)) {
+                echo twig_escape_filter($this->env, twig_get_attribute($this->env, $this->source, twig_get_attribute($this->env, $this->source, ($context["settings"] ?? null), "logo", [], "any", false, false, false, 69), "path", [], "any", false, false, false, 69), "html", null, true);
             } else {
                 echo "./admin/media/logos/logo.svg";
             }
             echo "\">
                                      </a>-->
-                                        <img alt=\"Responsive image\" class=\"img-fluid\" src=\"assets/e-cargologo.jpg\"/>
+                                     <img style=\"max-height:500px; max-width: 80%; width:auto;height:auto\" src=\"ecargologo.jpg\">
                                         
                                      <h3 class=\"kt-margin-t-30\">";
-            // line 68
+            // line 73
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Sign Up"]);
             echo "</h3>
              \t\t\t\t\t\t<div class=\"kt-login__desc\">";
-            // line 69
+            // line 74
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Enter your details to create your account"]);
             echo ":</div>
                                  </div>
@@ -185,38 +190,38 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                             <form class=\"kt-form\" action=\"\">
         \t\t\t\t\t\t<div class=\"input-group\">
         \t\t\t\t\t\t\t<input class=\"form-control\" type=\"text\" id=\"registerName\" placeholder=\"";
-            // line 74
+            // line 79
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Full Name"]);
             echo "\" name=\"name\" required>
         \t\t\t\t\t\t</div>
         \t\t\t\t\t\t<div class=\"input-group\">
         \t\t\t\t\t\t\t<input class=\"form-control\" type=\"text\" placeholder=\"";
-            // line 77
+            // line 82
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Email"]);
             echo "\" id=\"registerEmail\" name=\"email\" autocomplete=\"off\" required>
         \t\t\t\t\t\t</div>
                                 ";
-            // line 79
+            // line 84
             if ((($context["loginAttribute"] ?? null) == "username")) {
-                // line 80
+                // line 85
                 echo "            \t\t\t\t\t\t<div class=\"input-group\">
             \t\t\t\t\t\t\t<input class=\"form-control\" type=\"text\" placeholder=\"";
-                // line 81
+                // line 86
                 echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Enter your username"]);
                 echo "\" id=\"registerUsername\" name=\"username\" autocomplete=\"off\" required>
             \t\t\t\t\t\t</div>
                                 ";
             }
-            // line 84
+            // line 89
             echo "        \t\t\t\t\t\t<div class=\"input-group\">
         \t\t\t\t\t\t\t<input class=\"form-control\" type=\"password\" placeholder=\"";
-            // line 85
+            // line 90
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Choose a Password"]);
             echo "\" id=\"registerPassword\" name=\"password\" required>
         \t\t\t\t\t\t</div>
         \t\t\t\t\t\t<div class=\"input-group\">
         \t\t\t\t\t\t\t<input class=\"form-control\" type=\"password\" placeholder=\"";
-            // line 88
+            // line 93
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Confirm Password"]);
             echo "\" name=\"rpassword\" id=\"rpassword\" required>
         \t\t\t\t\t\t</div>
@@ -224,8 +229,8 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
         \t\t\t\t\t\t\t<div class=\"col kt-align-left\">
         \t\t\t\t\t\t\t\t<label class=\"kt-checkbox\">
         \t\t\t\t\t\t\t\t\t<input type=\"checkbox\" name=\"agree\" id=\"agreement\" checked required>";
-            // line 93
-            echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["I Agree the"]);
+            // line 98
+            echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["I Agree to the"]);
             echo " <a href=\"#\" data-toggle=\"modal\" data-target=\"#kt_modal_6\" class=\"kt-link kt-login__link kt-font-bold\">";
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["terms and conditions"]);
             echo "</a>.
@@ -236,55 +241,55 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
         \t\t\t\t\t\t</div>
         \t\t\t\t\t\t<div class=\"kt-login__actions\">
         \t\t\t\t\t\t\t<button id=\"kt_login_signup_submit\" type=\"submit\" class=\"btn btn-brand btn-pill kt-login__btn-primary\">";
-            // line 100
+            // line 105
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Sign Up"]);
             echo "</button>&nbsp;&nbsp;
         \t\t\t\t\t\t\t<button id=\"kt_login_signup_cancel\" class=\"btn btn-secondary btn-pill kt-login__btn-secondary\">";
-            // line 101
+            // line 106
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Cancel"]);
             echo "</button>
         \t\t\t\t\t\t</div>
         \t\t\t\t\t</form>
                         ";
         } else {
-            // line 105
+            // line 110
             echo "                            <!-- Registration is disabled. -->
                         ";
         }
-        // line 107
+        // line 112
         echo "    \t\t\t\t</div>
                      <div class=\"kt-login__forgot\">
                          <div class=\"kt-login__head\">
                              <h3 class=\"kt-login__title\">";
-        // line 110
+        // line 115
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Forgotten Password ?"]);
         echo "</h3>
                              <div class=\"kt-login__desc\">";
-        // line 111
+        // line 116
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Enter your email to reset your password"]);
         echo ":</div>
                          </div>
                          <div class=\"kt-login__form\">
 
                              <form class=\"kt-form\" data-request=\"";
-        // line 115
+        // line 120
         echo twig_escape_filter($this->env, ($context["__SELF__"] ?? null), "html", null, true);
         echo "::onRestorePassword\" data-request-update=\"'";
         echo twig_escape_filter($this->env, ($context["__SELF__"] ?? null), "html", null, true);
         echo "::reset': '#partialUserResetForm'\">
                                  <div class=\"form-group\">
                                      <input class=\"form-control\" type=\"email\" placeholder=\"";
-        // line 117
+        // line 122
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Email"]);
         echo "\" name=\"email\" id=\"userRestoreEmail\" autocomplete=\"off\">
                                  </div>
                                  <div class=\"kt-login__actions\">
                                      <button id=\"kt_login_forgot_submit\" class=\"btn btn-brand btn-pill btn-elevate\">";
-        // line 120
+        // line 125
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Request"]);
         echo "</button>
                                      <button id=\"kt_login_forgot_cancel\" class=\"btn btn-outline-brand btn-pill\">";
-        // line 121
+        // line 126
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Cancel"]);
         echo "</button>
                                  </div>
@@ -296,15 +301,15 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
 
 
                       ";
-        // line 130
-        if (twig_get_attribute($this->env, $this->source, ($context["settings"] ?? null), "demo_mode", [], "any", false, false, false, 130)) {
-            // line 131
+        // line 135
+        if (twig_get_attribute($this->env, $this->source, ($context["settings"] ?? null), "demo_mode", [], "any", false, false, false, 135)) {
+            // line 136
             echo "                      <!--begin::Divider-->
                       <div class=\"kt-login__divider\">
                           <div class=\"kt-divider\">
                               <span></span>
                               <span>";
-            // line 135
+            // line 140
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["OR"]);
             echo "</span>
                               <span></span>
@@ -326,11 +331,11 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                                                   </div>
                                                   <div class=\"kt-widget__details\">
                                                       <span class=\"kt-widget__title\">";
-            // line 154
+            // line 159
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Admin"]);
             echo "</span>
                                                       <a href=\"javascript:;\" id=\"admin\" class=\"kt-widget__value kt-font-brand signin_as\">";
-            // line 155
+            // line 160
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Login as"]);
             echo "</a>
                                                   </div>
@@ -342,11 +347,11 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                                                   </div>
                                                   <div class=\"kt-widget__details\">
                                                       <span class=\"kt-widget__title\">";
-            // line 164
+            // line 169
             echo "Employee";
             echo "</span>
                                                       <a href=\"javascript:;\" id=\"employee\" class=\"kt-widget__value kt-font-brand signin_as\">";
-            // line 165
+            // line 170
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Login as"]);
             echo "</a>
                                                   </div>
@@ -358,11 +363,11 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                                                   </div>
                                                   <div class=\"kt-widget__details\">
                                                       <span class=\"kt-widget__title\">";
-            // line 174
+            // line 179
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Driver"]);
             echo "</span>
                                                       <a href=\"javascript:;\" id=\"driver\" class=\"kt-widget__value kt-font-brand signin_as\">";
-            // line 175
+            // line 180
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Login as"]);
             echo "</a>
                                                   </div>
@@ -374,11 +379,11 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                                                   </div>
                                                   <div class=\"kt-widget__details\">
                                                       <span class=\"kt-widget__title\">";
-            // line 184
+            // line 189
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Client"]);
             echo "</span>
                                                       <a href=\"javascript:;\" id=\"client\" class=\"kt-widget__value kt-font-brand signin_as\">";
-            // line 185
+            // line 190
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Login as"]);
             echo "</a>
                                                   </div>
@@ -394,7 +399,7 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
 
                       ";
         }
-        // line 198
+        // line 203
         echo "                      
                  </div>
              </div>
@@ -407,7 +412,7 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
          <div class=\"modal-content\">
              <div class=\"modal-header\">
                  <h5 class=\"modal-title\" id=\"exampleModalLongTitle\">";
-        // line 209
+        // line 214
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Terms and conditions"]);
         echo "</h5>
                  <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-label=\"Close\">
@@ -424,11 +429,11 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
              </div>
              <div class=\"modal-footer\">
                  <button type=\"button\" class=\"btn btn-secondary\" data-dismiss=\"modal\">";
-        // line 223
+        // line 228
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Don't Agree"]);
         echo "</button>
                  <button type=\"button\" class=\"btn btn-primary\" id=\"agree\" data-dismiss=\"modal\">";
-        // line 224
+        // line 229
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Agree"]);
         echo "</button>
              </div>
@@ -436,9 +441,9 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
      </div>
  </div>
  ";
-        // line 229
+        // line 234
         echo $this->env->getExtension('Cms\Twig\Extension')->startBlock('styles'        );
-        // line 230
+        // line 235
         echo "     <link href=\"./admin/css/demo10/pages/login/login-5.css\" rel=\"stylesheet\" type=\"text/css\" />
      <style>
          .kt-header__topbar-item--langs {
@@ -461,12 +466,12 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
          }
      </style>
  ";
-        // line 229
+        // line 234
         echo $this->env->getExtension('Cms\Twig\Extension')->endBlock(true        );
-        // line 252
+        // line 257
         echo " ";
         echo $this->env->getExtension('Cms\Twig\Extension')->startBlock('scripts'        );
-        // line 253
+        // line 258
         echo " <script type=\"text/javascript\">
      \"use strict\";
 
@@ -556,13 +561,13 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                     messages: {
                         \"login\": {
                             required: '";
-        // line 341
+        // line 346
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["This field is required!"]);
         echo "',
                         },
                         \"password\": {
                             required: '";
-        // line 344
+        // line 349
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["This field is required!"]);
         echo "',
                         },
@@ -592,11 +597,11 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                     \tsetTimeout(function() {
     \t                    btn.removeClass('kt-spinner kt-spinner--right kt-spinner--sm kt-spinner--light').attr('disabled', false);
                            showErrorMsg(form, 'success', '";
-        // line 371
+        // line 376
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Correct, you are being redirect"]);
         echo ".');
                            location.href = \"";
-        // line 372
+        // line 377
         echo url("dashboard");
         echo "\";
                         }, 2000);
@@ -641,17 +646,17 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
 
                 \$.request('onRegister', {
                     ";
-        // line 414
+        // line 419
         if ((($context["loginAttribute"] ?? null) == "username")) {
-            // line 415
+            // line 420
             echo "                        data: {name: \$('#registerName').val(), email: \$('#registerEmail').val(), username: \$('#registerUsername').val(), password: \$('#registerPassword').val(), password_confirmation: \$('#rpassword').val()},
                     ";
         } else {
-            // line 417
+            // line 422
             echo "                        data: {name: \$('#registerName').val(), email: \$('#registerEmail').val(), password: \$('#registerPassword').val(), password_confirmation: \$('#rpassword').val()},
                     ";
         }
-        // line 419
+        // line 424
         echo "                    error: function(e,response) {
                         btn.removeClass('kt-spinner kt-spinner--right kt-spinner--sm kt-spinner--light').attr('disabled', false);
                         showErrorMsg(form, 'danger', e.responseJSON.X_OCTOBER_ERROR_MESSAGE);
@@ -661,25 +666,25 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                     \tsetTimeout(function() {
     \t                    btn.removeClass('kt-spinner kt-spinner--right kt-spinner--sm kt-spinner--light').attr('disabled', false);
                             ";
-        // line 427
+        // line 432
         if ((($context["requireActivation"] ?? null) && (null === ($context["automaticActivation"] ?? null)))) {
-            // line 428
+            // line 433
             echo "    \t                       showErrorMsg(form, 'success', '";
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Thank you. To complete your registration please check your email"]);
             echo ".');
                             ";
         } else {
-            // line 430
+            // line 435
             echo "                               showErrorMsg(form, 'success', '";
             echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Correct, you are being redirect"]);
             echo ".');
                                location.href = \"";
-            // line 431
+            // line 436
             echo url("dashboard");
             echo "\";
                            ";
         }
-        // line 433
+        // line 438
         echo "                        }, 2000);
                     }
                 });
@@ -719,7 +724,7 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                     \tsetTimeout(function() {
 \t                           btn.removeClass('kt-spinner kt-spinner--right kt-spinner--sm kt-spinner--light').attr('disabled', false);
                                showErrorMsg(form, 'success', '";
-        // line 471
+        // line 476
         echo call_user_func_array($this->env->getFilter('__')->getCallable(), ["Cool! Password recovery instruction has been sent to your email"]);
         echo ".');
                         }, 2000);
@@ -749,9 +754,9 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
          });
 
          ";
-        // line 498
-        if (twig_get_attribute($this->env, $this->source, ($context["settings"] ?? null), "demo_mode", [], "any", false, false, false, 498)) {
-            // line 499
+        // line 503
+        if (twig_get_attribute($this->env, $this->source, ($context["settings"] ?? null), "demo_mode", [], "any", false, false, false, 503)) {
+            // line 504
             echo "          \$('body').on('click','.signin_as', function(e){
               var type = \$(this).attr('id');
               if(type == 'admin'){
@@ -774,12 +779,14 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
           });
           ";
         }
-        // line 520
+        // line 525
         echo "     });
  </script>
  ";
-        // line 252
+        // line 257
         echo $this->env->getExtension('Cms\Twig\Extension')->endBlock(true        );
+        // line 528
+        echo "</html>";
     }
 
     public function getTemplateName()
@@ -794,12 +801,17 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
 
     public function getDebugInfo()
     {
-        return array (  782 => 252,  778 => 520,  755 => 499,  753 => 498,  723 => 471,  683 => 433,  678 => 431,  673 => 430,  667 => 428,  665 => 427,  655 => 419,  651 => 417,  647 => 415,  645 => 414,  600 => 372,  596 => 371,  566 => 344,  560 => 341,  470 => 253,  467 => 252,  465 => 229,  442 => 230,  440 => 229,  432 => 224,  428 => 223,  411 => 209,  398 => 198,  382 => 185,  378 => 184,  366 => 175,  362 => 174,  350 => 165,  346 => 164,  334 => 155,  330 => 154,  308 => 135,  302 => 131,  300 => 130,  288 => 121,  284 => 120,  278 => 117,  271 => 115,  264 => 111,  260 => 110,  255 => 107,  251 => 105,  244 => 101,  240 => 100,  228 => 93,  220 => 88,  214 => 85,  211 => 84,  205 => 81,  202 => 80,  200 => 79,  195 => 77,  189 => 74,  181 => 69,  177 => 68,  166 => 64,  162 => 63,  158 => 61,  156 => 60,  146 => 53,  140 => 50,  132 => 45,  128 => 44,  125 => 43,  117 => 38,  113 => 36,  111 => 35,  105 => 32,  99 => 29,  96 => 28,  89 => 25,  85 => 24,  76 => 23,  73 => 22,  64 => 16,  54 => 13,  50 => 12,  37 => 1,);
+        return array (  789 => 528,  787 => 257,  783 => 525,  760 => 504,  758 => 503,  728 => 476,  688 => 438,  683 => 436,  678 => 435,  672 => 433,  670 => 432,  660 => 424,  656 => 422,  652 => 420,  650 => 419,  605 => 377,  601 => 376,  571 => 349,  565 => 346,  475 => 258,  472 => 257,  470 => 234,  447 => 235,  445 => 234,  437 => 229,  433 => 228,  416 => 214,  403 => 203,  387 => 190,  383 => 189,  371 => 180,  367 => 179,  355 => 170,  351 => 169,  339 => 160,  335 => 159,  313 => 140,  307 => 136,  305 => 135,  293 => 126,  289 => 125,  283 => 122,  276 => 120,  269 => 116,  265 => 115,  260 => 112,  256 => 110,  249 => 106,  245 => 105,  233 => 98,  225 => 93,  219 => 90,  216 => 89,  210 => 86,  207 => 85,  205 => 84,  200 => 82,  194 => 79,  186 => 74,  182 => 73,  171 => 69,  167 => 68,  163 => 66,  161 => 65,  151 => 58,  145 => 55,  137 => 50,  133 => 49,  130 => 48,  122 => 43,  118 => 41,  116 => 40,  110 => 37,  104 => 34,  101 => 33,  94 => 30,  90 => 29,  81 => 28,  78 => 27,  69 => 21,  59 => 18,  55 => 17,  37 => 1,);
     }
 
     public function getSourceContext()
     {
         return new Source("<!-- begin:: Page -->
+<!DOCTYPE html>
+<head>
+<link href=\"https://fonts.googleapis.com/css2?family=Yanone+Kaffeesatz&display=swap\" rel=\"stylesheet\">
+</head>
+
  <div class=\"kt-grid kt-grid--ver kt-grid--root kt-page\">
      <div class=\"kt-grid kt-grid--hor kt-grid--root  kt-login kt-login--v5 kt-login--signin\" id=\"kt_login\">
          <div class=\"kt-grid__item kt-grid__item--fluid kt-grid kt-grid--desktop kt-grid--ver-desktop kt-grid--hor-tablet-and-mobile\">
@@ -864,7 +876,7 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
                                      <!--<a class=\"kt-login__logo \" href=\"{{url('/')}}\">
                                          <img style=\"height:90px;width:auto\" src=\"{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}\">
                                      </a>-->
-                                        <img alt=\"Responsive image\" class=\"img-fluid\" src=\"assets/e-cargologo.jpg\"/>
+                                     <img style=\"max-height:500px; max-width: 80%; width:auto;height:auto\" src=\"ecargologo.jpg\">
                                         
                                      <h3 class=\"kt-margin-t-30\">{{\"Sign Up\"|__}}</h3>
              \t\t\t\t\t\t<div class=\"kt-login__desc\">{{'Enter your details to create your account'|__}}:</div>
@@ -891,7 +903,7 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
         \t\t\t\t\t\t<div class=\"row kt-login__extra kt-hidden\">
         \t\t\t\t\t\t\t<div class=\"col kt-align-left\">
         \t\t\t\t\t\t\t\t<label class=\"kt-checkbox\">
-        \t\t\t\t\t\t\t\t\t<input type=\"checkbox\" name=\"agree\" id=\"agreement\" checked required>{{'I Agree the'|__}} <a href=\"#\" data-toggle=\"modal\" data-target=\"#kt_modal_6\" class=\"kt-link kt-login__link kt-font-bold\">{{'terms and conditions'|__}}</a>.
+        \t\t\t\t\t\t\t\t\t<input type=\"checkbox\" name=\"agree\" id=\"agreement\" checked required>{{'I Agree to the'|__}} <a href=\"#\" data-toggle=\"modal\" data-target=\"#kt_modal_6\" class=\"kt-link kt-login__link kt-font-bold\">{{'terms and conditions'|__}}</a>.
         \t\t\t\t\t\t\t\t\t<span></span>
         \t\t\t\t\t\t\t\t</label>
         \t\t\t\t\t\t\t\t<span class=\"form-text text-muted\"></span>
@@ -1320,6 +1332,7 @@ class __TwigTemplate_1d7a6ecc40d478422a4269b2b6708c953587397095eaacb50ed12e5aff0
           {% endif %}
      });
  </script>
- {% endput %}", "/Users/bola/Downloads/e-cargo/themes/spotlayer/pages/login.htm", "");
+ {% endput %}
+</html>", "/Users/bola/Downloads/e-cargo/themes/spotlayer/pages/login.htm", "");
     }
 }

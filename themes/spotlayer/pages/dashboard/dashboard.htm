@@ -2,7 +2,7 @@ title = "E-cargo"
 daterange = 1
 url = "/dashboard"
 layout = "admin"
-description = "Overview on your system"
+description = "Overview of your system"
 is_hidden = 0
 role = 0
 permission = 0
@@ -282,6 +282,7 @@ crumb_disabled = 0
 ?>
 ==
 <!--Begin::Section-->
+
 <div class="row">
     <div class="col-xl-12">
         <!--begin:: Widgets/Applications/User/Profile3-->
@@ -291,7 +292,7 @@ crumb_disabled = 0
                     <div class="kt-widget__top">
                         {% if user.avatar %}
                             <div class="kt-widget__media">
-                                <img src="{{user.avatar.thumb(100, 100,'crop')}}" alt="image">
+                                <!--<img src="{{user.avatar.thumb(100, 100,'crop')}}" alt="image">-->
                             </div>
                        {% else %}
                             <div class="kt-widget__pic kt-widget__pic--brand kt-font-boldest kt-font-light">

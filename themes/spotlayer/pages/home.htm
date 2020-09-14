@@ -45,14 +45,12 @@ function onMyRegister()
                      <div class="kt-login__signin">
                          <div class="kt-login__head">
                              <div class="kt-login__title">
-                                 <!---
-                                 <a class="kt-login__logo " href="{{url('/')}}">
+                             
+                                 <!--<a class="kt-login__logo " href="{{url('/')}}">
                                      <img style="max-height:90px;max-width:80%;width:auto;height:auto" src="{% if settings.logo %}{{ settings.logo.path }}{% else %}./admin/media/logos/logo.svg{% endif %}">
-                                 </a>
-                                -->
+                                 </a>-->
+                                
                                 <img style="max-height:500px; max-width: 80%; width:auto;height:auto" src="ecargologo.jpg">
-
-                                <!--<img src="ecargologo.jpg">-->
                             
                                 
                                  <h3 style="font-family: 'Oregano', cursive;" class="kt-margin-t-30">{{"Sign In"|__}}</h3>
@@ -68,7 +66,7 @@ function onMyRegister()
                                     </div>
                                  {% endflash %}
                                  <div class="form-group">
-                                     <input style="font-family: 'Oregano', cursive; font-size: 20px; color:black" class="form-control" type="text" placeholder="{{ loginAttributeLabel|__ }}" name="login" id="userSigninLogin" autocomplete="off">
+                                     <input style="font-family: 'Oregano', cursive; font-size: 20px; color:black;" class="form-control" type="text" placeholder="{{ loginAttributeLabel|__ }}" name="login" id="userSigninLogin" autocomplete="off">
                                  </div>
                                  <div class="form-group">
                                      <input style="font-family: 'Oregano', cursive; font-size: 20px; color:black" class="form-control form-control-last" type="Password" placeholder="{{'Password'|__}}" id="userSigninPassword" name="password">

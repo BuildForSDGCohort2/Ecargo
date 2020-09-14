@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      /* Set the size of the div element that contains the map */
+      #map {
+        height: 400px;  /* The height is 400 pixels */
+        width: 100%;  /* The width is the width of the web page */
+       }
+    </style>
+  </head>
+  <body>
+    <!--The div element for the map -->
+    <div id="map"></div>
+    <script>
+// Initialize and add the map
+function initMap() {
+  // The location of Accra
+  var accra = {lat: -25.344, lng: 131.036};
+  // The map, centered at Accra
+  var map = new google.maps.Map(
+      document.getElementById('map'), {zoom: 4, center: accra});
+  // The marker, positioned at Accra
+  var marker = new google.maps.Marker({position: accra, map: map});
+}
+    </script>
+    <script defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTDs0fLV7pKB-N3gaoJ7vGMvZ3iXdyZNc&callback=initMap">
+    </script>
+  </body>
+</html>
