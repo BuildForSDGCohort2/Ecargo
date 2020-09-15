@@ -54,11 +54,11 @@ return [
 
         'mysql' => [
             'driver'    => 'mysql',
-            'host'      => 'localhost',
+            'host'      => 'sh4ob67ph9l80v61.cbetxkdyhwsb.us-east-1.rds.amazonaws.com',
             'port'      => 3306,
-            'database'  => 'e-cargo',
-            'username'  => 'root',
-            'password'  => '',
+            'database'  => 'sq556zztmkdmkspu',
+            'username'  => 'xp5kgmknpt9b92bx',
+            'password'  => 'q6pg0xeaqczkpc6w',
             'charset'   => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
             'prefix'    => '',
@@ -68,7 +68,7 @@ return [
             'driver'   => 'pgsql',
             'host'     => 'localhost',
             'port'     => 5432,
-            'database' => 'database',
+            'database' => 'database',q6pg0xeaqczkpc6w
             'username' => 'root',
             'password' => '',
             'charset'  => 'utf8',
