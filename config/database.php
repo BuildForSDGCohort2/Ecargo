@@ -67,9 +67,9 @@ return [
         'pgsql' => [
             'driver'   => 'pgsql',
             'host'     => 'sh4ob67ph9l80v61.cbetxkdyhwsb.us-east-1.rds.amazonaws.com',
-            'port'     => 5432,
-            'database' => 'database',q6pg0xeaqczkpc6w
-            'username' => 'root',
+            'port'     => 3306,
+            'database' => 'sq556zztmkdmkspu',q6pg0xeaqczkpc6w
+            'username' => 'xp5kgmknpt9b92bx',
             'password' => '',
             'charset'  => 'utf8',
             'prefix'   => '',
