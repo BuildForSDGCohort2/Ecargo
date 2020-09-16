@@ -36,7 +36,7 @@ return [
     |
     */
 
-    'default' => 'mysql',
+
 
     /*
     |--------------------------------------------------------------------------
@@ -54,57 +54,6 @@ return [
     |
     */
 
-    /*
-    'connections' => [
-
-       
-        
-        
-        'mysql' => [
-            'driver'    => 'mysql',
-            'host'      => 'sh4ob67ph9l80v61.cbetxkdyhwsb.us-east-1.rds.amazonaws.com',
-            'port'      => 3306,
-            'database'  => 'ngcpbqfxngcgaoqj',
-            'username'  => 'iyxg6whzentos83o',
-            'password'  => 'omy5fuavklvzg60m',
-            'charset'   => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
-            'prefix'    => '',
-        ],
-    
-
-
-
-    ],
-    */
-
-    /*
-    |--------------------------------------------------------------------------
-    | Migration Repository Table
-    |--------------------------------------------------------------------------
-    |
-    | This table keeps track of all the migrations that have already run for
-    | your application. Using this information, we can determine which of
-    | the migrations on disk have not actually be run in the databases.
-    |
-    */
-
-    'migrations' => 'migrations',
-
    
-    |--------------------------------------------------------------------------
-    | Use DB configuration for testing
-    |--------------------------------------------------------------------------
-    |
-    | When running plugin tests OctoberCMS by default uses SQLite in memory.
-    | You can override this behavior by setting `useConfigForTesting` to true.
-    |
-    | After that OctoberCMS will take DB parameters from the config.
-    | If file `/config/testing/database.php` exists, config will be read from it,
-    | but remember that when not specified it will use parameters specified in
-    | `/config/database.php`.
-    |
-    */
-
     'useConfigForTesting' => false,
 ];
