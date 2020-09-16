@@ -56,9 +56,9 @@ return [
             'driver'    => 'mysql',
             'host'      => 'sh4ob67ph9l80v61.cbetxkdyhwsb.us-east-1.rds.amazonaws.com',
             'port'      => 3306,
-            'database'  => 'sq556zztmkdmkspu',
-            'username'  => 'xp5kgmknpt9b92bx',
-            'password'  => 'q6pg0xeaqczkpc6w',
+            'database'  => 'ngcpbqfxngcgaoqj',
+            'username'  => 'iyxg6whzentos83o',
+            'password'  => 'omy5fuavklvzg60m',
             'charset'   => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
             'prefix'    => '',
@@ -108,9 +108,9 @@ return [
         'cluster' => false,
 
         'default' => [
-            'host'     => '127.0.0.1',
-            'password' => null,
-            'port'     => 6379,
+            'host'     => 'ec2-3-226-208-170.compute-1.amazonaws.com',
+            'password' => pc28f6a2c4ecd020fcc0a8b4f3536e02ef09496afde278923fccd88177eb97a5e,
+            'port'     => 23889,
             'database' => 0,
         ],
 
