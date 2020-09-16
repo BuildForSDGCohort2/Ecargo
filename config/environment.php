@@ -28,7 +28,7 @@ return [
 
     'hosts' => [
 
-        'localhost' => 'dev',
+        'sh4ob67ph9l80v61.cbetxkdyhwsb.us-east-1.rds.amazonaws.com' => 'dev',
 
     ],
 
