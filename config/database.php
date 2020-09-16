@@ -1,4 +1,14 @@
+
+
+
 <?php
+ $url = getenv('mysql://iyxg6whzentos83o:omy5fuavklvzg60m@sh4ob67ph9l80v61.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/ngcpbqfxngcgaoqj');
+$dbparts = parse_url($url);
+
+$hostname = $dbparts['sh4ob67ph9l80v61.cbetxkdyhwsb.us-east-1.rds.amazonaws.com'];
+$username = $dbparts['iyxg6whzentos83o'];
+$password = $dbparts['omy5fuavklvzg60m'];
+$database = ltrim($dbparts['ngcpbqfxngcgaoqj'],'/');
 
 return [
 
@@ -46,12 +56,9 @@ return [
 
     'connections' => [
 
-        'sqlite' => [
-            'driver'   => 'sqlite',
-            'database' => 'storage/database.sqlite',
-            'prefix'   => '',
-        ],
-
+       
+        
+        
         'mysql' => [
             'driver'    => 'mysql',
             'host'      => 'sh4ob67ph9l80v61.cbetxkdyhwsb.us-east-1.rds.amazonaws.com',
@@ -64,18 +71,7 @@ return [
             'prefix'    => '',
         ],
 
-       
-    
 
-        'sqlsrv' => [
-            'driver'   => 'sqlsrv',
-            'host'     => 'localhost',
-            'port'     => 1433,
-            'database' => 'database',
-            'username' => 'root',
-            'password' => '',
-            'prefix'   => '',
-        ],
 
     ],
 
@@ -92,31 +88,7 @@ return [
 
     'migrations' => 'migrations',
 
-    /*
-    |--------------------------------------------------------------------------
-    | Redis Databases
-    |--------------------------------------------------------------------------
-    |
-    | Redis is an open source, fast, and advanced key-value store that also
-    | provides a richer set of commands than a typical key-value systems
-    | such as APC or Memcached. Laravel makes it easy to dig right in.
-    |
-    */
-
-    'redis' => [
-
-        'cluster' => false,
-
-        'default' => [
-            'host'     => 'ec2-3-226-208-170.compute-1.amazonaws.com',
-            'password' => pc28f6a2c4ecd020fcc0a8b4f3536e02ef09496afde278923fccd88177eb97a5e,
-            'port'     => 23889,
-            'database' => 0,
-        ],
-
-    ],
-
-    /*
+   
     |--------------------------------------------------------------------------
     | Use DB configuration for testing
     |--------------------------------------------------------------------------
