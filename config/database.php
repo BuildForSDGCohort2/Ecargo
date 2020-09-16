@@ -66,7 +66,7 @@ return [
 
         'pgsql' => [
             'driver'   => 'pgsql',
-            'host'     => 'localhost',
+            'host'     => 'sh4ob67ph9l80v61.cbetxkdyhwsb.us-east-1.rds.amazonaws.com',
             'port'     => 5432,
             'database' => 'database',q6pg0xeaqczkpc6w
             'username' => 'root',
