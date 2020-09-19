@@ -1,4 +1,4 @@
-1600092885a:1:{s:28:"dashboard/update-courier.htm";a:20:{s:8:"fileName";s:28:"dashboard/update-courier.htm";s:7:"content";s:8593:"title = "Update Courier"
+1600531686a:1:{s:28:"dashboard/update-courier.htm";a:20:{s:8:"fileName";s:28:"dashboard/update-courier.htm";s:7:"content";s:8593:"title = "Update Courier"
 url = "/dashboard/settings/couriers/:id/edit"
 layout = "admin"
 is_hidden = 0
