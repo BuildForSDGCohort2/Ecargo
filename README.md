@@ -1,24 +1,24 @@
-<b>About</b>
+<b>About our project</b>
 
-The name of our solution is <b>E-Cargo</b>. Our solution provides a platform to network the cargo business in Africa.
-Our goal is to revitalize the local shipping and help cargo owners, drivers and customers acheive their aim seamlessly and effortlessly in every locality or country. 
-Our first step towards achieving this was empowering carriers and their drivers, the heart of the trucking industry, with technology to help them succeed. We provide account for Drivers and Clients. Sign-up is free for everyone.
+The name of our solution is <b>E-Cargo</b>. Our novel solution provides a platform for interconnectivity for the cargo business in Africa.
+Our goal is to revitalize the local shipping industry and help cargo owners, drivers and customers alike acheive their aims seamlessly and effortlessly in every locality or country. 
+Our first step towards achieving this result was to empower carriers and their drivers, the heart of the trucking industry, with technology to help them succeed. We provide accounts for drivers and clients. Moreover, sign-up is free for everyone!
 
-<b>E-Cargo platform</b> gives shippers of all sizes a direct connection to locate avaliable cargo with right space to carry their load, enabling them to see instant upfront load pricing, give load specifications such as; weight, height, quanity, dimension and category. </br>
-The platform is being built in close collaboration with shippers to help transform a process that would typically take them days to complete and often leave them in the dark on market prices and whether they were getting the right carrier. 
+<b>The E-Cargo platform</b> provids various shippers a direct connection to locate avaliable cargo with the right space to transport their goods, thus enabling them to see instant upfront load pricing, and provide load specifications such as: weight, height, quantity, dimension and category. </br>
+The platform is being built in close collaboration with shippers to help transform a process that would typically take them days to complete, and often leave them in the dark about market prices and whether they were getting the right carrier. 
 
 <b>Shippers using E-cargo can:</b>
 <b>Tender a load in seconds:</b>
 Create and tender loads with just a few clicks and reduce the time and energy it takes to book a cargo.</br>
 
 <b>See instant marketplace pricing:</b></br>
-Get instant and transparent price quotes for shipments. E-cargo rates are based on market conditions and other factors and generated in real-time.</br>
+Get instant and transparent price quotes for shipments. E-cargo rates are based on market conditions and other factors and are generated in real-time.</br>
 
-<b>Access E-cargo reliable network of cargo and drivers:</b> 
-  Have peace of mind knowing all loads tendered through the cargo platform are backed by E-Cargo vast and reliable network of carriers.
+<b>Access E-cargo's reliable network of cargo and drivers:</b> 
+  Have peace of mind knowing that all goods tendered through the cargo platform are backed by E-Cargo's vast and reliable network of carriers.
 
-<b>Locate nearest Cargo and Track after takeoff:</b></br>
-Locate cargo travelling along your path and track shipments online at any time of day. Automatic notifications for major milestones mean no more searching through an inbox for tracking information.</br>
+<b>Locate the nearest cargo and track after takeoff:</b></br>
+Locate cargo travelling along your path, and track shipments online at any time of day. Automatic notifications for major milestones mean no more searching through an inbox for tracking information.</br>
 
 <b>Streamline document management:</b></br>
 Upon delivery, necessary documents are automatically organized and stored for instant and future access.</br>
@@ -27,16 +27,16 @@ Upon delivery, necessary documents are automatically organized and stored for in
 <b>Why</b>
 
 
-The problem we set out to solve is that of <b>The need to revitalize and improve Africa's Cargo/Shippment industry and make it more attractive and flexible with the intension of generating more income without discouraging clients.</b>
+The problem we set out to solve is that of <b>the need to revitalize and improve Africa's cargo/Shipment industry, and thus make it more attractive and flexible with the intension of generating more income without discouraging clients.</b>
 
 
 <b>How much impact the product could have in its stated SDG.</b></br>
 
 
-A core mission of E-Cargo is to cause impact on the environment. Sustainability is in the DNA of the entire project. </br>
-In the end, we want to sustain cargo owners and drivers in business by creating easy access to clients, it's a field of creating employement.</br>
-Travelling a long journey with small quantity of load is a lost in revenue, while don't we give access to other shippers along the same route?
-The end result is that clients can plan their loads more holistically.</br>
+A core mission of E-Cargo is to create a positive impact on the environment. Sustainability is in the DNA of the entire project. </br>
+In the end, we want to sustain cargo owners and drivers in business by creating easy access to clients, and creating employment.</br>
+Travelling a long journey with a small quantity of goods means lost revenue.  Why don't we give access to other shippers along the same route?
+The end result is that clients can plan the shipment of their goods more holistically.</br>
 
 <b>The launch of E-Cargo will create new avenues for carriers and shippers to achieve their goals.</b></br>
 
@@ -51,14 +51,14 @@ Crédo Jesu-go Aguete
 
 <b>Usage</b></br>
 
-URL for deploment is below
+URL for deployment is below
 E-cargo > http://e-cargorun.studiosasi.com/ </br>
 
 
 
 <b>Contributing</b></br>
 
-I this project sounds interesing to you and you'd like to contribute; with UI, API or Funds, thanks!
+If this project sounds interesing to you and you'd like to contribute; with UI, API or Funds, thanks!
 First, email the Team Lead: akromondr@gmail.com
 
 
