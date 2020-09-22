@@ -26,6 +26,7 @@ Upon delivery, necessary documents are automatically organized and stored for in
 
 <b>Why</b>
 
+
 The problem we set out to solve is that of <b>The need to revitalize and improve Africa's Cargo/Shippment industry and make it more attractive and flexible with the intension of generating more income without discouraging clients.</b>
 
 
