@@ -17,7 +17,7 @@ Get instant and transparent price quotes for shipments. E-cargo rates are based 
 <b>Access E-cargo reliable network of cargo and drivers:</b> 
   Have peace of mind knowing all loads tendered through the cargo platform are backed by E-Cargo vast and reliable network of carriers.
 
-<b.Locate nearest Cargo and Track after takeoff:</b></br>
+<b>Locate nearest Cargo and Track after takeoff:</b></br>
 Locate cargo travelling along your path and track shipments online at any time of day. Automatic notifications for major milestones mean no more searching through an inbox for tracking information.</br>
 
 <b>Streamline document management:</b></br>
