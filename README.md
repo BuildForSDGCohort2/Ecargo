@@ -1,3 +1,40 @@
+<b>About</b>
+
+The name of our solution is CargoRun. Our solution provides a platform to network the cargo business in Africa.
+Our goal is to revitalize the local shipping and help cargo owners, drivers and customers acheive their aim seamlessly and effortlessly in every locality or country. 
+Our first step towards achieving this was empowering carriers and their drivers, the heart of the trucking industry, with technology to help them succeed.
+Nationwide network
+Instant quote generation
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Installation wizard for October
 
 The wizard installation is a recommended way to install October. It is simpler than the command-line installation and doesn't require any special skills.
