@@ -43,9 +43,9 @@ The end result is that clients can plan their loads more holistically.
 
 <b>Authors</b>
 
-Robert Akromond --Technical Team Lead --@akromond
-Bola Bally
-Taiwo Olufemi Olusegun
+Robert Akromond --Technical Team Lead --@akromond</br>
+Bola Bally</br>
+Taiwo Olufemi Olusegun</br>
 Crédo Jesu-go Aguete
 
 
