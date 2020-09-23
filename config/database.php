@@ -54,11 +54,11 @@ return [
 
         'mysql' => [
             'driver'    => 'mysql',
-            'host'      => 'localhost',
+            'host'      => 'us-cdbr-east-02.cleardb.com',
             'port'      => 3306,
-            'database'  => 'tudiosa6_e-cargorun',
-            'username'  => 'tudiosa6_school',
-            'password'  => 'Berry1De2Blaq3',
+            'database'  => 'heroku_e090d535c0a387a',
+            'username'  => 'b0e251fa5d8501:4a552b36',
+            'password'  => '4a552b36',
             'charset'   => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
             'prefix'    => '',
