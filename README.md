@@ -7,14 +7,14 @@ Our first step towards achieving this result was to empower carriers and their d
 <b>The E-Cargo platform</b> provides various shippers a direct connection to locate avaliable cargo with the right space to transport their goods, thus enabling them to see instant upfront load pricing, and provide load specifications such as: weight, height, quantity, dimension and category. </br>
 The platform is being built in close collaboration with shippers to help transform a process that would typically take them days to complete, and often leave them in the dark about market prices and whether they were getting the right carrier. 
 
-<b>Shippers using E-cargo can tender a load in seconds;
+<b>Shippers using E-cargo can tender a load in seconds;<b></br>
 create and tender loads with just a few clicks; 
 reduce the time and energy it takes to book a cargo.</br>
 
-<b>See instant marketplace pricing:
+<b>See instant marketplace pricing:</b></br>
 Get instant and transparent price quotes for shipments. E-cargo rates are based on market conditions and other factors and are generated in real-time.</br>
 
-<b>Access E-cargo's reliable network of cargo and drivers:
+<b>Access E-cargo's reliable network of cargo and drivers:</b></br>
 Have peace of mind knowing that all goods tendered through the cargo platform are backed by E-Cargo's vast and reliable network of carriers.
 
 <b>Locate the nearest cargo and track after takeoff:</b></br>
@@ -34,7 +34,7 @@ The problem we set out to solve is that of <b>the need to revitalize and improve
 
 
 A core mission of E-Cargo is to create a positive impact on the environment. Sustainability is in the DNA of the entire project. </br>
-In the end, we want to sustain cargo owners and drivers in business by creating easy access to clients, and creating employment.</br>
+Our longterm goal is to sustain cargo owners and drivers in business by creating easy access to clients, and creating employment.</br>
 Travelling a long journey with a small quantity of goods means lost revenue.  Why don't we give access to other shippers along the same route?
 The end result is that clients can plan the shipment of their goods more holistically.</br>
 
