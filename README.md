@@ -13,7 +13,7 @@ Our platform is being built in close collaboration with shippers to help transfo
 Get instant and transparent price quotes for shipments. E-cargo rates are based on market conditions and other factors and are generated in real-time.</br>
 
 <b>Access E-cargo's reliable network of cargo and drivers:</b></br>
-Have peace of mind knowing that all goods tendered through the cargo platform are backed by E-Cargo's vast and reliable network of carriers.
+Have peace of mind knowing that all goods tendered through the E-cargo platform are backed by E-Cargo's vast and reliable network of carriers.
 
 <b>Locate the nearest cargo and track after takeoff:</b></br>
 Locate cargo travelling along your path, and track shipments online at any time of day. Automatic notifications for major milestones mean no more searching through an inbox for tracking information.</br>
