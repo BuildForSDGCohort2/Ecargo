@@ -2,20 +2,16 @@
 
 The name of our solution is <b>E-Cargo</b>. Our novel solution provides a platform for interconnectivity for the cargo business in Africa.
 Our goal is to revitalize the local shipping industry and help cargo owners, drivers and customers alike acheive their aims seamlessly and effortlessly in every locality or country. 
-Our first step towards achieving this result was to empower carriers and their drivers, the heart of the trucking industry, with technology to help them succeed. We provide accounts for drivers and clients. Moreover, sign-up is free for everyone!
+Our first step towards achieving this result was to empower carriers and their drivers (the heart of the trucking industry) with technology to help them succeed. We provide accounts for drivers and clients. Moreover, sign-up is free for everyone!
 
 <b>The E-Cargo platform</b> provides various shippers a direct connection to locate avaliable cargo with the right space to transport their goods, thus enabling them to see instant upfront load pricing, and provide load specifications such as: weight, height, quantity, dimension and category. </br>
 The platform is being built in close collaboration with shippers to help transform a process that would typically take them days to complete, and often leave them in the dark about market prices and whether they were getting the right carrier. 
 
-<b>Shippers using E-cargo can:</b>
-<b>Tender a load in seconds:</b>
-Create and tender loads with just a few clicks and reduce the time and energy it takes to book a cargo.</br>
+<b>Shippers using E-cargo can tender a load in seconds, create and tender loads with just a few clicks and reduce the time and energy it takes to book a cargo.</br>
 
-<b>See instant marketplace pricing:</b></br>
-Get instant and transparent price quotes for shipments. E-cargo rates are based on market conditions and other factors and are generated in real-time.</br>
+<b>See instant marketplace pricing:Get instant and transparent price quotes for shipments. E-cargo rates are based on market conditions and other factors and are generated in real-time.</br>
 
-<b>Access E-cargo's reliable network of cargo and drivers:</b> 
-  Have peace of mind knowing that all goods tendered through the cargo platform are backed by E-Cargo's vast and reliable network of carriers.
+<b>Access E-cargo's reliable network of cargo and drivers and have peace of mind knowing that all goods tendered through the cargo platform are backed by E-Cargo's vast and reliable network of carriers.
 
 <b>Locate the nearest cargo and track after takeoff:</b></br>
 Locate cargo travelling along your path, and track shipments online at any time of day. Automatic notifications for major milestones mean no more searching through an inbox for tracking information.</br>
