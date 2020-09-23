@@ -5,7 +5,7 @@ Our goal is to revitalize the local shipping industry and help cargo owners, dri
 Our first step towards achieving this result was to empower carriers and their drivers (the heart of the trucking industry) with technology to help them succeed. We provide accounts for drivers and clients. Moreover, sign-up is free for everyone!
 
 <b>The E-Cargo platform</b> provides various shippers with a direct connection to locate avaliable cargo with the right space to transport their goods, thus enabling them to see instant upfront load pricing, and provide load specifications such as: weight, height, quantity, dimension and category. </br>
-The platform is being built in close collaboration with shippers to help transform a process that would typically take them days to complete, and often leave them in the dark about market prices and whether they were getting the right carrier. 
+Our platform is being built in close collaboration with shippers to help transform a process that would typically take them days to complete, and often leave them in the dark about market prices and whether they were getting the right carrier. 
 
 <b>Shippers using E-cargo can tender a load in seconds;<b></br>
 create and tender loads with just a few clicks; 
