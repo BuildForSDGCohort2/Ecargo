@@ -7,9 +7,7 @@ Our first step towards achieving this result was to empower carriers and their d
 <b>The E-Cargo platform</b> provides various shippers with a direct connection to locate avaliable cargo with the right space to transport their goods, thus enabling them to see instant upfront load pricing, and provide load specifications such as: weight, height, quantity, dimension and category. </br>
 Our platform is being built in close collaboration with shippers to help transform a process that would typically take them days to complete, and often leave them in the dark about market prices and whether they were getting the right carrier. 
 
-<b>Shippers using E-cargo can tender a load in seconds;<b></br>
-create and tender loads with just a few clicks; 
-reduce the time and energy it takes to book a cargo.</br>
+<b>Shippers using E-cargo can tender a load in seconds, create and tender loads with just a few clicks and reduce the time and energy it takes to book a cargo.
 
 <b>See instant marketplace pricing:</b></br>
 Get instant and transparent price quotes for shipments. E-cargo rates are based on market conditions and other factors and are generated in real-time.</br>
