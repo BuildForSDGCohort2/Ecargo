@@ -1,144 +1,30 @@
-<?php
 
-return [
-
-    /*
-    |--------------------------------------------------------------------------
-    | PDO Fetch Style
-    |--------------------------------------------------------------------------
-    |
-    | By default, database results will be returned as instances of the PHP
-    | stdClass object; however, you may desire to retrieve records in an
-    | array format for simplicity. Here you can tweak the fetch style.
-    |
-    */
-
-    'fetch' => PDO::FETCH_CLASS,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Default Database Connection Name
-    |--------------------------------------------------------------------------
-    |
-    | Here you may specify which of the database connections below you wish
-    | to use as your default connection for all database work. Of course
-    | you may use many connections at once using the Database library.
-    |
-    */
-
-    'default' => 'mysql',
-
-    /*
-    |--------------------------------------------------------------------------
-    | Database Connections
-    |--------------------------------------------------------------------------
-    |
-    | Here are each of the database connections setup for your application.
-    | Of course, examples of configuring each database platform that is
-    | supported by Laravel is shown below to make development simple.
-    |
-    |
-    | All database work in Laravel is done through the PHP PDO facilities
-    | so make sure you have the driver for your particular database of
-    | choice installed on your machine before you begin development.
-    |
-    */
+// database.php
 
     'connections' => [
 
-        'sqlite' => [
-            'driver'   => 'sqlite',
-            'database' => 'storage/database.sqlite',
-            'prefix'   => '',
-        ],
-
         'mysql' => [
-            'driver'    => 'mysql',
-            'host'      => 'us-cdbr-east-02.cleardb.com',
-            'port'      => 3306,
-            'database'  => 'heroku_e090d535c0a387a',
-            'username'  => 'b0e251fa5d8501:4a552b36',
-            'password'  => '4a552b36',
-            'charset'   => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
-            'prefix'    => '',
+            'driver'      => 'mysql',
+            'host'        => env( 'DB_HOST', 'us-cdbr-east-02.cleardb.com' ),
+            'port'        => env( 'DB_PORT', '3306' ),
+            'database'    => env( 'DB_DATABASE', 'heroku_e090d535c0a387a' ),
+            'username'    => env( 'DB_USERNAME', 'b0e251fa5d8501:4a552b36' ),
+            'password'    => env( 'DB_PASSWORD', '4a552b36' ),
+            'unix_socket' => env( 'DB_SOCKET', '' ),
+            'charset'     => 'utf8mb4',
+            'collation'   => 'utf8mb4_unicode_ci',
+            'prefix'      => '',
+            'strict'      => true,
+            'engine'      => null,
+            'modes'       => [
+                'ONLY_FULL_GROUP_BY',
+                'STRICT_TRANS_TABLES',
+                'NO_ZERO_IN_DATE',
+                'NO_ZERO_DATE',
+                'ERROR_FOR_DIVISION_BY_ZERO',
+                'NO_ENGINE_SUBSTITUTION',
+            ],
         ],
-
-        'pgsql' => [
-            'driver'   => 'pgsql',
-            'host'     => 'localhost',
-            'port'     => 5432,
-            'database' => 'database',
-            'username' => 'root',
-            'password' => '',
-            'charset'  => 'utf8',
-            'prefix'   => '',
-            'schema'   => 'public',
-        ],
-
-        'sqlsrv' => [
-            'driver'   => 'sqlsrv',
-            'host'     => 'localhost',
-            'port'     => 1433,
-            'database' => 'database',
-            'username' => 'root',
-            'password' => '',
-            'prefix'   => '',
-        ],
-
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Migration Repository Table
-    |--------------------------------------------------------------------------
-    |
-    | This table keeps track of all the migrations that have already run for
-    | your application. Using this information, we can determine which of
-    | the migrations on disk have not actually be run in the databases.
-    |
-    */
 
-    'migrations' => 'migrations',
-
-    /*
-    |--------------------------------------------------------------------------
-    | Redis Databases
-    |--------------------------------------------------------------------------
-    |
-    | Redis is an open source, fast, and advanced key-value store that also
-    | provides a richer set of commands than a typical key-value systems
-    | such as APC or Memcached. Laravel makes it easy to dig right in.
-    |
-    */
-
-    'redis' => [
-
-        'cluster' => false,
-
-        'default' => [
-            'host'     => '127.0.0.1',
-            'password' => null,
-            'port'     => 6379,
-            'database' => 0,
-        ],
-
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Use DB configuration for testing
-    |--------------------------------------------------------------------------
-    |
-    | When running plugin tests OctoberCMS by default uses SQLite in memory.
-    | You can override this behavior by setting `useConfigForTesting` to true.
-    |
-    | After that OctoberCMS will take DB parameters from the config.
-    | If file `/config/testing/database.php` exists, config will be read from it,
-    | but remember that when not specified it will use parameters specified in
-    | `/config/database.php`.
-    |
-    */
-
-    'useConfigForTesting' => false,
-];
