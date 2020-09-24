@@ -44,7 +44,7 @@ $response = $kernel->handle(
 );
 
 if(!$app['config']['database.connections']){
-    return header("Location: setup.php");
+   
 }
 
 $response->send();
