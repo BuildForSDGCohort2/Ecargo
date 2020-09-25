@@ -44,7 +44,7 @@ $response = $kernel->handle(
 );
 
 if(!$app['config']['database.connections']){ 
-    return header("Location: home.blade.php");
+    return header("Location: setup.php");
    
 }
 
