@@ -43,7 +43,8 @@ $response = $kernel->handle(
     $request = Illuminate\Http\Request::capture()
 );
 
-if(!$app['config']['database.connections']){
+if(!$app['config']['database.connections']){ 
+    return header("Location: setup.php");
    
 }
 
